@@ -60,11 +60,9 @@
 ## ⚡ Como Iniciar no Windows
 
 ### Método 1: Inicialização 1-Clique (Recomendado)
-Basta dar um duplo clique no arquivo:
-```bash
-iniciar_salao.bat
-```
-O script instalará dependências se necessário, iniciará o servidor SQLite local e abrirá o sistema no seu navegador padrão (`http://localhost:3001`).
+* **Para instalar e configurar em um novo computador**: Dê duplo clique em [`INSTALADOR_BELLAGESTAO.bat`](file:///c:/Users/rgfer/OneDrive/Documentos/repositorioIA/projetoSalao/INSTALADOR_BELLAGESTAO.bat)
+* **Para iniciar no dia a dia**: Dê duplo clique no atalho da Área de Trabalho ou em [`INICIAR_SISTEMA.bat`](file:///c:/Users/rgfer/OneDrive/Documentos/repositorioIA/projetoSalao/INICIAR_SISTEMA.bat)
+O sistema abrirá automaticamente no seu navegador padrão (`http://localhost:3001`).
 
 ---
 

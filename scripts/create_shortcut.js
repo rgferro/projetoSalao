@@ -5,7 +5,7 @@ const { execSync } = require('child_process');
 const rootDir = path.resolve(__dirname, '..');
 const assetsDir = path.join(rootDir, 'assets');
 const iconIco = path.join(assetsDir, 'app_icon.ico');
-const targetBat = path.join(rootDir, 'INSTALAR_E_INICIAR.bat');
+const targetBat = path.join(rootDir, 'INICIAR_SISTEMA.bat');
 
 const psScript = `
 $desktop = [Environment]::GetFolderPath('Desktop')
