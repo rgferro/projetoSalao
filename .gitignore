@@ -15,6 +15,7 @@ yarn-error.log*
 pnpm-debug.log*
 backend/backups/
 backend/whatsapp_auth/
+cloudflared.exe
 *.log
 
 # Environment variables
