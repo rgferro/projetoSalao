@@ -28,8 +28,8 @@ pause
 exit /b 1
 
 :node_found
-echo [1/2] Iniciando o servidor local (SQLite + Express)...
-start "BellaGestao Server" /min cmd /c "cd /d "%~dp0backend" && node server.js"
+echo [1/2] Iniciando Servidor Local e Daemon WhatsApp Multi-Device...
+start "BellaGestao Server" /min cmd /c "cd /d "%~dp0backend" && npm.cmd start"
 
 echo [2/2] Abrindo BellaGestao Studio no navegador...
 ping 127.0.0.1 -n 3 > nul

@@ -109,10 +109,15 @@ export default function Clients({ onOpenNewClient }) {
     }
   };
 
-  const handleDirectWhatsApp = (phone) => {
-    const cleanPhone = phone.replace(/\D/g, '');
-    const fullPhone = cleanPhone.length <= 11 ? `55${cleanPhone}` : cleanPhone;
-    window.open(`https://wa.me/${fullPhone}`, '_blank');
+  const handleDirectWhatsApp = async (phone) => {
+    const msg = window.prompt(`Enviar mensagem de WhatsApp para ${phone}:`, 'Olá! Tudo bem? Passando para saber como você está e se precisa de algum atendimento no nosso salão.');
+    if (!msg) return;
+    try {
+      await api.sendCustomMsg({ phone, message: msg, client_id: selectedClient?.id });
+      alert('✅ Mensagem enviada com sucesso no WhatsApp em segundo plano!');
+    } catch (err) {
+      alert(`Erro no envio: ${err.message}`);
+    }
   };
 
   return (

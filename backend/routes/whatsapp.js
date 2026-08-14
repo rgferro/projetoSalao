@@ -3,7 +3,7 @@ const router = express.Router();
 const { query, get, run } = require('../database/db');
 const whatsappService = require('../services/whatsappService');
 
-// Obter status e QR Code de conexão
+// Obter status e QR Code de conexão em tempo real
 router.get('/status', async (req, res) => {
   try {
     const status = await whatsappService.getStatus();
@@ -13,12 +13,11 @@ router.get('/status', async (req, res) => {
   }
 });
 
-// Alternar status de simulação/conexão
-router.post('/toggle-status', async (req, res) => {
+// Desconectar sessão (Logout) para gerar novo QR Code
+router.post('/logout', async (req, res) => {
   try {
-    const { status } = req.body;
-    const updated = await whatsappService.setStatus(status || 'connected');
-    res.json(updated);
+    const result = await whatsappService.logout();
+    res.json(result);
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
@@ -53,42 +52,40 @@ router.put('/templates/:id', async (req, res) => {
   }
 });
 
-// Disparar Lembrete Manual para um Agendamento
+// Disparar Lembrete Manual 100% Silencioso em Background
 router.post('/send-reminder', async (req, res) => {
   try {
     const { appointment_id, type = 'reminder_24h' } = req.body;
     if (!appointment_id) return res.status(400).json({ error: 'ID do agendamento é obrigatório.' });
 
     const result = await whatsappService.sendAppointmentReminder(appointment_id, type);
-    res.json({ message: 'Lembrete processado!', ...result });
+    res.json({ message: 'Lembrete enviado com sucesso pelo WhatsApp!', ...result });
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
 });
 
-// Disparar Mensagem de Aniversário
+// Disparar Mensagem de Aniversário Silenciosa
 router.post('/send-birthday', async (req, res) => {
   try {
     const { client_id } = req.body;
     if (!client_id) return res.status(400).json({ error: 'ID do cliente é obrigatório.' });
 
     const result = await whatsappService.sendBirthday(client_id);
-    res.json({ message: 'Mensagem de aniversário processada!', ...result });
+    res.json({ message: 'Mensagem de aniversário enviada com sucesso!', ...result });
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
 });
 
-// Disparo Livre de Mensagem via WhatsApp
+// Disparo Livre de Mensagem via WhatsApp em Background
 router.post('/send-custom', async (req, res) => {
   try {
     const { client_id, phone, message } = req.body;
     if (!phone || !message) return res.status(400).json({ error: 'Telefone e mensagem são obrigatórios.' });
 
-    const waLink = whatsappService.generateWaLink(phone, message);
-    await whatsappService.logMessage(client_id || null, phone, 'custom', message, 'enviado');
-
-    res.json({ message: 'Mensagem gerada com sucesso!', waLink });
+    const result = await whatsappService.sendMessage(phone, message, client_id || null, 'custom');
+    res.json({ message: 'Mensagem enviada com sucesso!', ...result });
   } catch (error) {
     res.status(500).json({ error: error.message });
   }

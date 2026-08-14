@@ -108,9 +108,9 @@ export const api = {
   settleCommission: (data) => request('/commissions/settle', { method: 'POST', body: JSON.stringify(data) }),
   getSettlements: (professional_id) => request(`/commissions/settlements${professional_id ? `?professional_id=${professional_id}` : ''}`),
 
-  // WhatsApp
+  // WhatsApp Multi-Device
   getWhatsAppStatus: () => request('/whatsapp/status'),
-  toggleWhatsAppStatus: (status) => request('/whatsapp/toggle-status', { method: 'POST', body: JSON.stringify({ status }) }),
+  logoutWhatsApp: () => request('/whatsapp/logout', { method: 'POST' }),
   getWhatsAppTemplates: () => request('/whatsapp/templates'),
   updateWhatsAppTemplate: (id, data) => request(`/whatsapp/templates/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
   sendReminder: (appointment_id, type) => request('/whatsapp/send-reminder', { method: 'POST', body: JSON.stringify({ appointment_id, type }) }),

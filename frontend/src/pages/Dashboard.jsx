@@ -70,14 +70,11 @@ export default function Dashboard({
 
   const handleSendBirthday = async (clientId) => {
     try {
-      const res = await api.sendBirthdayMsg(clientId);
-      if (res.waLink) {
-        window.open(res.waLink, '_blank');
-      }
-      setToastMsg('Mensagem de parabéns gerada para envio!');
-      setTimeout(() => setToastMsg(''), 3000);
+      await api.sendBirthdayMsg(clientId);
+      setToastMsg('✅ Mensagem de aniversário enviada no WhatsApp em segundo plano!');
+      setTimeout(() => setToastMsg(''), 4000);
     } catch (err) {
-      alert(err.message);
+      alert(`Erro ao enviar WhatsApp: ${err.message}`);
     }
   };
 

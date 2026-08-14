@@ -1,36 +1,32 @@
 const { query, get, run } = require('../database/db');
-const QRCode = require('qrcode');
+
+const DAEMON_URL = 'http://127.0.0.1:3005';
 
 class WhatsAppService {
-  constructor() {
-    this.status = 'connected'; // 'connected', 'qr_ready', 'disconnected'
-    this.sessionQr = null;
-    this.init();
-  }
-
-  async init() {
-    try {
-      // Gera QR code padrão inicial para simulação/conexão local
-      const qrPayload = `BELLASTUDIO_WA_LOCAL_${Date.now()}`;
-      this.sessionQr = await QRCode.toDataURL(qrPayload);
-    } catch (e) {
-      console.error('Erro ao gerar QR Code inicial do WhatsApp:', e);
-    }
-  }
-
   async getStatus() {
-    const settingStatus = await get("SELECT value FROM settings WHERE key = 'whatsapp_status'");
+    try {
+      const response = await fetch(`${DAEMON_URL}/status`, { signal: AbortSignal.timeout(3000) });
+      if (response.ok) {
+        const data = await response.json();
+        return {
+          status: data.status,
+          qrCode: data.qr,
+          user: data.user,
+          daemonOnline: true,
+          lastCheck: new Date().toISOString()
+        };
+      }
+    } catch (e) {
+      // Daemon pode estar iniciando
+    }
+
     return {
-      status: settingStatus ? settingStatus.value : this.status,
-      qrCode: this.sessionQr,
+      status: 'CONNECTING',
+      qrCode: null,
+      user: null,
+      daemonOnline: false,
       lastCheck: new Date().toISOString()
     };
-  }
-
-  async setStatus(status) {
-    this.status = status;
-    await run("INSERT OR REPLACE INTO settings (key, value) VALUES ('whatsapp_status', ?)", [status]);
-    return this.getStatus();
   }
 
   formatMessage(templateBody, variables) {
@@ -43,17 +39,17 @@ class WhatsAppService {
   }
 
   sanitizePhone(phone) {
-    const digits = String(phone).replace(/\D/g, '');
+    let digits = String(phone).replace(/\D/g, '');
     if (digits.length === 10 || digits.length === 11) {
-      return `55${digits}`;
+      digits = `55${digits}`;
     }
     return digits;
   }
 
-  generateWaLink(phone, messageText) {
+  generateWaLink(phone, text = '') {
     const cleanPhone = this.sanitizePhone(phone);
-    const encodedText = encodeURIComponent(messageText);
-    return `https://wa.me/${cleanPhone}?text=${encodedText}`;
+    const encoded = encodeURIComponent(text);
+    return `https://wa.me/${cleanPhone}${encoded ? `?text=${encoded}` : ''}`;
   }
 
   async logMessage(clientId, phone, messageType, content, status = 'enviado', error = null) {
@@ -62,6 +58,42 @@ class WhatsAppService {
        VALUES (?, ?, ?, ?, ?, ?, datetime('now', 'localtime'))`,
       [clientId, phone, messageType, content, status, error]
     );
+  }
+
+  /**
+   * Disparo 100% silencioso e em segundo plano via Daemon Baileys
+   */
+  async sendMessage(phone, message, clientId = null, messageType = 'custom') {
+    const cleanPhone = this.sanitizePhone(phone);
+
+    try {
+      const response = await fetch(`${DAEMON_URL}/send`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ phone: cleanPhone, message }),
+        signal: AbortSignal.timeout(15000)
+      });
+
+      const data = await response.json();
+
+      if (!response.ok || !data.success) {
+        const errMsg = data.error || `Erro ${response.status}: falha no daemon`;
+        await this.logMessage(clientId, cleanPhone, messageType, message, 'erro', errMsg);
+        throw new Error(errMsg);
+      }
+
+      await this.logMessage(clientId, cleanPhone, messageType, message, 'enviado');
+
+      return {
+        success: true,
+        messageId: data.messageId,
+        phone: cleanPhone,
+        messageText: message
+      };
+    } catch (err) {
+      await this.logMessage(clientId, cleanPhone, messageType, message, 'erro', err.message);
+      throw err;
+    }
   }
 
   async sendAppointmentReminder(appointmentId, type = 'reminder_24h') {
@@ -94,8 +126,7 @@ class WhatsAppService {
     const profsStr = [...new Set(items.map(i => i.prof_nickname || i.prof_name))].join(', ');
     const startTime = items.length > 0 ? items[0].start_time : '09:00';
 
-    const confirmationLink = `http://localhost:3000/confirm/${appointment.id}`;
-
+    const confirmationLink = `http://localhost:3001/confirm/${appointment.id}`;
     const formattedDate = appointment.date.split('-').reverse().join('/');
 
     const messageText = this.formatMessage(template.body, {
@@ -109,16 +140,12 @@ class WhatsAppService {
       link_confirmacao: confirmationLink
     });
 
-    const waLink = this.generateWaLink(appointment.client_phone, messageText);
-
-    // Registra na fila/log
-    await this.logMessage(appointment.client_id, appointment.client_phone, type, messageText, 'enviado');
+    // Enviar silenciosamente em segundo plano
+    const sendResult = await this.sendMessage(appointment.client_phone, messageText, appointment.client_id, type);
 
     return {
-      success: true,
-      messageText,
-      waLink,
-      phone: appointment.client_phone
+      ...sendResult,
+      clientName: appointment.client_name
     };
   }
 
@@ -136,10 +163,8 @@ class WhatsAppService {
       salao: salonName
     });
 
-    const waLink = this.generateWaLink(client.phone, messageText);
-    await this.logMessage(client.id, client.phone, 'welcome', messageText, 'enviado');
-
-    return { success: true, messageText, waLink };
+    const sendResult = await this.sendMessage(client.phone, messageText, client.id, 'welcome');
+    return sendResult;
   }
 
   async sendBirthday(clientId) {
@@ -156,10 +181,17 @@ class WhatsAppService {
       salao: salonName
     });
 
-    const waLink = this.generateWaLink(client.phone, messageText);
-    await this.logMessage(client.id, client.phone, 'birthday', messageText, 'enviado');
+    const sendResult = await this.sendMessage(client.phone, messageText, client.id, 'birthday');
+    return sendResult;
+  }
 
-    return { success: true, messageText, waLink };
+  async logout() {
+    try {
+      const res = await fetch(`${DAEMON_URL}/logout`, { method: 'POST' });
+      return await res.json();
+    } catch (e) {
+      throw new Error('Falha ao desconectar WhatsApp do daemon');
+    }
   }
 }
 

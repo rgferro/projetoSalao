@@ -89,10 +89,8 @@ echo   INSTALACAO CONCLUIDA COM SUCESSO!
 echo ===============================================================================
 echo.
 echo   O atalho "BellaGestao Studio" foi criado na sua Area de Trabalho.
-echo   Iniciando o servidor e abrindo o sistema agora...
-echo.
-
-start "BellaGestao Server" /min cmd /c "cd /d "%~dp0backend" && node server.js"
+echo  :: Iniciar o servidor backend e daemon WhatsApp em segundo plano
+start "BellaGestao Server" /min cmd /c "cd /d "%~dp0backend" && npm.cmd start"
 ping 127.0.0.1 -n 4 > nul
 start http://localhost:3001
 

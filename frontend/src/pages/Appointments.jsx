@@ -94,10 +94,10 @@ export default function Appointments({ onOpenNewAppointment, onOpenPDV }) {
 
   const handleSendReminder = async (appId) => {
     try {
-      const res = await api.sendReminder(appId, 'reminder_24h');
-      if (res.waLink) window.open(res.waLink, '_blank');
+      await api.sendReminder(appId, 'reminder_24h');
+      alert('✅ Lembrete de agendamento enviado no WhatsApp em segundo plano com sucesso!');
     } catch (err) {
-      alert(err.message);
+      alert(`Erro ao enviar WhatsApp: ${err.message}`);
     }
   };
 
