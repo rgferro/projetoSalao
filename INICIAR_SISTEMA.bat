@@ -1,5 +1,4 @@
 @echo off
-setlocal EnableDelayedExpansion
 title BellaGestao Studio - Inicializador
 
 cls
@@ -11,20 +10,24 @@ echo.
 cd /d "%~dp0"
 
 where node >nul 2>nul
-if %errorlevel% neq 0 (
-    if exist "C:\Program Files\nodejs\node.exe" (
-        set "PATH=%PATH%;C:\Program Files\nodejs"
-    ) else if exist "C:\Program Files (x86)\nodejs\node.exe" (
-        set "PATH=%PATH%;C:\Program Files (x86)\nodejs"
-    ) else (
-        echo [ERRO] Node.js nao encontrado!
-        echo Execute o arquivo INSTALADOR_BELLAGESTAO.bat para configurar o sistema.
-        echo.
-        pause
-        exit /b 1
-    )
+if %errorlevel% equ 0 goto :node_found
+
+if exist "C:\Program Files\nodejs\node.exe" (
+    set "PATH=%PATH%;C:\Program Files\nodejs"
+    goto :node_found
+)
+if exist "C:\Program Files (x86)\nodejs\node.exe" (
+    set "PATH=%PATH%;C:\Program Files (x86)\nodejs"
+    goto :node_found
 )
 
+echo [ERRO] Node.js nao encontrado!
+echo Execute o arquivo INSTALADOR_BELLAGESTAO.bat para configurar o sistema.
+echo.
+pause
+exit /b 1
+
+:node_found
 echo [1/2] Iniciando o servidor local (SQLite + Express)...
 start "BellaGestao Server" /min cmd /c "cd /d "%~dp0backend" && node server.js"
 

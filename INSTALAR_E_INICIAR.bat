@@ -1,5 +1,4 @@
 @echo off
-setlocal EnableDelayedExpansion
 title BellaGestao Studio - Inicializador 1-Clique
 
 cls
@@ -11,18 +10,22 @@ echo.
 cd /d "%~dp0"
 
 where node >nul 2>nul
-if %errorlevel% neq 0 (
-    if exist "C:\Program Files\nodejs\node.exe" (
-        set "PATH=%PATH%;C:\Program Files\nodejs"
-    ) else if exist "C:\Program Files (x86)\nodejs\node.exe" (
-        set "PATH=%PATH%;C:\Program Files (x86)\nodejs"
-    ) else (
-        echo [!] Node.js nao encontrado. Executando assistente de instalacao...
-        call INSTALADOR_BELLAGESTAO.bat
-        exit /b 0
-    )
+if %errorlevel% equ 0 goto :node_ready
+
+if exist "C:\Program Files\nodejs\node.exe" (
+    set "PATH=%PATH%;C:\Program Files\nodejs"
+    goto :node_ready
+)
+if exist "C:\Program Files (x86)\nodejs\node.exe" (
+    set "PATH=%PATH%;C:\Program Files (x86)\nodejs"
+    goto :node_ready
 )
 
+echo [!] Node.js nao encontrado. Executando assistente de instalacao...
+call INSTALADOR_BELLAGESTAO.bat
+exit /b 0
+
+:node_ready
 if not exist "backend\node_modules\" (
     echo Instalando componentes necessarios...
     call INSTALADOR_BELLAGESTAO.bat
@@ -33,7 +36,7 @@ echo [1/2] Iniciando Servidor Local SQLite...
 start "BellaGestao Server" /min cmd /c "cd /d "%~dp0backend" && node server.js"
 
 echo [2/2] Abrindo BellaGestao Studio...
-timeout /t 2 /nobreak > nul
+ping 127.0.0.1 -n 3 > nul
 start http://localhost:3001
 
 echo.
