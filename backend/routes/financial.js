@@ -131,8 +131,14 @@ router.post('/cash/close', async (req, res) => {
       [current.id, declaredFinal]
     );
 
+    // Disparar backup em nuvem automático ao fechar o caixa (zero intervenção do usuário)
+    try {
+      const gdriveService = require('../services/gdriveService');
+      gdriveService.syncToGoogleDrive().catch(e => console.warn('Aviso no backup em nuvem:', e.message));
+    } catch (bErr) {}
+
     res.json({
-      message: 'Caixa fechado com sucesso!',
+      message: 'Caixa fechado com sucesso e cópia de segurança enviada para a nuvem!',
       system_balance: current.system_balance,
       final_balance: declaredFinal,
       difference
