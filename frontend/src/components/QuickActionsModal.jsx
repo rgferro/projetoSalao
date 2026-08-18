@@ -148,8 +148,8 @@ export function CashManagementModal({ isOpen, onClose, cashStatus, onRefresh }) 
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
-      <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl max-w-lg w-full p-6 shadow-2xl">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-3 sm:p-4 animate-fadeIn">
+      <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl max-w-lg w-full p-4 sm:p-6 shadow-2xl max-h-[92vh] overflow-y-auto">
         <div className="flex items-center justify-between pb-3 border-b border-slate-100 dark:border-slate-800">
           <div className="flex items-center gap-2">
             <DollarSign className="w-5 h-5 text-emerald-500" />
@@ -472,8 +472,8 @@ export function NewAppointmentModal({ isOpen, onClose, onCreated }) {
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4 overflow-y-auto">
-      <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl max-w-2xl w-full p-6 shadow-2xl my-8">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-3 sm:p-4 overflow-y-auto">
+      <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl max-w-2xl w-full p-4 sm:p-6 shadow-2xl max-h-[92vh] overflow-y-auto my-auto">
         
         <div className="flex items-center justify-between pb-3 border-b border-slate-100 dark:border-slate-800">
           <div className="flex items-center gap-2">
@@ -492,28 +492,25 @@ export function NewAppointmentModal({ isOpen, onClose, onCreated }) {
           </div>
         )}
 
-        <form onSubmit={handleSubmit} className="mt-4 space-y-4">
-          
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div>
-              <label className="block text-xs font-semibold text-slate-600 dark:text-slate-300 mb-1">
-                Cliente
-              </label>
+        <form onSubmit={handleCreateAppointment} className="mt-4 space-y-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="space-y-1">
+              <label className="text-xs font-semibold text-slate-600 dark:text-slate-300">Cliente *</label>
               <select
+                required
                 value={clientId}
                 onChange={(e) => setClientId(e.target.value)}
                 className="w-full px-3 py-2 text-sm rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800"
               >
+                <option value="">Selecione a cliente...</option>
                 {clients.map(c => (
-                  <option key={c.id} value={c.id}>{c.name} - {c.phone}</option>
+                  <option key={c.id} value={c.id}>{c.name} ({c.phone})</option>
                 ))}
               </select>
             </div>
 
-            <div>
-              <label className="block text-xs font-semibold text-slate-600 dark:text-slate-300 mb-1">
-                Data do Atendimento
-              </label>
+            <div className="space-y-1">
+              <label className="text-xs font-semibold text-slate-600 dark:text-slate-300">Data do Atendimento *</label>
               <input
                 type="date"
                 required
@@ -524,7 +521,7 @@ export function NewAppointmentModal({ isOpen, onClose, onCreated }) {
             </div>
           </div>
 
-          {/* Lista de Serviços e Profissionais (Multisserviço) */}
+          {/* Dynamic Service Items Selection */}
           <div className="space-y-3 pt-2">
             <div className="flex items-center justify-between">
               <label className="text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider">

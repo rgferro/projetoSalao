@@ -4,6 +4,12 @@ async function request(endpoint, options = {}) {
   const url = `${API_BASE}${endpoint}`;
   const headers = options.headers || {};
 
+  // Injetar token de autenticação se disponível
+  const token = localStorage.getItem('salao_token') || localStorage.getItem('bella_token');
+  if (token) {
+    headers['Authorization'] = `Bearer ${token}`;
+  }
+
   if (!(options.body instanceof FormData) && !headers['Content-Type']) {
     headers['Content-Type'] = 'application/json';
   }
@@ -29,6 +35,13 @@ async function request(endpoint, options = {}) {
 }
 
 export const api = {
+  // Axios-like helper methods for flexibility
+  get: (endpoint, options = {}) => request(endpoint, { method: 'GET', ...options }).then(res => ({ data: res })),
+  post: (endpoint, body, options = {}) => request(endpoint, { method: 'POST', body: body instanceof FormData ? body : JSON.stringify(body), ...options }).then(res => ({ data: res })),
+  put: (endpoint, body, options = {}) => request(endpoint, { method: 'PUT', body: body instanceof FormData ? body : JSON.stringify(body), ...options }).then(res => ({ data: res })),
+  patch: (endpoint, body, options = {}) => request(endpoint, { method: 'PATCH', body: body instanceof FormData ? body : JSON.stringify(body), ...options }).then(res => ({ data: res })),
+  delete: (endpoint, options = {}) => request(endpoint, { method: 'DELETE', ...options }).then(res => ({ data: res })),
+
   // Dashboard
   getDashboardMetrics: () => request('/dashboard/metrics'),
 
@@ -128,3 +141,5 @@ export const api = {
   getSettings: () => request('/settings'),
   updateSettings: (data) => request('/settings', { method: 'POST', body: JSON.stringify(data) })
 };
+
+export default api;

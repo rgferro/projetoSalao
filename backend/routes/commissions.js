@@ -2,16 +2,17 @@ const express = require('express');
 const router = express.Router();
 const { query, get, run } = require('../database/db');
 
-// Relatório de Repasse de Comissões por Profissional e Período
+// Relatório de Repasse de Comissões por Profissional e Período isolado por Tenant
 router.get('/report', async (req, res) => {
   try {
     const { professional_id, startDate, endDate } = req.query;
+    const tenantId = req.tenantId || 'tenant_default_salao';
 
     const sDate = startDate || new Date(new Date().getFullYear(), new Date().getMonth(), 1).toISOString().split('T')[0];
     const eDate = endDate || new Date().toISOString().split('T')[0];
 
     let profFilter = '';
-    const params = [sDate, eDate];
+    const params = [tenantId, sDate, eDate];
 
     if (professional_id) {
       profFilter = ' AND ai.professional_id = ?';
@@ -29,7 +30,7 @@ router.get('/report', async (req, res) => {
        JOIN clients c ON a.client_id = c.id
        JOIN services s ON ai.service_id = s.id
        JOIN professionals p ON ai.professional_id = p.id
-       WHERE a.status = 'concluido' AND a.date BETWEEN ? AND ? ${profFilter}
+       WHERE a.tenant_id = ? AND a.status = 'concluido' AND a.date BETWEEN ? AND ? ${profFilter}
        ORDER BY a.date DESC, ai.start_time DESC`,
       params
     );
@@ -70,16 +71,17 @@ router.get('/report', async (req, res) => {
   }
 });
 
-// Registrar Quitação / Pagamento de Repasse de Comissão
+// Registrar Quitação / Pagamento de Repasse de Comissão com Tenant
 router.post('/settle', async (req, res) => {
   try {
     const { professional_id, period_start, period_end, total_services_amount, total_commission, deduction_amount = 0, payment_method = 'pix', notes } = req.body;
+    const tenantId = req.tenantId || 'tenant_default_salao';
 
     if (!professional_id || !period_start || !period_end || total_commission === undefined) {
       return res.status(400).json({ error: 'Profissional, período e total de comissão são obrigatórios.' });
     }
 
-    const prof = await get('SELECT name, nickname FROM professionals WHERE id = ?', [professional_id]);
+    const prof = await get('SELECT name, nickname FROM professionals WHERE id = ? AND tenant_id = ?', [professional_id, tenantId]);
     if (!prof) return res.status(404).json({ error: 'Profissional não encontrado' });
 
     const netPayout = parseFloat(total_commission) - (parseFloat(deduction_amount) || 0);
@@ -87,15 +89,16 @@ router.post('/settle', async (req, res) => {
 
     // 1. Criar transação financeira de despesa
     const finRes = await run(
-      `INSERT INTO financial_transactions (type, category, description, amount, payment_method, due_date, payment_date, status, professional_id)
-       VALUES ('despesa', 'Comissões', ?, ?, ?, ?, ?, 'pago', ?)`,
+      `INSERT INTO financial_transactions (type, category, description, amount, payment_method, due_date, payment_date, status, professional_id, tenant_id)
+       VALUES ('despesa', 'Comissões', ?, ?, ?, ?, ?, 'pago', ?, ?)`,
       [
         `Repasse de Comissão - ${prof.nickname || prof.name} (${period_start} a ${period_end})`,
         netPayout,
         payment_method,
         todayStr,
         todayStr,
-        professional_id
+        professional_id,
+        tenantId
       ]
     );
 
@@ -103,8 +106,8 @@ router.post('/settle', async (req, res) => {
 
     // 2. Registrar histórico do acerto de comissão
     const result = await run(
-      `INSERT INTO commission_settlements (professional_id, period_start, period_end, total_services_amount, total_commission, deduction_amount, net_payout, payment_date, payment_method, notes, financial_transaction_id)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      `INSERT INTO commission_settlements (professional_id, period_start, period_end, total_services_amount, total_commission, deduction_amount, net_payout, payment_date, payment_method, notes, financial_transaction_id, tenant_id)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       [
         professional_id,
         period_start,
@@ -116,7 +119,8 @@ router.post('/settle', async (req, res) => {
         todayStr,
         payment_method,
         notes || null,
-        finId
+        finId,
+        tenantId
       ]
     );
 
@@ -134,13 +138,14 @@ router.post('/settle', async (req, res) => {
 router.get('/settlements', async (req, res) => {
   try {
     const { professional_id } = req.query;
+    const tenantId = req.tenantId || 'tenant_default_salao';
     let sql = `
       SELECT cs.*, p.name as prof_name, p.nickname as prof_nickname
       FROM commission_settlements cs
       JOIN professionals p ON cs.professional_id = p.id
-      WHERE 1=1
+      WHERE cs.tenant_id = ?
     `;
-    const params = [];
+    const params = [tenantId];
     if (professional_id) {
       sql += ' AND cs.professional_id = ?';
       params.push(professional_id);

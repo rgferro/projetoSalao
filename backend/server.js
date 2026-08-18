@@ -1,3 +1,4 @@
+require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
 const path = require('path');
@@ -5,7 +6,9 @@ const cron = require('node-cron');
 const { initDb } = require('./database/db');
 const { seedData } = require('./database/seed');
 const gdriveService = require('./services/gdriveService');
-const whatsappService = require('./services/whatsappService');
+const logger = require('./services/logger');
+const { sanitizationMiddleware } = require('./middleware/sanitization');
+const { extractAuth } = require('./middleware/authMiddleware');
 
 const clientsRoutes = require('./routes/clients');
 const professionalsRoutes = require('./routes/professionals');
@@ -17,16 +20,26 @@ const whatsappRoutes = require('./routes/whatsapp');
 const backupRoutes = require('./routes/backup');
 const dashboardRoutes = require('./routes/dashboard');
 const settingsRoutes = require('./routes/settings');
+const authRoutes = require('./routes/auth');
+const subscriptionRoutes = require('./routes/subscription');
+const contactRoutes = require('./routes/contact');
+const masterAdminRoutes = require('./routes/masterAdmin');
 
 const app = express();
 const PORT = process.env.PORT || 3001;
 
-// Middlewares
+// Middlewares Globais de Segurança, Sanitização e Extração de Tenant
 app.use(cors());
-app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
+app.use(express.json({ limit: '10mb' }));
+app.use(express.urlencoded({ extended: true, limit: '10mb' }));
+app.use(sanitizationMiddleware);
+app.use(extractAuth);
 
 // Rotas da API REST
+app.use('/api/auth', authRoutes);
+app.use('/api/subscription', subscriptionRoutes);
+app.use('/api/contact', contactRoutes);
+app.use('/api/master-admin', masterAdminRoutes);
 app.use('/api/clients', clientsRoutes);
 app.use('/api/professionals', professionalsRoutes);
 app.use('/api/services', servicesRoutes);
@@ -51,10 +64,15 @@ app.get('*', (req, res, next) => {
     res.sendFile(indexPath);
   } else {
     res.json({
-      name: 'Sistema de Gestão para Salão de Beleza e Estética API',
+      name: 'BellaGestão Studio - Sistema de Gestão para Salão de Beleza e Estética API',
       status: 'online',
-      version: '1.0.0',
+      version: '2.0.0',
+      resilience: 'Circuit Breaker + Grace Period + ACID Transactions + Multi-Tenancy',
       endpoints: [
+        '/api/auth/login',
+        '/api/auth/register',
+        '/api/master-admin/metrics',
+        '/api/subscription/status',
         '/api/dashboard/metrics',
         '/api/clients',
         '/api/appointments',
@@ -63,21 +81,29 @@ app.get('*', (req, res, next) => {
         '/api/financial/cash/current',
         '/api/commissions/report',
         '/api/whatsapp/status',
-        '/api/backup'
-      ]
+        '/api/backup',
+      ],
     });
   }
 });
 
+// Middleware Global de Tratamento de Erros (Graceful Error Handling)
+app.use((err, req, res, next) => {
+  logger.error(`Exceção capturada na rota [${req.method} ${req.path}]:`, { error: err.message });
+  res.status(500).json({
+    error: 'Ocorreu uma instabilidade momentânea. O sistema continuará operando com segurança.',
+    details: process.env.NODE_ENV === 'development' ? err.message : undefined,
+  });
+});
+
 // Rotinas Agendadas em Segundo Plano (Cron Jobs)
-// 1. Rotina de Backup Automático Diário (às 23:00)
 cron.schedule('0 23 * * *', async () => {
-  console.log('⏰ Executando rotina agendada de backup diário...');
+  logger.info('Executando rotina agendada de backup diário com hash SHA-256...');
   try {
     const backup = await gdriveService.createLocalBackup();
-    console.log('✅ Backup diário criado:', backup.filename);
+    logger.info(`Backup diário criado com sucesso: ${backup.filename} (${backup.sha256})`);
   } catch (err) {
-    console.error('❌ Falha no backup diário automático:', err.message);
+    logger.error('Falha no backup diário automático:', { error: err.message });
   }
 });
 
@@ -88,13 +114,10 @@ const startServer = async () => {
     await seedData();
 
     app.listen(PORT, () => {
-      console.log(`=======================================================`);
-      console.log(`💈 SALÃOPRO & ESTÉTICA - BACKEND LOCAL INICIADO COM SUCESSO!`);
-      console.log(`📍 Servidor rodando em: http://localhost:${PORT}`);
-      console.log(`=======================================================`);
+      logger.info(`💈 BELLAGESTÃO STUDIO ERP - BACKEND INICIADO COM SUCESSO! Porta: ${PORT} | URL: ${process.env.APP_URL || 'https://belagestaostudio.com.br'}`);
     });
   } catch (error) {
-    console.error('❌ Falha crítica ao iniciar servidor:', error);
+    logger.error('Falha crítica ao iniciar servidor:', { error: error.message });
     process.exit(1);
   }
 };

@@ -9,47 +9,100 @@ import {
   Scissors, 
   MessageSquareText, 
   HardDriveDownload,
-  HelpCircle
+  HelpCircle,
+  Sparkles,
+  BookOpen,
+  ShieldCheck,
+  Compass,
+  X
 } from 'lucide-react';
+import { useAuth } from '../context/AuthContext';
 
-const MENU_ITEMS = [
-  { id: 'dashboard', label: 'Visão Geral', icon: LayoutDashboard },
-  { id: 'appointments', label: 'Agenda & Horários', icon: CalendarDays },
-  { id: 'clients', label: 'Clientes & Anamnese', icon: Users },
-  { id: 'cash-register', label: 'Frente de Caixa & PDV', icon: ShoppingBag },
-  { id: 'financial', label: 'Financeiro & DRE', icon: BadgeDollarSign },
-  { id: 'professionals', label: 'Equipe & Comissões', icon: UserCheck },
-  { id: 'services', label: 'Catálogo de Serviços', icon: Scissors },
-  { id: 'whatsapp', label: 'Módulo WhatsApp', icon: MessageSquareText },
-  { id: 'backup', label: 'Backup & Google Drive', icon: HardDriveDownload },
+const ALL_MENU_ITEMS = [
+  { id: 'dashboard', label: 'Visão Geral', icon: LayoutDashboard, category: 'Operacional' },
+  { id: 'appointments', label: 'Agenda & Horários', icon: CalendarDays, category: 'Operacional' },
+  { id: 'clients', label: 'Clientes & Anamnese', icon: Users, category: 'Operacional' },
+  { id: 'cash-register', label: 'Frente de Caixa & PDV', icon: ShoppingBag, category: 'Operacional' },
+  { id: 'financial', label: 'Financeiro & DRE', icon: BadgeDollarSign, category: 'Gestão' },
+  { id: 'professionals', label: 'Equipe & Profissionais', icon: UserCheck, category: 'Gestão' },
+  { id: 'services', label: 'Catálogo de Serviços', icon: Scissors, category: 'Gestão' },
+  { id: 'whatsapp', label: 'WhatsApp Automático', icon: MessageSquareText, category: 'Gestão' },
+  { id: 'subscription', label: 'Assinatura & Planos', icon: Sparkles, category: 'Administrativo' },
+  { id: 'manual', label: 'Manual & Tutoriais', icon: BookOpen, category: 'Operacional' },
+  { id: 'backup', label: 'Backup & Nuvem', icon: HardDriveDownload, category: 'Administrativo' },
 ];
 
-export default function Sidebar({ activeTab, setActiveTab, onOpenHelp }) {
-  return (
-    <aside className="w-64 bg-white dark:bg-slate-900 border-r border-slate-200 dark:border-slate-800 flex flex-col justify-between shrink-0 select-none transition-colors">
-      
+export default function Sidebar({ 
+  activeTab, 
+  setActiveTab, 
+  onOpenHelp, 
+  onStartTour,
+  isOpenMobile,
+  onCloseMobile
+}) {
+  const { user, checkPermission } = useAuth();
+
+  // Filtrar apenas módulos autorizados para o perfil do usuário
+  const allowedMenuItems = ALL_MENU_ITEMS.filter((item) => checkPermission(item.id));
+
+  const handleSelectTab = (id) => {
+    setActiveTab(id);
+    if (onCloseMobile) onCloseMobile();
+  };
+
+  const sidebarContent = (
+    <div className="flex flex-col h-full justify-between bg-white dark:bg-slate-900 select-none">
       {/* Navigation List */}
-      <div className="p-4 space-y-1">
-        <div className="px-3 pb-3">
-          <p className="text-[11px] font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500">
-            Menu de Gestão
-          </p>
+      <div className="p-3 sm:p-4 space-y-1 overflow-y-auto flex-1">
+        {/* Mobile Header in Drawer */}
+        <div className="px-3 pb-3 flex items-center justify-between border-b border-slate-100 dark:border-slate-800 md:border-none mb-2 md:mb-0">
+          <div>
+            <p className="text-[11px] font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500">
+              Menu de Gestão
+            </p>
+            <span className="text-[10px] font-bold text-pink-600 dark:text-pink-400 uppercase">
+              Nível: {user?.accessLevel || 'STUDIO'}
+            </span>
+          </div>
+          {onCloseMobile && (
+            <button
+              onClick={onCloseMobile}
+              className="md:hidden p-1.5 rounded-xl text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800"
+            >
+              <X className="w-5 h-5" />
+            </button>
+          )}
         </div>
 
-        {MENU_ITEMS.map((item) => {
+        {/* Super Admin Master Highlight */}
+        {user?.isMaster && (
+          <button
+            onClick={() => handleSelectTab('master-admin')}
+            className={`w-full mb-2 flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-black transition-all ${
+              activeTab === 'master-admin'
+                ? 'bg-gradient-to-r from-amber-500 to-amber-600 text-slate-950 shadow-md border border-amber-400'
+                : 'bg-amber-50 dark:bg-amber-950/40 text-amber-800 dark:text-amber-300 hover:bg-amber-100 border border-amber-200/80 dark:border-amber-800/60'
+            }`}
+          >
+            <ShieldCheck className="w-4 h-4 shrink-0 text-amber-900 dark:text-amber-300" />
+            <span className="truncate">Painel Master Admin</span>
+          </button>
+        )}
+
+        {allowedMenuItems.map((item) => {
           const Icon = item.icon;
           const isActive = activeTab === item.id;
           return (
             <button
               key={item.id}
-              onClick={() => setActiveTab(item.id)}
-              className={`w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-sm font-medium transition-all ${
+              onClick={() => handleSelectTab(item.id)}
+              className={`w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-bold transition-all ${
                 isActive
-                  ? 'bg-salon-50 dark:bg-salon-950/40 text-salon-600 dark:text-salon-400 font-semibold shadow-sm border border-salon-200 dark:border-salon-800/50'
+                  ? 'bg-pink-50 dark:bg-pink-950/50 text-pink-600 dark:text-pink-400 shadow-xs border border-pink-200 dark:border-pink-800/60'
                   : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100 hover:bg-slate-100 dark:hover:bg-slate-800/60'
               }`}
             >
-              <Icon className={`w-4 h-4 shrink-0 transition-transform ${isActive ? 'scale-110 text-salon-600 dark:text-salon-400' : 'text-slate-400 dark:text-slate-500'}`} />
+              <Icon className={`w-4 h-4 shrink-0 transition-transform ${isActive ? 'scale-110 text-pink-600 dark:text-pink-400' : 'text-slate-400 dark:text-slate-500'}`} />
               <span className="truncate">{item.label}</span>
             </button>
           );
@@ -57,24 +110,69 @@ export default function Sidebar({ activeTab, setActiveTab, onOpenHelp }) {
       </div>
 
       {/* Footer Info & Shortcuts */}
-      <div className="p-4 border-t border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900/50">
+      <div className="p-3 sm:p-4 border-t border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900/50 space-y-2">
+        {onStartTour && (
+          <button
+            onClick={() => {
+              if (onCloseMobile) onCloseMobile();
+              onStartTour();
+            }}
+            className="w-full flex items-center justify-between px-3 py-2 rounded-xl text-xs font-bold text-pink-600 dark:text-pink-400 bg-pink-50 dark:bg-pink-950/40 hover:bg-pink-100 dark:hover:bg-pink-900/60 transition"
+          >
+            <div className="flex items-center gap-2">
+              <Compass className="w-4 h-4" />
+              <span>Tour Interativo</span>
+            </div>
+            <span className="text-[10px] uppercase font-black">Guia</span>
+          </button>
+        )}
+
         <button
-          onClick={onOpenHelp}
-          className="w-full flex items-center justify-between px-3 py-2 rounded-lg text-xs font-medium text-slate-600 dark:text-slate-400 hover:bg-slate-200/60 dark:hover:bg-slate-800 transition"
+          onClick={() => {
+            if (onCloseMobile) onCloseMobile();
+            onOpenHelp();
+          }}
+          className="w-full flex items-center justify-between px-3 py-2 rounded-xl text-xs font-medium text-slate-600 dark:text-slate-400 hover:bg-slate-200/60 dark:hover:bg-slate-800 transition"
         >
           <div className="flex items-center gap-2">
-            <HelpCircle className="w-4 h-4 text-salon-500" />
+            <HelpCircle className="w-4 h-4 text-slate-500" />
             <span>Guia de Atalhos</span>
           </div>
-          <span className="font-mono text-[10px] px-1.5 py-0.5 rounded bg-slate-200 dark:bg-slate-700 text-slate-600 dark:text-slate-300">F1</span>
+          <span className="font-mono text-[10px] px-1.5 py-0.5 rounded bg-slate-200 dark:bg-slate-700 text-slate-600 dark:text-slate-300 font-bold">F1</span>
         </button>
 
-        <div className="mt-3 px-2 text-[11px] text-slate-400 dark:text-slate-500 flex items-center justify-between">
-          <span>v1.0.0 • SQLite ACID</span>
-          <span className="inline-block w-2 h-2 rounded-full bg-emerald-500" title="Sistema Online e Operante"></span>
+        <div className="px-2 text-[11px] text-slate-400 dark:text-slate-500 flex items-center justify-between">
+          <span>BellaGestão v2.0</span>
+          <span className="inline-flex items-center gap-1 text-[10px] text-emerald-600 font-bold">
+            <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+            Online
+          </span>
         </div>
       </div>
+    </div>
+  );
 
-    </aside>
+  return (
+    <>
+      {/* Desktop Sidebar (hidden on mobile, visible on md and up) */}
+      <aside className="hidden md:flex flex-col w-64 shrink-0 bg-white dark:bg-slate-900 border-r border-slate-200 dark:border-slate-800 transition-colors">
+        {sidebarContent}
+      </aside>
+
+      {/* Mobile Drawer (visible when isOpenMobile is true) */}
+      {isOpenMobile && (
+        <div className="fixed inset-0 z-50 md:hidden flex animate-fadeIn">
+          {/* Backdrop Blur */}
+          <div 
+            className="fixed inset-0 bg-slate-950/60 backdrop-blur-xs transition-opacity"
+            onClick={onCloseMobile}
+          />
+          {/* Slide-in Drawer */}
+          <div className="relative w-4/5 max-w-xs h-full bg-white dark:bg-slate-900 shadow-2xl z-10 border-r border-slate-200 dark:border-slate-800 animate-slideRight">
+            {sidebarContent}
+          </div>
+        </div>
+      )}
+    </>
   );
 }

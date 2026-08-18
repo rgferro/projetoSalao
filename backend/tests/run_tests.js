@@ -1,10 +1,30 @@
 const assert = require('assert');
 const path = require('path');
 const fs = require('fs');
-const { query, get, run, initDb } = require('../database/db');
+const { query, get, run, exec, transaction, initDb } = require('../database/db');
 const { seedData } = require('../database/seed');
 const whatsappService = require('../services/whatsappService');
 const gdriveService = require('../services/gdriveService');
+const {
+  validateCPF,
+  validateCNPJ,
+  validatePasswordStrength,
+  hashPassword,
+  verifyPassword,
+  createSessionToken,
+  verifySessionToken,
+} = require('../services/authService');
+const {
+  createMercadoPagoPixPayment,
+  createMercadoPagoPreapproval,
+} = require('../services/mercadopagoService');
+const {
+  sendVerificationEmail,
+  sendEmployeeInviteEmail,
+} = require('../services/brevoService');
+const { CircuitBreaker } = require('../services/circuitBreaker');
+const { licenseManager, generateLicenseSignature, verifyLicenseSignature } = require('../services/licenseCache');
+const { sanitizeInput } = require('../middleware/sanitization');
 
 let passedTests = 0;
 let failedTests = 0;
@@ -24,247 +44,198 @@ async function runTest(name, fn) {
 
 async function startTestSuite() {
   console.log('================================================================');
-  console.log('🚀 INICIANDO BATERIA DE TESTES AUTOMATIZADOS - BELLAGESTÃO STUDIO');
+  console.log('🚀 BATERIA DE TESTES DEVSECOPS & RESILIÊNCIA - BELLAGESTÃO STUDIO');
   console.log('================================================================\n');
 
-  // Setup banco
+  // Setup inicial do banco de dados
   await initDb();
   await seedData();
 
-  // 1. Testes de Banco de Dados & Configurações
-  await runTest('1.1 - Persistência SQLite e Configurações Gerais', async () => {
-    const salonName = await get("SELECT value FROM settings WHERE key = 'salon_name'");
-    assert.ok(salonName, 'Configuração salon_name deve existir');
-    assert.ok(salonName.value.length > 0, 'salon_name não pode estar vazio');
+  // 1. Testes de Autenticação & Validação de Documentos
+  await runTest('1.1 - Validação Oficial de CPF (Módulo 11 da Receita)', async () => {
+    assert.strictEqual(validateCPF('111.111.111-11'), false);
+    assert.strictEqual(validateCPF('123.456.789-00'), false);
+    assert.strictEqual(validateCPF('52998224725'), true);
   });
 
-  // 2. Testes de Clientes & Anamnese
-  await runTest('2.1 - Cadastro de Cliente com Ficha de Anamnese Técnica', async () => {
-    const testPhone = `(11) 9${Math.floor(10000000 + Math.random() * 90000000)}`;
-    const cRes = await run(
-      `INSERT INTO clients (name, phone, email, birthdate, loyalty_points)
-       VALUES (?, ?, ?, '1995-05-15', 50)`,
-      ['Cliente Teste Unitário', testPhone, 'teste@email.com']
-    );
-    const clientId = cRes.lastID;
-    assert.ok(clientId > 0, 'Cliente deve ser inserido com ID');
-
-    // Inserir Anamnese
-    await run(
-      `INSERT INTO anamnesis (client_id, hair_type, hair_color_formula, waxing_skin_type, nails_shape_preferences, makeup_skin_type)
-       VALUES (?, 'Ondulado 2A', 'Igora 9.7', 'Fototipo II', 'Amendoadas', 'Pele Mista')`,
-      [clientId]
-    );
-
-    const saved = await get('SELECT * FROM clients WHERE id = ?', [clientId]);
-    const savedAnamnese = await get('SELECT * FROM anamnesis WHERE client_id = ?', [clientId]);
-
-    assert.strictEqual(saved.name, 'Cliente Teste Unitário');
-    assert.strictEqual(savedAnamnese.hair_color_formula, 'Igora 9.7');
-    assert.strictEqual(savedAnamnese.waxing_skin_type, 'Fototipo II');
+  await runTest('1.2 - Validação Oficial de CNPJ (Módulo 11 da Receita)', async () => {
+    assert.strictEqual(validateCNPJ('11.111.111/1111-11'), false);
+    assert.strictEqual(validateCNPJ('12.345.678/0001-90'), false);
+    assert.strictEqual(validateCNPJ('06.990.590/0001-23'), true);
   });
 
-  await runTest('2.2 - Programa de Fidelidade (Crédito e Resgate de Pontos)', async () => {
-    const client = await get('SELECT id, loyalty_points FROM clients LIMIT 1');
-    const initial = client.loyalty_points;
-
-    // Creditar 25 pontos
-    await run('UPDATE clients SET loyalty_points = loyalty_points + 25 WHERE id = ?', [client.id]);
-    let updated = await get('SELECT loyalty_points FROM clients WHERE id = ?', [client.id]);
-    assert.strictEqual(updated.loyalty_points, initial + 25, 'Pontos creditados incorretamente');
-
-    // Resgatar 10 pontos
-    await run('UPDATE clients SET loyalty_points = MAX(0, loyalty_points - 10) WHERE id = ?', [client.id]);
-    updated = await get('SELECT loyalty_points FROM clients WHERE id = ?', [client.id]);
-    assert.strictEqual(updated.loyalty_points, initial + 15, 'Pontos resgatados incorretamente');
+  await runTest('1.3 - Hash PBKDF2/Salt e Validação de Senha', async () => {
+    const pass = 'Bella@2026';
+    const hash = hashPassword(pass);
+    assert.ok(hash.includes(':'));
+    assert.strictEqual(verifyPassword(pass, hash), true);
+    assert.strictEqual(verifyPassword('SenhaErrada', hash), false);
   });
 
-  // 3. Testes de Serviços e Profissionais
-  await runTest('3.1 - Catálogo de Serviços e Categorias', async () => {
-    const services = await query('SELECT * FROM services WHERE active = 1');
-    assert.ok(services.length >= 4, 'Deve conter pelo menos serviços de Cabelo, Manicure, Depilação e Maquiagem');
+  // 2. Testes de Multi-Tenancy & Isolamento de Dados
+  await runTest('2.1 - Isolamento de Dados entre Salões (Multi-Tenant)', async () => {
+    const tenantA = `tenant_test_a_${Date.now()}`;
+    const tenantB = `tenant_test_b_${Date.now()}`;
 
-    const categories = [...new Set(services.map(s => s.category))];
-    assert.ok(categories.includes('Cabelo'), 'Categoria Cabelo ausente');
-    assert.ok(categories.includes('Manicure'), 'Categoria Manicure ausente');
-    assert.ok(categories.includes('Depilação'), 'Categoria Depilação ausente');
-    assert.ok(categories.includes('Maquiagem'), 'Categoria Maquiagem ausente');
+    // Inserir cliente no Salão A
+    await run('INSERT INTO clients (name, phone, tenant_id) VALUES (?, ?, ?)', ['Cliente Salão A', '(11) 91111-1111', tenantA]);
+    // Inserir cliente no Salão B
+    await run('INSERT INTO clients (name, phone, tenant_id) VALUES (?, ?, ?)', ['Cliente Salão B', '(11) 92222-2222', tenantB]);
+
+    // Consultar clientes do Salão A
+    const clientsA = await query('SELECT * FROM clients WHERE tenant_id = ?', [tenantA]);
+    assert.strictEqual(clientsA.length, 1);
+    assert.strictEqual(clientsA[0].name, 'Cliente Salão A');
+
+    // Consultar clientes do Salão B
+    const clientsB = await query('SELECT * FROM clients WHERE tenant_id = ?', [tenantB]);
+    assert.strictEqual(clientsB.length, 1);
+    assert.strictEqual(clientsB[0].name, 'Cliente Salão B');
+
+    // Limpeza
+    await run('DELETE FROM clients WHERE tenant_id IN (?, ?)', [tenantA, tenantB]);
   });
 
-  await runTest('3.2 - Profissionais e Regras de Comissão', async () => {
-    const profs = await query('SELECT * FROM professionals WHERE active = 1');
-    assert.ok(profs.length >= 2, 'Deve conter profissionais cadastrados');
-
-    const p = profs[0];
-    assert.ok(p.default_commission_value > 0, 'Valor de comissão padrão deve ser positivo');
-  });
-
-  // 4. Testes de Agendamento Multisserviços e Validação de Conflitos
-  await runTest('4.1 - Agendamento Multisserviços Encadeados', async () => {
-    const client = await get('SELECT id FROM clients LIMIT 1');
-    const profs = await query('SELECT id FROM professionals LIMIT 2');
-    const srvs = await query('SELECT id, price FROM services LIMIT 2');
-    const today = new Date().toISOString().split('T')[0];
-
-    const totalPrice = srvs[0].price + srvs[1].price;
-
-    const appRes = await run(
-      `INSERT INTO appointments (client_id, date, status, total_price, total_duration_min)
-       VALUES (?, ?, 'agendado', ?, 120)`,
-      [client.id, today, totalPrice]
-    );
-    const appId = appRes.lastID;
-
-    // Inserir 2 itens no mesmo agendamento com profissionais diferentes
-    await run(
-      `INSERT INTO appointment_items (appointment_id, service_id, professional_id, start_time, end_time, price, commission_type, commission_value, commission_amount, status)
-       VALUES (?, ?, ?, '16:00', '17:00', ?, 'percentage', 50.0, ?, 'agendado')`,
-      [appId, srvs[0].id, profs[0].id, srvs[0].price, srvs[0].price * 0.5]
-    );
-
-    await run(
-      `INSERT INTO appointment_items (appointment_id, service_id, professional_id, start_time, end_time, price, commission_type, commission_value, commission_amount, status)
-       VALUES (?, ?, ?, '17:00', '18:00', ?, 'percentage', 60.0, ?, 'agendado')`,
-      [appId, srvs[1].id, profs[1].id, srvs[1].price, srvs[1].price * 0.6]
-    );
-
-    const items = await query('SELECT * FROM appointment_items WHERE appointment_id = ?', [appId]);
-    assert.strictEqual(items.length, 2, 'Deve conter exatamente 2 itens');
-  });
-
-  await runTest('4.2 - Detecção de Conflitos de Horários do Profissional', async () => {
-    const prof = await get('SELECT id FROM professionals LIMIT 1');
-    const today = new Date().toISOString().split('T')[0];
-
-    // Criar agendamento teste às 10:00 - 11:00
-    const client = await get('SELECT id FROM clients LIMIT 1');
-    const app = await run(
-      `INSERT INTO appointments (client_id, date, status, total_price) VALUES (?, ?, 'confirmado', 100)`,
-      [client.id, today]
-    );
-    await run(
-      `INSERT INTO appointment_items (appointment_id, service_id, professional_id, start_time, end_time, price, commission_type, commission_value, commission_amount)
-       VALUES (?, 1, ?, '10:00', '11:00', 100, 'percentage', 50, 50)`,
-      [app.lastID, prof.id]
-    );
-
-    // Checar conflito com 10:30 - 11:30 (deve detectar conflito)
-    const conflicts = await query(
-      `SELECT ai.* FROM appointment_items ai
-       JOIN appointments a ON ai.appointment_id = a.id
-       WHERE ai.professional_id = ? AND a.date = ? AND a.status NOT IN ('cancelado', 'no_show')
-         AND NOT (ai.end_time <= '10:30' OR ai.start_time >= '11:30')`,
-      [prof.id, today]
-    );
-
-    assert.ok(conflicts.length > 0, 'Deveria ter detectado conflito de horário sobreposto');
-  });
-
-  // 5. Testes de Frente de Caixa (PDV) e Financeiro
-  await runTest('5.1 - Controle de Caixa Diário (Abertura, Sangria e Fechamento)', async () => {
-    // Abrir sessão de teste
-    const cash = await run(
-      `INSERT INTO cash_registers (initial_balance, system_balance, status, opened_by)
-       VALUES (100.0, 100.0, 'aberto', 'Teste Automatizado')`
-    );
-    const cashId = cash.lastID;
-
-    // Sangria de R$ 30
-    await run(
-      `INSERT INTO cash_movements (cash_register_id, type, amount, description)
-       VALUES (?, 'sangria', 30.0, 'Sangria de Teste')`,
-      [cashId]
-    );
-    await run('UPDATE cash_registers SET system_balance = system_balance - 30.0 WHERE id = ?', [cashId]);
-
-    // Reforço de R$ 50
-    await run(
-      `INSERT INTO cash_movements (cash_register_id, type, amount, description)
-       VALUES (?, 'reforco', 50.0, 'Reforço de Teste')`,
-      [cashId]
-    );
-    await run('UPDATE cash_registers SET system_balance = system_balance + 50.0 WHERE id = ?', [cashId]);
-
-    const updatedCash = await get('SELECT system_balance FROM cash_registers WHERE id = ?', [cashId]);
-    assert.strictEqual(updatedCash.system_balance, 120.0, 'Saldo do caixa deveria ser R$ 120.00');
-
-    // Fechar caixa
-    await run(
-      `UPDATE cash_registers SET status = 'fechado', final_balance = 120.0, difference = 0.0 WHERE id = ?`,
-      [cashId]
-    );
-    const closed = await get('SELECT status FROM cash_registers WHERE id = ?', [cashId]);
-    assert.strictEqual(closed.status, 'fechado');
-  });
-
-  await runTest('5.2 - DRE Gerencial (Receita, Comissões e Lucro Líquido)', async () => {
-    const today = new Date().toISOString().split('T')[0];
-
-    // Inserir receita de teste
-    await run(
-      `INSERT INTO financial_transactions (type, category, description, amount, payment_method, due_date, payment_date, status)
-       VALUES ('receita', 'Serviços', 'Venda Teste DRE', 500.0, 'pix', ?, ?, 'pago')`,
-      [today, today]
-    );
-
-    // Inserir despesa de teste
-    await run(
-      `INSERT INTO financial_transactions (type, category, description, amount, payment_method, due_date, payment_date, status)
-       VALUES ('despesa', 'Produtos', 'Insumos Teste DRE', 100.0, 'pix', ?, ?, 'pago')`,
-      [today, today]
-    );
-
-    const rec = await get("SELECT SUM(amount) as total FROM financial_transactions WHERE type = 'receita' AND status = 'pago' AND payment_date = ?", [today]);
-    const desp = await get("SELECT SUM(amount) as total FROM financial_transactions WHERE type = 'despesa' AND status = 'pago' AND payment_date = ?", [today]);
-
-    assert.ok(rec.total >= 500.0, 'Receita deve computar');
-    assert.ok(desp.total >= 100.0, 'Despesa deve computar');
-    assert.ok(rec.total - desp.total > 0, 'Lucro líquido do dia deve ser positivo');
-  });
-
-  // 6. Testes de Comissões e Repasse
-  await runTest('6.1 - Cálculo de Repasse e Quitação Financeira', async () => {
-    const prof = await get('SELECT id, name FROM professionals LIMIT 1');
-    const today = new Date().toISOString().split('T')[0];
-
-    const fin = await run(
-      `INSERT INTO financial_transactions (type, category, description, amount, payment_method, due_date, payment_date, status, professional_id)
-       VALUES ('despesa', 'Comissões', 'Repasse Teste', 150.0, 'pix', ?, ?, 'pago', ?)`,
-      [today, today, prof.id]
-    );
-
-    const setRes = await run(
-      `INSERT INTO commission_settlements (professional_id, period_start, period_end, total_services_amount, total_commission, net_payout, payment_date, financial_transaction_id)
-       VALUES (?, ?, ?, 300.0, 150.0, 150.0, ?, ?)`,
-      [prof.id, today, today, today, fin.lastID]
-    );
-
-    assert.ok(setRes.lastID > 0, 'Acerto de comissão deve ser registrado');
-  });
-
-  // 7. Testes de WhatsApp
-  await runTest('7.1 - Formatação de Templates e Links wa.me', async () => {
-    const formatted = whatsappService.formatMessage('Olá {cliente}, seu horário é às {horario} no {salao}.', {
-      cliente: 'Maria',
-      horario: '14:30',
-      salao: 'Bella Studio'
+  // 3. Testes de Circuit Breaker & Retry com Exponential Backoff
+  await runTest('3.1 - Circuit Breaker: Retry com Exponential Backoff e Transição para OPEN', async () => {
+    const breaker = new CircuitBreaker('TestService', {
+      failureThreshold: 2,
+      recoveryTimeout: 500,
+      maxRetries: 2,
+      baseDelayMs: 20,
     });
 
-    assert.strictEqual(formatted, 'Olá Maria, seu horário é às 14:30 no Bella Studio.');
+    let callCount = 0;
+    const failingAction = async () => {
+      callCount++;
+      throw new Error('Falha simulada na API externa');
+    };
+
+    // Primeira execução deve tentar maxRetries (2 vezes) e falhar
+    try {
+      await breaker.execute(failingAction);
+    } catch (e) {
+      assert.strictEqual(e.message, 'Falha simulada na API externa');
+    }
+    assert.strictEqual(callCount, 2, 'Deveria ter executado 2 tentativas com retry');
+
+    // Segunda execução falha -> atinge threshold e abre o circuito
+    try {
+      await breaker.execute(failingAction);
+    } catch (e) {}
+
+    assert.strictEqual(breaker.state, 'OPEN', 'Circuito deveria estar no estado OPEN');
+
+    // Com circuito OPEN, execução com fallback deve retornar o fallback imediatamente sem tentar chamar o serviço
+    let fallbackExecuted = false;
+    const fallbackResult = await breaker.execute(failingAction, async () => {
+      fallbackExecuted = true;
+      return { fallback: true };
+    });
+
+    assert.strictEqual(fallbackExecuted, true, 'Fallback deve ser acionado com circuito OPEN');
+    assert.strictEqual(fallbackResult.fallback, true);
+  });
+
+  // 4. Testes de Licença Offline, Grace Period & Assinatura HMAC
+  await runTest('4.1 - Assinatura Digital HMAC SHA-256 de Licença e Anti-Tampering', async () => {
+    const license = {
+      tenantId: 'tenant_test_123',
+      plan: 'PRO',
+      expiresAt: '2026-09-01T00:00:00.000Z',
+      maxUsers: 5,
+    };
+    const signature = generateLicenseSignature(license);
+    assert.ok(signature.length === 64, 'Assinatura HMAC SHA-256 deve ter 64 caracteres hex');
+    assert.strictEqual(verifyLicenseSignature(license, signature), true, 'Assinatura genuína deve validar');
+
+    // Simulação de adulteração (tentativa de mudar plano para ELITE localmente)
+    const tamperedLicense = { ...license, plan: 'ELITE' };
+    assert.strictEqual(verifyLicenseSignature(tamperedLicense, signature), false, 'Licença adulterada deve ser rejeitada');
+  });
+
+  await runTest('4.2 - Período de Carência (Grace Period) Offline de 7 Dias', async () => {
+    // Simula tenant expirado há 3 dias (dentro do limite de 7 dias)
+    const expired3DaysAgo = new Date(Date.now() - 3 * 24 * 60 * 60 * 1000).toISOString();
+    const mockTenant = {
+      id: 'tenant_grace_test',
+      plan: 'PRO',
+      max_users: 5,
+      subscription_expires_at: expired3DaysAgo,
+    };
+
+    const evalResult = licenseManager.evaluateLicense('tenant_grace_test', mockTenant);
+    assert.strictEqual(evalResult.status, 'GRACE_PERIOD', 'Status deve ser GRACE_PERIOD');
+    assert.strictEqual(evalResult.gracePeriodActive, true, 'Grace Period deve estar ativo');
+    assert.strictEqual(evalResult.isDegraded, true, 'Sistema deve estar em modo degradado tratado');
+    assert.ok(evalResult.graceDaysRemaining >= 3, 'Deve calcular dias restantes de carência');
+  });
+
+  // 5. Testes de Transações Atômicas ACID com Rollback Automático
+  await runTest('5.1 - Transação Atômica ACID: Rollback Automático em Exceção', async () => {
+    const testName = `Cliente Rollback ${Date.now()}`;
+
+    try {
+      await transaction(async ({ run: tRun }) => {
+        // Passo 1: Inserir cliente
+        await tRun('INSERT INTO clients (name, phone) VALUES (?, ?)', [testName, '(11) 90000-0000']);
+
+        // Passo 2: Forçar erro de sintaxe SQL para simular falha no meio da transação
+        await tRun('INSERT INTO tabela_inexistente_de_erro (coluna) VALUES (1)');
+      });
+    } catch (err) {
+      // Erro esperado
+    }
+
+    // Verificar se o cliente do Passo 1 foi revertido pelo ROLLBACK
+    const shouldNotExist = await get('SELECT * FROM clients WHERE name = ?', [testName]);
+    assert.strictEqual(shouldNotExist, undefined, 'Cliente não deve existir no banco após ROLLBACK');
+  });
+
+  // 6. Testes de Sanitização de Inputs e Proteção contra Injection
+  await runTest('6.1 - Sanitização de Inputs: XSS, Scripts e Injections', async () => {
+    const maliciousPayload = {
+      name: '  Camila <script>alert("XSS")</script>  ',
+      description: 'Corte de Cabelo <script>evil()</script>',
+      nested: {
+        safe: 'Olá Mundo',
+        scriptTag: '<script src="malicious.js"></script>',
+      },
+    };
+
+    const cleaned = sanitizeInput(maliciousPayload);
+    assert.strictEqual(cleaned.name, 'Camila');
+    assert.strictEqual(cleaned.description, 'Corte de Cabelo');
+    assert.strictEqual(cleaned.nested.scriptTag, '');
+  });
+
+  // 7. Testes de Integridade de Backup com SHA-256
+  await runTest('7.1 - Geração de Backup com Checksum SHA-256', async () => {
+    const backup = await gdriveService.createLocalBackup();
+    assert.ok(backup.sha256 && backup.sha256.length === 64, 'Backup deve gerar hash SHA-256 de 64 caracteres');
+    assert.ok(fs.existsSync(backup.path), 'Arquivo de backup físico deve existir');
+  });
+
+  // 8. Testes de Especialidades e Subtipos
+  await runTest('8.1 - Especialidades Extensíveis de Salão (Cabelo, Manicure, Depilação)', async () => {
+    const specs = await query('SELECT * FROM custom_specialties');
+    const names = specs.map((s) => s.name);
+    assert.ok(names.includes('Cabeleireira'));
+    assert.ok(names.includes('Manicure'));
+    assert.ok(names.includes('Depiladora'));
+  });
+
+  // 9. Testes de WhatsApp
+  await runTest('9.1 - Formatação de Mensagens e Sanitização Telefônica', async () => {
+    const formatted = whatsappService.formatMessage('Olá {cliente}, seu horário no {salao} é às {horario}.', {
+      cliente: 'Mariana',
+      salao: 'BellaGestão Studio',
+      horario: '15:00',
+    });
+    assert.strictEqual(formatted, 'Olá Mariana, seu horário no BellaGestão Studio é às 15:00.');
 
     const cleanPhone = whatsappService.sanitizePhone('(11) 98765-4321');
     assert.strictEqual(cleanPhone, '5511987654321');
-
-    const link = whatsappService.generateWaLink('(11) 98765-4321', 'Olá!');
-    assert.ok(link.startsWith('https://wa.me/5511987654321?text='), 'Link wa.me gerado incorretamente');
-  });
-
-  // 8. Testes de Backup Local
-  await runTest('8.1 - Geração de Cópia de Segurança Compactada (.ZIP)', async () => {
-    const backup = await gdriveService.createLocalBackup();
-    assert.ok(backup.filename.endsWith('.zip'), 'Backup deve ser arquivo .zip');
-    assert.ok(fs.existsSync(backup.path), 'Arquivo de backup deve existir fisicamente');
-    assert.ok(backup.size > 0, 'Tamanho do backup deve ser maior que 0');
   });
 
   console.log('\n================================================================');

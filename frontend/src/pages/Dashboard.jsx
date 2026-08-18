@@ -13,9 +13,11 @@ import {
   ShoppingBag, 
   Send,
   Sparkles,
-  DollarSign
+  DollarSign,
+  Award
 } from 'lucide-react';
 import { api } from '../services/api';
+import { useAuth } from '../context/AuthContext';
 
 export default function Dashboard({ 
   onNavigate, 
@@ -24,6 +26,7 @@ export default function Dashboard({
   onOpenPDV,
   onOpenCashModal 
 }) {
+  const { user, canViewFinancial, canViewCashRegister } = useAuth();
   const [metrics, setMetrics] = useState(null);
   const [loading, setLoading] = useState(true);
   const [toastMsg, setToastMsg] = useState('');
@@ -86,7 +89,20 @@ export default function Dashboard({
     );
   }
 
-  const { todayApps, todayRevenue, monthRevenue, cashRegister, birthdaysToday, upcomingToday, pendingPayables, totalClients } = metrics || {};
+  const { 
+    todayApps, 
+    todayRevenue, 
+    monthRevenue, 
+    myCommissionsToday, 
+    myCommissionsMonth, 
+    cashRegister, 
+    birthdaysToday, 
+    upcomingToday, 
+    pendingPayables, 
+    totalClients 
+  } = metrics || {};
+
+  const isProf = user?.accessLevel === 'PROFISSIONAL';
 
   return (
     <div className="space-y-6 animate-fadeIn pb-12">
@@ -100,68 +116,97 @@ export default function Dashboard({
       )}
 
       {/* Top Banner with Quick Actions */}
-      <div className="relative overflow-hidden rounded-3xl bg-gradient-to-r from-salon-700 via-salon-600 to-rose-500 text-white p-6 sm:p-8 shadow-lg shadow-salon-600/15">
-        <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-6">
+      <div className="relative overflow-hidden rounded-3xl bg-gradient-to-r from-salon-700 via-salon-600 to-rose-500 text-white p-5 sm:p-8 shadow-lg shadow-salon-600/15">
+        <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-5 sm:gap-6">
           <div className="space-y-2">
             <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/20 backdrop-blur-md text-xs font-medium">
               <Sparkles className="w-3.5 h-3.5 text-yellow-200" />
               <span>Painel de Controle Inteligente</span>
             </div>
-            <h2 className="text-2xl sm:text-3xl font-extrabold tracking-tight">
-              Bem-vindo ao Studio BellaGestão!
+            <h2 className="text-xl sm:text-3xl font-extrabold tracking-tight">
+              Olá, {user?.name || 'Equipe BellaGestão'}!
             </h2>
-            <p className="text-sm text-rose-100 max-w-xl">
-              Gerencie seus atendimentos de cabelo, estética, manicure e depilação com agilidade e total controle financeiro local.
+            <p className="text-xs sm:text-sm text-rose-100 max-w-xl">
+              {isProf 
+                ? 'Acompanhe seus horários de atendimento, fichas de clientes e o extrato das suas comissões.'
+                : 'Gerencie seus atendimentos de cabelo, estética, manicure e depilação com agilidade e total controle.'
+              }
             </p>
           </div>
 
-          <div className="flex flex-wrap gap-3">
+          <div className="flex flex-col sm:flex-row gap-2.5 sm:gap-3 w-full sm:w-auto">
             <button
               onClick={onOpenNewAppointment}
-              className="px-4 py-2.5 rounded-xl bg-white text-salon-700 hover:bg-rose-50 font-bold text-sm shadow-md transition active:scale-95 flex items-center gap-2"
+              className="w-full sm:w-auto px-4 py-2.5 rounded-xl bg-white text-salon-700 hover:bg-rose-50 font-bold text-xs sm:text-sm shadow-md transition active:scale-95 flex items-center justify-center gap-2"
             >
               <CalendarCheck className="w-4 h-4" />
               <span>Novo Agendamento (F2)</span>
             </button>
-            <button
-              onClick={onOpenPDV}
-              className="px-4 py-2.5 rounded-xl bg-salon-950/40 hover:bg-salon-950/60 backdrop-blur-md border border-white/20 text-white font-bold text-sm transition active:scale-95 flex items-center gap-2"
-            >
-              <ShoppingBag className="w-4 h-4" />
-              <span>Frente de Caixa (F3)</span>
-            </button>
+            {canViewCashRegister && (
+              <button
+                onClick={onOpenPDV}
+                className="w-full sm:w-auto px-4 py-2.5 rounded-xl bg-salon-950/40 hover:bg-salon-950/60 backdrop-blur-md border border-white/20 text-white font-bold text-xs sm:text-sm transition active:scale-95 flex items-center justify-center gap-2"
+              >
+                <ShoppingBag className="w-4 h-4" />
+                <span>Frente de Caixa (F3)</span>
+              </button>
+            )}
           </div>
         </div>
       </div>
 
       {/* KPI Cards Grid */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
         
-        {/* Faturamento do Dia */}
-        <div className="glass-panel p-5 space-y-3">
-          <div className="flex items-center justify-between">
-            <span className="text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">
-              Faturamento Hoje
-            </span>
-            <div className="p-2 rounded-xl bg-emerald-100 dark:bg-emerald-950/50 text-emerald-600 dark:text-emerald-400">
-              <DollarSign className="w-5 h-5" />
+        {/* Faturamento do Salão (Apenas Dono / Gerente) */}
+        {canViewFinancial && (
+          <div className="glass-panel p-5 space-y-3">
+            <div className="flex items-center justify-between">
+              <span className="text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">
+                Faturamento Hoje
+              </span>
+              <div className="p-2 rounded-xl bg-emerald-100 dark:bg-emerald-950/50 text-emerald-600 dark:text-emerald-400">
+                <DollarSign className="w-5 h-5" />
+              </div>
+            </div>
+            <div>
+              <p className="text-2xl font-bold text-slate-800 dark:text-slate-100">
+                R$ {(todayRevenue || 0).toFixed(2)}
+              </p>
+              <p className="text-xs text-slate-500 mt-1">
+                Acumulado no Mês: <strong className="text-emerald-600">R$ {(monthRevenue || 0).toFixed(2)}</strong>
+              </p>
             </div>
           </div>
-          <div>
-            <p className="text-2xl font-bold text-slate-800 dark:text-slate-100">
-              R$ {(todayRevenue || 0).toFixed(2)}
-            </p>
-            <p className="text-xs text-slate-500 mt-1">
-              Acumulado no Mês: <strong className="text-emerald-600">R$ {(monthRevenue || 0).toFixed(2)}</strong>
-            </p>
+        )}
+
+        {/* Minhas Comissões (Exclusivo para Profissional) */}
+        {isProf && (
+          <div className="glass-panel p-5 space-y-3 border-pink-200 dark:border-pink-900/50 bg-gradient-to-br from-pink-50/50 to-white dark:from-pink-950/20 dark:to-slate-900">
+            <div className="flex items-center justify-between">
+              <span className="text-xs font-semibold uppercase tracking-wider text-pink-700 dark:text-pink-400">
+                Minhas Comissões Hoje
+              </span>
+              <div className="p-2 rounded-xl bg-pink-100 dark:bg-pink-950/50 text-pink-600 dark:text-pink-400">
+                <Award className="w-5 h-5" />
+              </div>
+            </div>
+            <div>
+              <p className="text-2xl font-bold text-pink-700 dark:text-pink-300">
+                R$ {(myCommissionsToday || 0).toFixed(2)}
+              </p>
+              <p className="text-xs text-slate-500 mt-1">
+                Ganhos no Mês: <strong className="text-pink-600">R$ {(myCommissionsMonth || 0).toFixed(2)}</strong>
+              </p>
+            </div>
           </div>
-        </div>
+        )}
 
         {/* Atendimentos Hoje */}
         <div className="glass-panel p-5 space-y-3">
           <div className="flex items-center justify-between">
             <span className="text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">
-              Agendamentos Hoje
+              {isProf ? 'Meus Atendimentos Hoje' : 'Agendamentos Hoje'}
             </span>
             <div className="p-2 rounded-xl bg-blue-100 dark:bg-blue-950/50 text-blue-600 dark:text-blue-400">
               <CalendarCheck className="w-5 h-5" />
@@ -179,31 +224,33 @@ export default function Dashboard({
           </div>
         </div>
 
-        {/* Caixa Diário */}
-        <div className="glass-panel p-5 space-y-3">
-          <div className="flex items-center justify-between">
-            <span className="text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">
-              Caixa Diário
-            </span>
-            <div className={`p-2 rounded-xl ${cashRegister?.isOpen ? 'bg-emerald-100 text-emerald-600 dark:bg-emerald-950/50' : 'bg-rose-100 text-rose-600 dark:bg-rose-950/50'}`}>
-              <Wallet className="w-5 h-5" />
+        {/* Caixa Diário (Dono, Gerente, Recepção) */}
+        {canViewCashRegister && (
+          <div className="glass-panel p-5 space-y-3">
+            <div className="flex items-center justify-between">
+              <span className="text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">
+                Caixa Diário
+              </span>
+              <div className={`p-2 rounded-xl ${cashRegister?.isOpen ? 'bg-emerald-100 text-emerald-600 dark:bg-emerald-950/50' : 'bg-rose-100 text-rose-600 dark:bg-rose-950/50'}`}>
+                <Wallet className="w-5 h-5" />
+              </div>
+            </div>
+            <div>
+              <div className="flex items-center gap-2">
+                <span className={`inline-block w-2.5 h-2.5 rounded-full ${cashRegister?.isOpen ? 'bg-emerald-500' : 'bg-rose-500'}`}></span>
+                <p className="text-lg font-bold text-slate-800 dark:text-slate-100">
+                  {cashRegister?.isOpen ? `R$ ${(cashRegister.session?.system_balance || 0).toFixed(2)}` : 'Fechado'}
+                </p>
+              </div>
+              <button
+                onClick={onOpenCashModal}
+                className="text-xs text-salon-600 dark:text-salon-400 font-semibold hover:underline mt-1 inline-block"
+              >
+                {cashRegister?.isOpen ? 'Gerenciar Sangria / Fechar' : 'Abrir Caixa Diário'}
+              </button>
             </div>
           </div>
-          <div>
-            <div className="flex items-center gap-2">
-              <span className={`inline-block w-2.5 h-2.5 rounded-full ${cashRegister?.isOpen ? 'bg-emerald-500' : 'bg-rose-500'}`}></span>
-              <p className="text-lg font-bold text-slate-800 dark:text-slate-100">
-                {cashRegister?.isOpen ? `R$ ${(cashRegister.session.system_balance || 0).toFixed(2)}` : 'Fechado'}
-              </p>
-            </div>
-            <button
-              onClick={onOpenCashModal}
-              className="text-xs text-salon-600 dark:text-salon-400 font-semibold hover:underline mt-1 inline-block"
-            >
-              {cashRegister?.isOpen ? 'Gerenciar Sangria / Fechar' : 'Abrir Caixa Diário'}
-            </button>
-          </div>
-        </div>
+        )}
 
         {/* Total de Clientes */}
         <div className="glass-panel p-5 space-y-3">
@@ -378,41 +425,43 @@ export default function Dashboard({
             )}
           </div>
 
-          {/* Contas a Pagar / Pendências Financeiras */}
-          <div className="glass-panel p-6 space-y-3">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <AlertCircle className="w-5 h-5 text-amber-500" />
-                <h3 className="font-bold text-base text-slate-800 dark:text-slate-100">Contas a Vencer</h3>
+          {/* Contas a Pagar / Pendências Financeiras (Apenas Dono / Gerente) */}
+          {canViewFinancial && (
+            <div className="glass-panel p-6 space-y-3">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <AlertCircle className="w-5 h-5 text-amber-500" />
+                  <h3 className="font-bold text-base text-slate-800 dark:text-slate-100">Contas a Vencer</h3>
+                </div>
+                <button
+                  onClick={() => onNavigate('financial')}
+                  className="text-xs font-semibold text-salon-600 dark:text-salon-400 hover:underline"
+                >
+                  Ver Todas
+                </button>
               </div>
-              <button
-                onClick={() => onNavigate('financial')}
-                className="text-xs font-semibold text-salon-600 dark:text-salon-400 hover:underline"
-              >
-                Ver Todas
-              </button>
-            </div>
 
-            {(!pendingPayables || pendingPayables.length === 0) ? (
-              <p className="text-xs text-slate-500 dark:text-slate-400 py-3 text-center">
-                Tudo em dia! Sem despesas pendentes para hoje.
-              </p>
-            ) : (
-              <div className="space-y-2">
-                {pendingPayables.map((p) => (
-                  <div key={p.id} className="p-2.5 rounded-xl bg-slate-50 dark:bg-slate-800/40 border border-slate-200 dark:border-slate-700 flex items-center justify-between text-xs">
-                    <div>
-                      <p className="font-semibold text-slate-800 dark:text-slate-100">{p.description}</p>
-                      <p className="text-[10px] text-slate-400 capitalize">{p.category} • Vencimento: {p.due_date.split('-').reverse().join('/')}</p>
+              {(!pendingPayables || pendingPayables.length === 0) ? (
+                <p className="text-xs text-slate-500 dark:text-slate-400 py-3 text-center">
+                  Tudo em dia! Sem despesas pendentes para hoje.
+                </p>
+              ) : (
+                <div className="space-y-2">
+                  {pendingPayables.map((p) => (
+                    <div key={p.id} className="p-2.5 rounded-xl bg-slate-50 dark:bg-slate-800/40 border border-slate-200 dark:border-slate-700 flex items-center justify-between text-xs">
+                      <div>
+                        <p className="font-semibold text-slate-800 dark:text-slate-100">{p.description}</p>
+                        <p className="text-[10px] text-slate-400 capitalize">{p.category} • Vencimento: {p.due_date.split('-').reverse().join('/')}</p>
+                      </div>
+                      <span className="font-bold text-rose-600 dark:text-rose-400">
+                        R$ {p.amount.toFixed(2)}
+                      </span>
                     </div>
-                    <span className="font-bold text-rose-600 dark:text-rose-400">
-                      R$ {p.amount.toFixed(2)}
-                    </span>
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
 
         </div>
 

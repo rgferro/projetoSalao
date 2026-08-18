@@ -8,7 +8,10 @@
     "dev": "concurrently -k \"node server-whatsapp.js\" \"node --watch server.js\"",
     "whatsapp": "node server-whatsapp.js",
     "server": "node server.js",
-    "test": "node tests/run_tests.js"
+    "test": "node tests/run_tests.js",
+    "test:ui": "node tests/interface_flows_test.js",
+    "test:stress": "node tests/stress_tests.js",
+    "test:all": "node tests/run_tests.js && node tests/stress_tests.js && node tests/interface_flows_test.js"
   },
   "dependencies": {
     "@whiskeysockets/baileys": "^6.7.9",

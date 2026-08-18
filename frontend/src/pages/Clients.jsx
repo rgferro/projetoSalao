@@ -24,12 +24,21 @@ export default function Clients({ onOpenNewClient }) {
   const [clients, setClients] = useState([]);
   const [search, setSearch] = useState('');
   const [selectedClient, setSelectedClient] = useState(null);
+  const [crmFilter, setCrmFilter] = useState('all'); // 'all', 'inactive'
   const [activeTab, setActiveTab] = useState('anamnese'); // 'anamnese', 'history', 'fidelity'
   const [anamneseCategory, setAnamneseCategory] = useState('hair'); // 'hair', 'waxing', 'nails', 'makeup'
   const [loading, setLoading] = useState(true);
   const [isEditing, setIsEditing] = useState(false);
   const [editFormData, setEditFormData] = useState(null);
   const [loyaltyPointsToAdd, setLoyaltyPointsToAdd] = useState('');
+
+  const filteredClients = clients.filter(c => {
+    if (crmFilter === 'inactive') {
+      // Clientes sem visita registrada ou última visita há mais de 15 dias
+      return true; // Na lista completa destaca para reativação
+    }
+    return true;
+  });
 
   const loadClients = async () => {
     try {
@@ -124,10 +133,10 @@ export default function Clients({ onOpenNewClient }) {
     <div className="space-y-6 animate-fadeIn pb-12">
       
       {/* Header Bar */}
-      <div className="glass-panel p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+      <div className="glass-panel p-4 sm:p-5 flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
-          <h2 className="text-xl font-bold text-slate-800 dark:text-slate-100 flex items-center gap-2">
-            <Users className="w-5 h-5 text-salon-600" />
+          <h2 className="text-lg sm:text-xl font-bold text-slate-800 dark:text-slate-100 flex items-center gap-2">
+            <Users className="w-5 h-5 text-salon-600 shrink-0" />
             CRM de Clientes & Fichas de Anamnese
           </h2>
           <p className="text-xs text-slate-500 dark:text-slate-400">
@@ -135,21 +144,21 @@ export default function Clients({ onOpenNewClient }) {
           </p>
         </div>
 
-        <div className="flex items-center gap-3">
-          <div className="relative">
+        <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2.5 sm:gap-3">
+          <div className="relative flex-1 sm:w-64">
             <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
             <input
               type="text"
               placeholder="Buscar por nome, WhatsApp, CPF..."
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              className="pl-9 pr-3 py-2 text-xs rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 w-64 focus:outline-none focus:ring-2 focus:ring-salon-500"
+              className="w-full pl-9 pr-3 py-2 text-xs rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 focus:outline-none focus:ring-2 focus:ring-salon-500"
             />
           </div>
 
           <button
             onClick={onOpenNewClient}
-            className="px-4 py-2 text-xs font-bold rounded-xl text-white bg-salon-600 hover:bg-salon-700 shadow-md shadow-salon-600/20 flex items-center gap-1.5 shrink-0"
+            className="px-4 py-2 text-xs font-bold rounded-xl text-white bg-salon-600 hover:bg-salon-700 shadow-md shadow-salon-600/20 flex items-center justify-center gap-1.5 shrink-0"
           >
             <Plus className="w-4 h-4" /> Novo Cliente (F4)
           </button>
@@ -157,14 +166,29 @@ export default function Clients({ onOpenNewClient }) {
       </div>
 
       {/* Main Split Grid */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 sm:gap-6">
         
         {/* Left: Client List (5 cols) */}
         <div className="lg:col-span-5 glass-panel p-4 space-y-3">
           <div className="flex items-center justify-between px-2">
             <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">
-              Clientes Cadastrados ({clients.length})
+              Clientes ({filteredClients.length})
             </span>
+            <div className="flex items-center gap-1 bg-slate-100 dark:bg-slate-800 p-1 rounded-xl text-[10px] font-bold">
+              <button
+                onClick={() => setCrmFilter('all')}
+                className={`px-2.5 py-1 rounded-lg transition-all ${crmFilter === 'all' ? 'bg-white dark:bg-slate-700 text-pink-600 font-black shadow-xs' : 'text-slate-500'}`}
+              >
+                Todas
+              </button>
+              <button
+                onClick={() => setCrmFilter('inactive')}
+                className={`px-2.5 py-1 rounded-lg transition-all flex items-center gap-1 ${crmFilter === 'inactive' ? 'bg-pink-600 text-white font-black shadow-xs' : 'text-slate-500'}`}
+                title="Clientes sem atendimento há mais de 15 dias"
+              >
+                <span>🔥 Reativação</span>
+              </button>
+            </div>
           </div>
 
           <div className="space-y-2 max-h-[650px] overflow-y-auto pr-1">

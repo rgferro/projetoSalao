@@ -260,13 +260,13 @@ export default function WhatsAppModule() {
                   Desconectar e Conectar Outro Número
                 </button>
               </div>
-            ) : waStatus?.status === 'QR_READY' && waStatus.qr ? (
+            ) : (waStatus?.qr || waStatus?.qrCode || waStatus?.qrCodeUrl) ? (
               <div className="space-y-4">
                 <div className="p-3 bg-white rounded-3xl shadow-xl border-4 border-emerald-500 inline-block">
                   <img
-                    src={waStatus.qr}
+                    src={waStatus.qr || waStatus.qrCode || waStatus.qrCodeUrl}
                     alt="QR Code WhatsApp"
-                    className="w-64 h-64 rounded-2xl"
+                    className="w-64 h-64 rounded-2xl object-contain mx-auto"
                   />
                 </div>
                 <div className="space-y-1">
@@ -277,11 +277,25 @@ export default function WhatsAppModule() {
                     O código atualiza automaticamente a cada poucos segundos.
                   </p>
                 </div>
+                <button
+                  onClick={fetchStatus}
+                  className="px-3 py-1.5 text-xs font-semibold rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 text-slate-600 dark:text-slate-300 flex items-center gap-1.5 mx-auto transition"
+                >
+                  <RefreshCw className="w-3.5 h-3.5" />
+                  <span>Atualizar QR Code</span>
+                </button>
               </div>
             ) : (
               <div className="p-12 space-y-3">
                 <RefreshCw className="w-10 h-10 text-slate-400 animate-spin mx-auto" />
                 <p className="text-xs font-semibold text-slate-500">Iniciando daemon e gerando QR Code seguro...</p>
+                <button
+                  onClick={fetchStatus}
+                  className="mt-2 px-3 py-1.5 text-xs font-semibold rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 text-slate-600 dark:text-slate-300 inline-flex items-center gap-1.5 transition"
+                >
+                  <RefreshCw className="w-3.5 h-3.5" />
+                  <span>Verificar Novamente</span>
+                </button>
               </div>
             )}
           </div>

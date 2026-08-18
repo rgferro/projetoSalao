@@ -2,12 +2,13 @@ const express = require('express');
 const router = express.Router();
 const { query, get, run } = require('../database/db');
 
-// Listar todos os serviços
+// Listar todos os serviços por Tenant
 router.get('/', async (req, res) => {
   try {
     const { category, active } = req.query;
-    let sql = 'SELECT * FROM services WHERE 1=1';
-    const params = [];
+    const tenantId = req.tenantId || 'tenant_default_salao';
+    let sql = 'SELECT * FROM services WHERE tenant_id = ?';
+    const params = [tenantId];
 
     if (category) {
       sql += ' AND category = ?';
@@ -30,7 +31,8 @@ router.get('/', async (req, res) => {
 // Detalhes de um serviço
 router.get('/:id', async (req, res) => {
   try {
-    const service = await get('SELECT * FROM services WHERE id = ?', [req.params.id]);
+    const tenantId = req.tenantId || 'tenant_default_salao';
+    const service = await get('SELECT * FROM services WHERE id = ? AND tenant_id = ?', [req.params.id, tenantId]);
     if (!service) return res.status(404).json({ error: 'Serviço não encontrado' });
     res.json(service);
   } catch (error) {
@@ -42,14 +44,15 @@ router.get('/:id', async (req, res) => {
 router.post('/', async (req, res) => {
   try {
     const { name, category, description, price, cost_price, duration_min, default_commission_type, default_commission_value } = req.body;
+    const tenantId = req.tenantId || 'tenant_default_salao';
 
     if (!name || !category || price === undefined) {
       return res.status(400).json({ error: 'Nome, Categoria e Preço são obrigatórios.' });
     }
 
     const result = await run(
-      `INSERT INTO services (name, category, description, price, cost_price, duration_min, default_commission_type, default_commission_value)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+      `INSERT INTO services (name, category, description, price, cost_price, duration_min, default_commission_type, default_commission_value, tenant_id)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       [
         name,
         category,
@@ -58,7 +61,8 @@ router.post('/', async (req, res) => {
         cost_price || 0,
         duration_min || 60,
         default_commission_type || 'percentage',
-        default_commission_value ?? 50.0
+        default_commission_value ?? 50.0,
+        tenantId
       ]
     );
 
@@ -73,13 +77,14 @@ router.put('/:id', async (req, res) => {
   try {
     const { id } = req.params;
     const { name, category, description, price, cost_price, duration_min, default_commission_type, default_commission_value, active } = req.body;
+    const tenantId = req.tenantId || 'tenant_default_salao';
 
     await run(
       `UPDATE services 
        SET name = ?, category = ?, description = ?, price = ?, cost_price = ?, 
            duration_min = ?, default_commission_type = ?, default_commission_value = ?, active = COALESCE(?, active)
-       WHERE id = ?`,
-      [name, category, description, price, cost_price, duration_min, default_commission_type, default_commission_value, active, id]
+       WHERE id = ? AND tenant_id = ?`,
+      [name, category, description, price, cost_price, duration_min, default_commission_type, default_commission_value, active, id, tenantId]
     );
 
     res.json({ message: 'Serviço atualizado com sucesso!' });
@@ -91,7 +96,8 @@ router.put('/:id', async (req, res) => {
 // Excluir serviço
 router.delete('/:id', async (req, res) => {
   try {
-    await run('DELETE FROM services WHERE id = ?', [req.params.id]);
+    const tenantId = req.tenantId || 'tenant_default_salao';
+    await run('DELETE FROM services WHERE id = ? AND tenant_id = ?', [req.params.id, tenantId]);
     res.json({ message: 'Serviço removido com sucesso.' });
   } catch (error) {
     res.status(500).json({ error: error.message });

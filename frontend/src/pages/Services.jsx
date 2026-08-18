@@ -101,10 +101,10 @@ export default function Services() {
     <div className="space-y-6 animate-fadeIn pb-12">
       
       {/* Top Header */}
-      <div className="glass-panel p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+      <div className="glass-panel p-4 sm:p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h2 className="text-xl font-bold text-slate-800 dark:text-slate-100 flex items-center gap-2">
-            <Scissors className="w-5 h-5 text-salon-600" />
+          <h2 className="text-lg sm:text-xl font-bold text-slate-800 dark:text-slate-100 flex items-center gap-2">
+            <Scissors className="w-5 h-5 text-salon-600 shrink-0" />
             Catálogo de Serviços & Tabela de Preços
           </h2>
           <p className="text-xs text-slate-500 dark:text-slate-400">
@@ -127,19 +127,19 @@ export default function Services() {
             });
             setShowModal(true);
           }}
-          className="px-4 py-2 text-xs font-bold rounded-xl text-white bg-salon-600 hover:bg-salon-700 shadow-md shadow-salon-600/20 flex items-center gap-1.5"
+          className="w-full sm:w-auto px-4 py-2 text-xs font-bold rounded-xl text-white bg-salon-600 hover:bg-salon-700 shadow-md shadow-salon-600/20 flex items-center justify-center gap-1.5 shrink-0"
         >
           <Plus className="w-4 h-4" /> Novo Serviço
         </button>
       </div>
 
       {/* Categories Filter Tabs */}
-      <div className="flex flex-wrap gap-2 p-1 bg-slate-100 dark:bg-slate-800 rounded-2xl">
+      <div className="flex gap-1.5 sm:gap-2 p-1 bg-slate-100 dark:bg-slate-800 rounded-2xl overflow-x-auto no-scrollbar">
         {CATEGORIES.map(cat => (
           <button
             key={cat.id}
             onClick={() => setSelectedCategory(cat.id)}
-            className={`px-4 py-2 text-xs font-bold rounded-xl transition ${
+            className={`min-w-fit px-3.5 py-2 text-xs font-bold rounded-xl whitespace-nowrap transition ${
               selectedCategory === cat.id ? 'bg-white dark:bg-slate-900 text-salon-600 shadow-sm' : 'text-slate-500 hover:text-slate-700'
             }`}
           >

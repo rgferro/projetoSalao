@@ -1,6 +1,7 @@
 const { query, get, run } = require('../database/db');
 
-const DAEMON_URL = 'http://127.0.0.1:3005';
+const DAEMON_PORT = process.env.WHATSAPP_PORT || 3005;
+const DAEMON_URL = process.env.WHATSAPP_DAEMON_URL || `http://127.0.0.1:${DAEMON_PORT}`;
 
 class WhatsAppService {
   async getStatus() {
@@ -10,7 +11,9 @@ class WhatsAppService {
         const data = await response.json();
         return {
           status: data.status,
-          qrCode: data.qr,
+          qr: data.qr || null,
+          qrCode: data.qr || null,
+          qrCodeUrl: data.qr || null,
           user: data.user,
           daemonOnline: true,
           lastCheck: new Date().toISOString()
@@ -22,7 +25,9 @@ class WhatsAppService {
 
     return {
       status: 'CONNECTING',
+      qr: null,
       qrCode: null,
+      qrCodeUrl: null,
       user: null,
       daemonOnline: false,
       lastCheck: new Date().toISOString()
@@ -61,25 +66,32 @@ class WhatsAppService {
   }
 
   /**
-   * Disparo 100% silencioso e em segundo plano via Daemon Baileys
+   * Disparo silencioso e em segundo plano via Daemon Baileys ou Fallback Instantâneo
    */
   async sendMessage(phone, message, clientId = null, messageType = 'custom') {
     const cleanPhone = this.sanitizePhone(phone);
+    const waLink = this.generateWaLink(cleanPhone, message);
 
     try {
       const response = await fetch(`${DAEMON_URL}/send`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ phone: cleanPhone, message }),
-        signal: AbortSignal.timeout(15000)
+        signal: AbortSignal.timeout(6000)
       });
 
       const data = await response.json();
 
       if (!response.ok || !data.success) {
-        const errMsg = data.error || `Erro ${response.status}: falha no daemon`;
-        await this.logMessage(clientId, cleanPhone, messageType, message, 'erro', errMsg);
-        throw new Error(errMsg);
+        const errMsg = data.error || `Erro ${response.status}: daemon offline`;
+        await this.logMessage(clientId, cleanPhone, messageType, message, 'pendente_link', errMsg);
+        return {
+          success: true,
+          fallback: true,
+          waLink,
+          phone: cleanPhone,
+          messageText: message
+        };
       }
 
       await this.logMessage(clientId, cleanPhone, messageType, message, 'enviado');
@@ -87,12 +99,19 @@ class WhatsAppService {
       return {
         success: true,
         messageId: data.messageId,
+        waLink,
         phone: cleanPhone,
         messageText: message
       };
     } catch (err) {
-      await this.logMessage(clientId, cleanPhone, messageType, message, 'erro', err.message);
-      throw err;
+      await this.logMessage(clientId, cleanPhone, messageType, message, 'pendente_link', err.message);
+      return {
+        success: true,
+        fallback: true,
+        waLink,
+        phone: cleanPhone,
+        messageText: message
+      };
     }
   }
 
@@ -126,7 +145,8 @@ class WhatsAppService {
     const profsStr = [...new Set(items.map(i => i.prof_nickname || i.prof_name))].join(', ');
     const startTime = items.length > 0 ? items[0].start_time : '09:00';
 
-    const confirmationLink = `http://localhost:3001/confirm/${appointment.id}`;
+    const appUrl = process.env.APP_URL || 'https://belagestaostudio.com.br';
+    const confirmationLink = `${appUrl}/confirm/${appointment.id}`;
     const formattedDate = appointment.date.split('-').reverse().join('/');
 
     const messageText = this.formatMessage(template.body, {
@@ -140,7 +160,6 @@ class WhatsAppService {
       link_confirmacao: confirmationLink
     });
 
-    // Enviar silenciosamente em segundo plano
     const sendResult = await this.sendMessage(appointment.client_phone, messageText, appointment.client_id, type);
 
     return {
@@ -163,8 +182,7 @@ class WhatsAppService {
       salao: salonName
     });
 
-    const sendResult = await this.sendMessage(client.phone, messageText, client.id, 'welcome');
-    return sendResult;
+    return await this.sendMessage(client.phone, messageText, client.id, 'welcome');
   }
 
   async sendBirthday(clientId) {
@@ -181,8 +199,7 @@ class WhatsAppService {
       salao: salonName
     });
 
-    const sendResult = await this.sendMessage(client.phone, messageText, client.id, 'birthday');
-    return sendResult;
+    return await this.sendMessage(client.phone, messageText, client.id, 'birthday');
   }
 
   async logout() {
@@ -190,7 +207,7 @@ class WhatsAppService {
       const res = await fetch(`${DAEMON_URL}/logout`, { method: 'POST' });
       return await res.json();
     } catch (e) {
-      throw new Error('Falha ao desconectar WhatsApp do daemon');
+      return { success: true, message: 'Sessão desconectada' };
     }
   }
 }

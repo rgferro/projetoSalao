@@ -152,10 +152,10 @@ export default function CashRegister({ onOpenCashModal }) {
     <div className="space-y-6 animate-fadeIn pb-12">
       
       {/* Header Info */}
-      <div className="glass-panel p-5 flex flex-col md:flex-row md:items-center justify-between gap-4">
+      <div className="glass-panel p-4 sm:p-5 flex flex-col lg:flex-row lg:items-center justify-between gap-4">
         <div>
-          <h2 className="text-xl font-bold text-slate-800 dark:text-slate-100 flex items-center gap-2">
-            <ShoppingBag className="w-5 h-5 text-emerald-600" />
+          <h2 className="text-lg sm:text-xl font-bold text-slate-800 dark:text-slate-100 flex items-center gap-2">
+            <ShoppingBag className="w-5 h-5 text-emerald-600 shrink-0" />
             Frente de Caixa & PDV Balcão
           </h2>
           <p className="text-xs text-slate-500 dark:text-slate-400">
@@ -163,7 +163,7 @@ export default function CashRegister({ onOpenCashModal }) {
           </p>
         </div>
 
-        <div className="flex items-center gap-3">
+        <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2.5 sm:gap-3">
           <div className={`px-4 py-2 rounded-xl border flex items-center gap-3 ${
             cashData?.isOpen 
               ? 'bg-emerald-50 text-emerald-800 border-emerald-200 dark:bg-emerald-950/40 dark:text-emerald-300' 
@@ -180,7 +180,7 @@ export default function CashRegister({ onOpenCashModal }) {
 
           <button
             onClick={onOpenCashModal}
-            className="px-4 py-2 text-xs font-bold rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 text-slate-700 dark:text-slate-200"
+            className="px-4 py-2 text-xs font-bold rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 text-slate-700 dark:text-slate-200 text-center"
           >
             {cashData?.isOpen ? 'Sangria / Fechamento' : 'Abrir Caixa'}
           </button>

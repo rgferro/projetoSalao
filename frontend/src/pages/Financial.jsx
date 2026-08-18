@@ -109,12 +109,11 @@ export default function Financial() {
 
   return (
     <div className="space-y-6 animate-fadeIn pb-12">
-      
-      {/* Top Header */}
-      <div className="glass-panel p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            {/* Header Info */}
+      <div className="glass-panel p-4 sm:p-5 flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
-          <h2 className="text-xl font-bold text-slate-800 dark:text-slate-100 flex items-center gap-2">
-            <BadgeDollarSign className="w-5 h-5 text-emerald-600" />
+          <h2 className="text-lg sm:text-xl font-bold text-slate-800 dark:text-slate-100 flex items-center gap-2">
+            <BadgeDollarSign className="w-5 h-5 text-emerald-600 shrink-0" />
             Gestão Financeira & DRE
           </h2>
           <p className="text-xs text-slate-500 dark:text-slate-400">
@@ -125,7 +124,7 @@ export default function Financial() {
         <div className="flex items-center gap-2">
           <button
             onClick={() => setShowNewTransModal(true)}
-            className="px-4 py-2 text-xs font-bold rounded-xl text-white bg-emerald-600 hover:bg-emerald-700 shadow-md shadow-emerald-600/20 flex items-center gap-1.5"
+            className="w-full sm:w-auto px-4 py-2 text-xs font-bold rounded-xl text-white bg-emerald-600 hover:bg-emerald-700 shadow-md shadow-emerald-600/20 flex items-center justify-center gap-1.5"
           >
             <Plus className="w-4 h-4" /> Novo Lançamento
           </button>
@@ -133,7 +132,7 @@ export default function Financial() {
       </div>
 
       {/* Tabs */}
-      <div className="flex gap-2 p-1 bg-slate-100 dark:bg-slate-800 rounded-2xl">
+      <div className="flex gap-1.5 sm:gap-2 p-1 bg-slate-100 dark:bg-slate-800 rounded-2xl overflow-x-auto no-scrollbar">
         {[
           { id: 'transactions', label: 'Contas a Pagar & Receber' },
           { id: 'dre', label: 'DRE Simplificado' },
@@ -143,7 +142,7 @@ export default function Financial() {
           <button
             key={t.id}
             onClick={() => setActiveTab(t.id)}
-            className={`flex-1 py-2 text-xs font-bold rounded-xl transition ${
+            className={`flex-1 min-w-fit px-3 py-2 text-xs font-bold rounded-xl whitespace-nowrap transition ${
               activeTab === t.id ? 'bg-white dark:bg-slate-900 text-salon-600 shadow-sm' : 'text-slate-500 hover:text-slate-700'
             }`}
           >

@@ -3,20 +3,23 @@ const router = express.Router();
 const { query, get, run } = require('../database/db');
 const whatsappService = require('../services/whatsappService');
 
-// Listar todos os clientes com resumo de pontos e último atendimento
+// Listar todos os clientes com resumo de pontos e último atendimento (Isolado por Tenant)
 router.get('/', async (req, res) => {
   try {
     const { search } = req.query;
+    const tenantId = req.tenantId || 'tenant_default_salao';
+
     let sql = `
       SELECT c.*, 
-        (SELECT MAX(date) FROM appointments WHERE client_id = c.id) as last_appointment_date,
-        (SELECT COUNT(*) FROM appointments WHERE client_id = c.id AND status = 'concluido') as total_completed_appointments
+        (SELECT MAX(date) FROM appointments WHERE client_id = c.id AND tenant_id = ?) as last_appointment_date,
+        (SELECT COUNT(*) FROM appointments WHERE client_id = c.id AND status = 'concluido' AND tenant_id = ?) as total_completed_appointments
       FROM clients c
+      WHERE c.tenant_id = ?
     `;
-    const params = [];
+    const params = [tenantId, tenantId, tenantId];
 
     if (search) {
-      sql += ` WHERE c.name LIKE ? OR c.phone LIKE ? OR c.cpf LIKE ? OR c.email LIKE ?`;
+      sql += ` AND (c.name LIKE ? OR c.phone LIKE ? OR c.cpf LIKE ? OR c.email LIKE ?)`;
       const s = `%${search}%`;
       params.push(s, s, s, s);
     }
@@ -33,12 +36,14 @@ router.get('/', async (req, res) => {
 router.get('/:id', async (req, res) => {
   try {
     const { id } = req.params;
-    const client = await get('SELECT * FROM clients WHERE id = ?', [id]);
+    const tenantId = req.tenantId || 'tenant_default_salao';
+
+    const client = await get('SELECT * FROM clients WHERE id = ? AND tenant_id = ?', [id, tenantId]);
     if (!client) {
       return res.status(404).json({ error: 'Cliente não encontrado' });
     }
 
-    const anamnesis = await get('SELECT * FROM anamnesis WHERE client_id = ?', [id]);
+    const anamnesis = await get('SELECT * FROM anamnesis WHERE client_id = ? AND tenant_id = ?', [id, tenantId]);
 
     const appointments = await query(
       `SELECT a.*, 
@@ -48,10 +53,10 @@ router.get('/:id', async (req, res) => {
        LEFT JOIN appointment_items ai ON a.id = ai.appointment_id
        LEFT JOIN services s ON ai.service_id = s.id
        LEFT JOIN professionals p ON ai.professional_id = p.id
-       WHERE a.client_id = ?
+       WHERE a.client_id = ? AND a.tenant_id = ?
        GROUP BY a.id
        ORDER BY a.date DESC, a.created_at DESC`,
-      [id]
+      [id, tenantId]
     );
 
     res.json({
@@ -68,15 +73,16 @@ router.get('/:id', async (req, res) => {
 router.post('/', async (req, res) => {
   try {
     const { name, phone, email, birthdate, cpf, address, notes, anamnesis, sendWelcome = true } = req.body;
+    const tenantId = req.tenantId || 'tenant_default_salao';
 
     if (!name || !phone) {
       return res.status(400).json({ error: 'Nome e Telefone/WhatsApp são obrigatórios.' });
     }
 
     const result = await run(
-      `INSERT INTO clients (name, phone, email, birthdate, cpf, address, notes)
-       VALUES (?, ?, ?, ?, ?, ?, ?)`,
-      [name, phone, email || null, birthdate || null, cpf || null, address || null, notes || null]
+      `INSERT INTO clients (name, phone, email, birthdate, cpf, address, notes, tenant_id)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+      [name, phone, email || null, birthdate || null, cpf || null, address || null, notes || null, tenantId]
     );
 
     const clientId = result.lastID;
@@ -87,8 +93,8 @@ router.post('/', async (req, res) => {
       `INSERT INTO anamnesis (
         client_id, hair_type, hair_chemical_history, hair_color_formula, hair_sensitivities, hair_preferred_cut,
         waxing_skin_type, waxing_allergies, waxing_folliculitis_history, waxing_preferred_method, waxing_restrictions,
-        nails_shape_preferences, nails_gel_allergy, makeup_skin_type, makeup_restrictions, general_observations
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+        nails_shape_preferences, nails_gel_allergy, makeup_skin_type, makeup_restrictions, general_observations, tenant_id
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       [
         clientId,
         a.hair_type || null,
@@ -105,7 +111,8 @@ router.post('/', async (req, res) => {
         a.nails_gel_allergy || null,
         a.makeup_skin_type || null,
         a.makeup_restrictions || null,
-        a.general_observations || null
+        a.general_observations || null,
+        tenantId
       ]
     );
 
@@ -129,13 +136,14 @@ router.put('/:id', async (req, res) => {
   try {
     const { id } = req.params;
     const { name, phone, email, birthdate, cpf, address, notes, loyalty_points, anamnesis } = req.body;
+    const tenantId = req.tenantId || 'tenant_default_salao';
 
     await run(
       `UPDATE clients 
        SET name = ?, phone = ?, email = ?, birthdate = ?, cpf = ?, address = ?, notes = ?, 
            loyalty_points = COALESCE(?, loyalty_points), updated_at = CURRENT_TIMESTAMP
-       WHERE id = ?`,
-      [name, phone, email, birthdate, cpf, address, notes, loyalty_points, id]
+       WHERE id = ? AND tenant_id = ?`,
+      [name, phone, email, birthdate, cpf, address, notes, loyalty_points, id, tenantId]
     );
 
     if (anamnesis) {
@@ -145,8 +153,8 @@ router.put('/:id', async (req, res) => {
           client_id, hair_type, hair_chemical_history, hair_color_formula, hair_sensitivities, hair_preferred_cut,
           waxing_skin_type, waxing_allergies, waxing_folliculitis_history, waxing_preferred_method, waxing_restrictions,
           nails_shape_preferences, nails_gel_allergy, makeup_skin_type, makeup_restrictions, general_observations,
-          updated_at
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)
+          tenant_id, updated_at
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)
         ON CONFLICT(client_id) DO UPDATE SET
           hair_type = excluded.hair_type,
           hair_chemical_history = excluded.hair_chemical_history,
@@ -168,7 +176,8 @@ router.put('/:id', async (req, res) => {
           id,
           a.hair_type, a.hair_chemical_history, a.hair_color_formula, a.hair_sensitivities, a.hair_preferred_cut,
           a.waxing_skin_type, a.waxing_allergies, a.waxing_folliculitis_history, a.waxing_preferred_method, a.waxing_restrictions,
-          a.nails_shape_preferences, a.nails_gel_allergy, a.makeup_skin_type, a.makeup_restrictions, a.general_observations
+          a.nails_shape_preferences, a.nails_gel_allergy, a.makeup_skin_type, a.makeup_restrictions, a.general_observations,
+          tenantId
         ]
       );
     }
@@ -183,7 +192,8 @@ router.put('/:id', async (req, res) => {
 router.delete('/:id', async (req, res) => {
   try {
     const { id } = req.params;
-    await run('DELETE FROM clients WHERE id = ?', [id]);
+    const tenantId = req.tenantId || 'tenant_default_salao';
+    await run('DELETE FROM clients WHERE id = ? AND tenant_id = ?', [id, tenantId]);
     res.json({ message: 'Cliente removido com sucesso.' });
   } catch (error) {
     res.status(500).json({ error: error.message });
@@ -194,11 +204,12 @@ router.delete('/:id', async (req, res) => {
 router.post('/:id/loyalty', async (req, res) => {
   try {
     const { id } = req.params;
-    const { points, operation } = req.body; // operation: 'add' ou 'redeem'
+    const { points, operation } = req.body;
+    const tenantId = req.tenantId || 'tenant_default_salao';
     const delta = operation === 'redeem' ? -Math.abs(points) : Math.abs(points);
 
-    await run('UPDATE clients SET loyalty_points = MAX(0, loyalty_points + ?) WHERE id = ?', [delta, id]);
-    const updated = await get('SELECT loyalty_points FROM clients WHERE id = ?', [id]);
+    await run('UPDATE clients SET loyalty_points = MAX(0, loyalty_points + ?) WHERE id = ? AND tenant_id = ?', [delta, id, tenantId]);
+    const updated = await get('SELECT loyalty_points FROM clients WHERE id = ? AND tenant_id = ?', [id, tenantId]);
 
     res.json({ loyalty_points: updated.loyalty_points, message: 'Pontos atualizados!' });
   } catch (error) {
