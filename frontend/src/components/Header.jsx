@@ -484,7 +484,7 @@ export default function Header({
                 <input
                   type="text"
                   required
-                  placeholder="Ex: Maluko Barbeiro, Bella Esmalteria..."
+                  placeholder="Ex: Studio Bella, Barbearia VIP, Bella Esmalteria..."
                   value={projectForm.name}
                   onChange={(e) => setProjectForm(prev => ({ ...prev, name: e.target.value }))}
                   className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white text-xs focus:ring-2 focus:ring-pink-500/20 focus:border-pink-500"
