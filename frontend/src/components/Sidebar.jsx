@@ -50,26 +50,37 @@ export default function Sidebar({
     if (onCloseMobile) onCloseMobile();
   };
 
+  const currentSegment = {
+    salao: { label: 'Salão & Cabelo', icon: '✂️' },
+    barbearia: { label: 'Barbearia', icon: '💈' },
+    estetica: { label: 'Estética & Spa', icon: '✨' },
+    esmalteria: { label: 'Esmalteria', icon: '💅' },
+    lash: { label: 'Lash & Sobrancelhas', icon: '👁️' },
+  }[user?.segment] || { label: 'Salão & Cabelo', icon: '✂️' };
+
   const sidebarContent = (
     <div className="flex flex-col h-full justify-between bg-white dark:bg-slate-900 select-none">
       {/* Navigation List */}
       <div className="p-3 sm:p-4 space-y-1 overflow-y-auto flex-1">
-        {/* Mobile Header in Drawer */}
-        <div className="px-3 pb-3 flex items-center justify-between border-b border-slate-100 dark:border-slate-800 md:border-none mb-2 md:mb-0">
-          <div>
-            <p className="text-[11px] font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500">
-              Menu de Gestão
-            </p>
-            <span className="text-[10px] font-bold text-pink-600 dark:text-pink-400 uppercase">
-              Nível: {user?.accessLevel || 'STUDIO'}
-            </span>
+        {/* Unit & Segment info */}
+        <div className="px-3 py-2 mb-2 rounded-xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200/60 dark:border-slate-700/50 flex items-center justify-between">
+          <div className="min-w-0 flex items-center gap-2">
+            <span className="text-base shrink-0">{currentSegment.icon}</span>
+            <div className="min-w-0">
+              <p className="text-[11px] font-black text-slate-800 dark:text-slate-200 truncate">
+                {user?.salonName || 'BelaGestão Studio'}
+              </p>
+              <p className="text-[10px] font-bold text-pink-600 dark:text-pink-400 truncate">
+                {currentSegment.label}
+              </p>
+            </div>
           </div>
           {onCloseMobile && (
             <button
               onClick={onCloseMobile}
-              className="md:hidden p-1.5 rounded-xl text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800"
+              className="md:hidden p-1 rounded-lg text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800"
             >
-              <X className="w-5 h-5" />
+              <X className="w-4 h-4" />
             </button>
           )}
         </div>
@@ -142,7 +153,7 @@ export default function Sidebar({
         </button>
 
         <div className="px-2 text-[11px] text-slate-400 dark:text-slate-500 flex items-center justify-between">
-          <span>BellaGestão v2.0</span>
+          <span>BelaGestão v2.0</span>
           <span className="inline-flex items-center gap-1 text-[10px] text-emerald-600 font-bold">
             <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
             Online

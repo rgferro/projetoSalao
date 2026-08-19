@@ -10,7 +10,7 @@ const { verifySessionToken } = require('../services/authService');
 const { licenseManager } = require('../services/licenseCache');
 const logger = require('../services/logger');
 
-// Planos Oficiais Transparentes do BellaGestão Studio por Capacidade Operacional
+// Planos Oficiais Transparentes do BelaGestão Studio por Capacidade Operacional
 const SAAS_PLANS = {
   SOLO: {
     id: 'SOLO',
@@ -124,7 +124,7 @@ router.get('/status', async (req, res) => {
     res.json({
       success: true,
       tenantId: tenant?.id || tenantId,
-      salonName: tenant?.name || 'BellaGestão Studio',
+      salonName: tenant?.name || 'BelaGestão Studio',
       plan: licenseEvaluation.plan,
       status: licenseEvaluation.status,
       isDegraded: licenseEvaluation.isDegraded,
@@ -171,7 +171,7 @@ router.post('/pix', async (req, res) => {
     const authHeader = req.headers.authorization;
     let tenant = {
       id: 'tenant_default_salao',
-      name: 'BellaGestão Studio',
+      name: 'BelaGestão Studio',
       owner_email: 'contato@bellagestao.com.br',
       owner_name: 'Camila Silveira',
       document: '12.345.678/0001-90',
@@ -234,7 +234,7 @@ router.post('/card', async (req, res) => {
     const authHeader = req.headers.authorization;
     let tenant = {
       id: 'tenant_default_salao',
-      name: 'BellaGestão Studio',
+      name: 'BelaGestão Studio',
       owner_email: 'contato@bellagestao.com.br',
       owner_name: 'Camila Silveira',
     };

@@ -25,6 +25,8 @@ import Privacy from './pages/Privacy';
 import SistemaSalao from './pages/SistemaSalao';
 import SistemaBarbearia from './pages/SistemaBarbearia';
 import SistemaEstetica from './pages/SistemaEstetica';
+import SistemaEsmalteria from './pages/SistemaEsmalteria';
+import SistemaLash from './pages/SistemaLash';
 import PageTourModal from './components/PageTourModal';
 import { 
   ShortcutsModal, 
@@ -64,7 +66,9 @@ function MainApp() {
     if (path === '/privacidade') return 'privacidade';
     if (path === '/sistema-para-salao-de-beleza') return 'sistema-salao';
     if (path === '/sistema-para-barbearia') return 'sistema-barbearia';
-    if (path === '/sistema-para-estetica-e-esmalteria') return 'sistema-estetica';
+    if (path === '/sistema-para-estetica' || path === '/sistema-para-estetica-e-esmalteria') return 'sistema-estetica';
+    if (path === '/sistema-para-esmalteria-e-unhas' || path === '/sistema-para-esmalteria') return 'sistema-esmalteria';
+    if (path === '/sistema-para-lash-designer-e-sobrancelhas' || path === '/sistema-para-lash-designer') return 'sistema-lash';
     if (path === '/master-admin' && user?.isMaster) return 'app_master';
 
     const savedUser = localStorage.getItem('bella_user');
@@ -180,6 +184,8 @@ function MainApp() {
   if (currentView === 'sistema-salao') return <SistemaSalao />;
   if (currentView === 'sistema-barbearia') return <SistemaBarbearia />;
   if (currentView === 'sistema-estetica') return <SistemaEstetica />;
+  if (currentView === 'sistema-esmalteria') return <SistemaEsmalteria />;
+  if (currentView === 'sistema-lash') return <SistemaLash />;
 
   // 1. Landing Page View
   if (currentView === 'landing') {

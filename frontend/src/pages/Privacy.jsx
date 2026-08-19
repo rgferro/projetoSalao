@@ -14,7 +14,7 @@ export default function Privacy() {
             </div>
             <div>
               <span className="text-lg sm:text-xl font-black tracking-tight text-slate-950">
-                BellaGestão<span className="text-pink-600 font-bold">Studio</span>
+                BelaGestão<span className="text-pink-600 font-bold">Studio</span>
               </span>
               <div className="text-[10px] text-slate-500 font-semibold uppercase tracking-wider">
                 Privacidade & LGPD
@@ -46,7 +46,7 @@ export default function Privacy() {
           <section className="space-y-2">
             <h2 className="text-base font-extrabold text-slate-900">1. Coleta e Finalidade dos Dados</h2>
             <p>
-              O <strong>BellaGestão Studio</strong> coleta apenas as informações estritamente necessárias para a prestação de serviços de gestão, emissão de comprovantes, agendamento de horários e comunicação via WhatsApp e e-mail:
+              O <strong>BelaGestão Studio</strong> coleta apenas as informações estritamente necessárias para a prestação de serviços de gestão, emissão de comprovantes, agendamento de horários e comunicação via WhatsApp e e-mail:
             </p>
             <ul className="list-disc pl-5 space-y-1">
               <li><strong>Dados do Salão / Titular:</strong> Nome, Razão Social, CPF/CNPJ, E-mail, Telefone e Endereço comercial.</li>
@@ -72,7 +72,7 @@ export default function Privacy() {
           <section className="space-y-2">
             <h2 className="text-base font-extrabold text-slate-900">4. Direitos do Titular (LGPD Art. 18)</h2>
             <p>
-              O titular dos dados possui o direito inalienável de solicitar a confirmação, correção, exportação em arquivo portátil ou exclusão definitiva de seus dados a qualquer momento pelo e-mail <strong>privacidade@bellagestao.com.br</strong>.
+              O titular dos dados possui o direito inalienável de solicitar a confirmação, correção, exportação em arquivo portátil ou exclusão definitiva de seus dados a qualquer momento através do nosso canal de <strong>Fale Conosco</strong>.
             </p>
           </section>
         </div>

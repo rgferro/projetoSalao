@@ -169,7 +169,7 @@ export default function Login({ onNavigateRegister, onNavigateLanding, onLoginSu
         </button>
 
         <span className="text-[11px] font-bold text-pink-600 uppercase tracking-wider">
-          BellaGestão Studio
+          BelaGestão Studio
         </span>
       </div>
 
@@ -181,7 +181,7 @@ export default function Login({ onNavigateRegister, onNavigateLanding, onLoginSu
             ✨
           </div>
           <h1 className="text-2xl font-black text-slate-950 tracking-tight">
-            Acessar o BellaGestão Studio
+            Acessar o BelaGestão Studio
           </h1>
           <p className="text-xs text-slate-500 font-medium">
             Digite seu e-mail e senha de acesso
@@ -321,7 +321,7 @@ export default function Login({ onNavigateRegister, onNavigateLanding, onLoginSu
                     <input
                       type="email"
                       required
-                      placeholder="exemplo@bellagestao.com.br"
+                      placeholder="seu.email@exemplo.com"
                       value={forgotEmail}
                       onChange={(e) => setForgotEmail(e.target.value)}
                       className="w-full pl-10 pr-4 py-3 rounded-xl border border-slate-200 text-xs focus:outline-none focus:ring-2 focus:ring-pink-500 font-medium"

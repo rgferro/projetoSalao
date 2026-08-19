@@ -1,4 +1,4 @@
-import React from 'react';
+﻿import React from 'react';
 import { Sparkles, CheckCircle2, ArrowRight, Scissors, Palette, MessageSquare, BarChart3, ShieldCheck } from 'lucide-react';
 import { Link } from '../components/Link';
 
@@ -14,7 +14,7 @@ export default function SistemaSalao() {
             </div>
             <div>
               <span className="text-lg sm:text-xl font-black tracking-tight text-white">
-                BellaGestão<span className="text-pink-500 font-bold">Studio</span>
+                BelaGestão<span className="text-pink-500 font-bold">Studio</span>
               </span>
               <div className="text-[10px] text-pink-400 font-semibold uppercase tracking-wider">
                 Para Salões de Beleza
@@ -22,12 +22,20 @@ export default function SistemaSalao() {
             </div>
           </Link>
 
-          <Link
-            to="/cadastro"
-            className="px-5 py-2.5 rounded-xl bg-pink-600 hover:bg-pink-700 text-white text-xs font-black shadow-lg shadow-pink-600/30 transition-all"
-          >
-            Criar Conta Grátis
-          </Link>
+          <div className="flex items-center gap-3">
+            <Link
+              to="/login"
+              className="hidden sm:inline-flex px-4 py-2 rounded-xl text-xs font-bold text-slate-300 hover:text-white transition"
+            >
+              Entrar
+            </Link>
+            <Link
+              to="/cadastro?segment=salao"
+              className="px-5 py-2.5 rounded-xl bg-pink-600 hover:bg-pink-700 text-white text-xs font-black shadow-lg shadow-pink-600/30 transition-all active:scale-95"
+            >
+              Criar Conta Grátis
+            </Link>
+          </div>
         </div>
       </header>
 
@@ -52,19 +60,27 @@ export default function SistemaSalao() {
 
           <div className="flex flex-col sm:flex-row items-center justify-center gap-4 pt-4">
             <Link
-              to="/cadastro"
+              to="/cadastro?segment=salao"
               className="w-full sm:w-auto px-8 py-4 rounded-2xl bg-gradient-to-r from-pink-600 to-rose-600 hover:from-pink-700 hover:to-rose-700 text-white font-black text-sm shadow-xl shadow-pink-600/30 flex items-center justify-center gap-2 transition-all active:scale-95"
             >
               <Sparkles className="w-4 h-4 text-amber-300 fill-current" />
               <span>Experimentar Grátis (2 Usuários)</span>
               <ArrowRight className="w-4 h-4" />
             </Link>
+
+            <Link
+              to="/contato"
+              className="w-full sm:w-auto px-6 py-4 rounded-2xl bg-slate-900 hover:bg-slate-800 text-slate-300 text-sm font-bold border border-slate-800 flex items-center justify-center gap-2 transition-all"
+            >
+              <MessageSquare className="w-4 h-4" />
+              <span>Fale Conosco / Suporte</span>
+            </Link>
           </div>
         </div>
 
         {/* Recursos Específicos */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          <div className="bg-slate-900/90 rounded-3xl p-6 border border-slate-800 space-y-4">
+          <div className="bg-slate-900/90 rounded-3xl p-6 border border-slate-800 space-y-4 hover:border-pink-800/60 transition-all">
             <div className="w-12 h-12 rounded-2xl bg-pink-950/60 border border-pink-800 text-pink-400 flex items-center justify-center">
               <Palette className="w-6 h-6" />
             </div>
@@ -74,7 +90,7 @@ export default function SistemaSalao() {
             </p>
           </div>
 
-          <div className="bg-slate-900/90 rounded-3xl p-6 border border-slate-800 space-y-4">
+          <div className="bg-slate-900/90 rounded-3xl p-6 border border-slate-800 space-y-4 hover:border-pink-800/60 transition-all">
             <div className="w-12 h-12 rounded-2xl bg-indigo-950/60 border border-indigo-800 text-indigo-400 flex items-center justify-center">
               <Scissors className="w-6 h-6" />
             </div>
@@ -84,7 +100,7 @@ export default function SistemaSalao() {
             </p>
           </div>
 
-          <div className="bg-slate-900/90 rounded-3xl p-6 border border-slate-800 space-y-4">
+          <div className="bg-slate-900/90 rounded-3xl p-6 border border-slate-800 space-y-4 hover:border-pink-800/60 transition-all">
             <div className="w-12 h-12 rounded-2xl bg-emerald-950/60 border border-emerald-800 text-emerald-400 flex items-center justify-center">
               <BarChart3 className="w-6 h-6" />
             </div>
@@ -94,6 +110,19 @@ export default function SistemaSalao() {
             </p>
           </div>
         </div>
+
+        {/* Rodapé do Segmento */}
+        <footer className="pt-12 border-t border-slate-800/80 text-center text-xs text-slate-500 space-y-4">
+          <div className="flex flex-wrap items-center justify-center gap-6 text-slate-400">
+            <Link to="/" className="hover:text-pink-400">Todos os Segmentos</Link>
+            <Link to="/sistema-para-barbearia" className="hover:text-pink-400">Barbearias</Link>
+            <Link to="/sistema-para-estetica" className="hover:text-pink-400">Clínicas de Estética</Link>
+            <Link to="/sistema-para-esmalteria-e-unhas" className="hover:text-pink-400">Esmalterias & Unhas</Link>
+            <Link to="/sistema-para-lash-designer-e-sobrancelhas" className="hover:text-pink-400">Lash & Sobrancelhas</Link>
+            <Link to="/contato" className="text-pink-400 font-bold hover:underline">Fale Conosco</Link>
+          </div>
+          <p>© {new Date().getFullYear()} BelaGestão Studio. Plataforma em conformidade com a LGPD.</p>
+        </footer>
       </main>
     </div>
   );

@@ -14,7 +14,7 @@ router.post('/', async (req, res) => {
     await run(`
       INSERT INTO contact_messages (id, name, email, phone, subject, message, status)
       VALUES (?, ?, ?, ?, ?, ?, 'UNREAD')
-    `, [id, name, email, phone || null, subject || 'Dúvida sobre o BellaGestão Studio', message]);
+    `, [id, name, email, phone || null, subject || 'Dúvida sobre o BelaGestão Studio', message]);
 
     await sendContactEmail({
       name,

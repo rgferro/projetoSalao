@@ -4,8 +4,14 @@ async function request(endpoint, options = {}) {
   const url = `${API_BASE}${endpoint}`;
   const headers = options.headers || {};
 
-  // Injetar token de autenticação se disponível
-  const token = localStorage.getItem('salao_token') || localStorage.getItem('bella_token');
+  // Limpar tokens legados em cache se existirem
+  if (typeof window !== 'undefined') {
+    if (localStorage.getItem('salao_token')) localStorage.removeItem('salao_token');
+    if (localStorage.getItem('salao_user')) localStorage.removeItem('salao_user');
+  }
+
+  // Injetar token de autenticação unificado
+  const token = typeof window !== 'undefined' ? localStorage.getItem('bella_token') : null;
   if (token) {
     headers['Authorization'] = `Bearer ${token}`;
   }

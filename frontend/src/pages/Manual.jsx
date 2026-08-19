@@ -44,7 +44,7 @@ export default function Manual({ onNavigateTab }) {
             Manual do Usuário & Tutoriais Interativos
           </h1>
           <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400">
-            Aprenda a dominar todos os recursos do BellaGestão Studio com tutoriais guiados passo a passo na sua tela.
+            Aprenda a dominar todos os recursos do BelaGestão Studio com tutoriais guiados passo a passo na sua tela.
           </p>
         </div>
       </div>
@@ -233,7 +233,7 @@ export default function Manual({ onNavigateTab }) {
             },
             {
               q: 'O que acontece se a internet cair?',
-              a: 'O BellaGestão Studio utiliza banco de dados SQLite local de altíssima performance. Todas as informações de clientes, agenda e caixa continuam gravadas com total segurança.',
+              a: 'O BelaGestão Studio utiliza banco de dados SQLite local de altíssima performance. Todas as informações de clientes, agenda e caixa continuam gravadas com total segurança.',
             },
           ].map((faq, idx) => (
             <div

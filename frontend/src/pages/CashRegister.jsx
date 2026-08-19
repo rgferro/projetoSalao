@@ -389,7 +389,7 @@ export default function CashRegister({ onOpenCashModal }) {
               </div>
 
               <div className="p-3 bg-white dark:bg-slate-900 rounded-xl border border-emerald-200 dark:border-emerald-800 text-xs font-mono space-y-1">
-                <p className="font-bold text-center border-b pb-1 text-slate-700 dark:text-slate-200">STUDIO BELLAGESTÃO • COMPROVANTE</p>
+                <p className="font-bold text-center border-b pb-1 text-slate-700 dark:text-slate-200">STUDIO BELAGESTÃO • COMPROVANTE</p>
                 <p>Transação: #{checkoutSuccess.transaction_id}</p>
                 <p>Cliente: {checkoutSuccess.clientName}</p>
                 <p>Forma: {checkoutSuccess.paymentMethod.toUpperCase()}</p>

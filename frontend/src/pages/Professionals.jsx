@@ -15,6 +15,7 @@ import {
   Scissors,
   Mail,
   Send,
+  Lock,
   KeyRound,
   Shield,
   Tag
@@ -41,7 +42,7 @@ export default function Professionals() {
     subtypes: ['Cabeleireira'],
     phone: '',
     email: '',
-    pin_code: '1234',
+    password: '',
     color_hex: '#ec4899',
     specialties: ['Cabelo'],
     default_commission_type: 'percentage',
@@ -138,7 +139,7 @@ export default function Professionals() {
       subtypes: Array.isArray(p.subtypes) ? p.subtypes : (p.role ? [p.role] : ['Cabeleireira']),
       phone: p.phone || '',
       email: p.email || '',
-      pin_code: p.pin_code || '1234',
+      password: '',
       color_hex: p.color_hex || '#ec4899',
       specialties: Array.isArray(p.specialties) ? p.specialties : ['Cabelo'],
       default_commission_type: p.default_commission_type || 'percentage',
@@ -194,7 +195,7 @@ export default function Professionals() {
           employeeEmail: prof.email,
           employeeName: prof.name,
           role: prof.role || 'Profissional',
-          salonName: 'BellaGestão Studio',
+          salonName: 'BelaGestão Studio',
           ownerName: 'Administrador'
         })
       });
@@ -261,7 +262,7 @@ export default function Professionals() {
               subtypes: ['Cabeleireira'],
               phone: '',
               email: '',
-              pin_code: '1234',
+              password: '',
               color_hex: '#ec4899',
               specialties: ['Cabelo'],
               default_commission_type: 'percentage',
@@ -353,13 +354,13 @@ export default function Professionals() {
                     </div>
                   </div>
 
-                  {/* Nível de Acesso Badge */}
-                  <div className="flex items-center justify-between">
+                  {/* Nível de Acesso Badge & E-mail */}
+                  <div className="flex items-center justify-between gap-2">
                     <span className={`text-[10px] font-bold px-2.5 py-0.5 rounded-full border ${roleConf.badgeColor}`}>
                       {roleConf.icon} {roleConf.label}
                     </span>
-                    <span className="text-[10px] font-mono text-slate-400 bg-slate-100 dark:bg-slate-800 px-2 py-0.5 rounded-md">
-                      PIN: {p.pin_code || '1234'}
+                    <span className="text-[10px] text-slate-500 dark:text-slate-400 bg-slate-100 dark:bg-slate-800 px-2 py-0.5 rounded-md truncate max-w-[140px]" title={p.email}>
+                      {p.email || 'Sem login'}
                     </span>
                   </div>
 
@@ -677,20 +678,20 @@ export default function Professionals() {
               <div className="grid grid-cols-2 gap-3">
                 <div>
                   <label className="block font-bold text-slate-700 dark:text-slate-300 mb-1 flex items-center gap-1">
-                    <KeyRound className="w-3.5 h-3.5 text-pink-600" />
-                    <span>PIN Rápido (4 dígitos)</span>
+                    <Lock className="w-3.5 h-3.5 text-pink-600" />
+                    <span>Senha de Acesso {editingProf ? '(opcional)' : ''}</span>
                   </label>
                   <input
-                    type="text"
-                    maxLength={4}
-                    value={profForm.pin_code}
-                    onChange={(e) => setProfForm({ ...profForm, pin_code: e.target.value.replace(/\D/g, '') })}
-                    className="w-full px-3 py-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 font-mono font-bold"
+                    type="password"
+                    placeholder={editingProf ? 'Deixar em branco para manter' : 'Mínimo 6 caracteres'}
+                    value={profForm.password || ''}
+                    onChange={(e) => setProfForm({ ...profForm, password: e.target.value })}
+                    className="w-full px-3 py-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800"
                   />
                 </div>
                 <div>
                   <label className="block font-bold text-slate-700 dark:text-slate-300 mb-1">Cor na Grade</label>
-                  <div className="flex items-center gap-2">
+                  <div className="flex items-center gap-2 pt-1">
                     <input
                       type="color"
                       value={profForm.color_hex}

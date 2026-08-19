@@ -36,10 +36,62 @@ export function AuthProvider({ children }) {
     }
   });
 
+  const [userTenants, setUserTenants] = useState(() => {
+    const saved = localStorage.getItem('bella_user');
+    if (saved) {
+      try {
+        const parsed = JSON.parse(saved);
+        return parsed.tenants || [];
+      } catch {
+        return [];
+      }
+    }
+    return [];
+  });
+
+  // Validar sessão no backend ao iniciar para evitar estados residuais ou inconsistências
+  useEffect(() => {
+    if (!token) return;
+    fetch('/api/auth/me', {
+      headers: { 'Authorization': `Bearer ${token}` }
+    })
+      .then(res => {
+        if (!res.ok) {
+          logout();
+          return null;
+        }
+        return res.json();
+      })
+      .then(data => {
+        if (data && data.success && data.user) {
+          const tenant = data.tenant;
+          setUser(prev => {
+            const updated = {
+              ...prev,
+              ...data.user,
+              salonName: tenant?.name || data.user.salonName || prev?.salonName,
+              segment: tenant?.segment || data.user.segment || prev?.segment || 'salao',
+              plan: tenant?.plan || data.user.plan || prev?.plan,
+              tenants: data.user.tenants || prev?.tenants || []
+            };
+            localStorage.setItem('bella_user', JSON.stringify(updated));
+            return updated;
+          });
+          if (data.user.tenants) {
+            setUserTenants(data.user.tenants);
+          }
+        }
+      })
+      .catch(() => {});
+  }, [token]);
+
   const login = (userData, userToken) => {
     setUser(userData);
     setToken(userToken);
     setIsAuthenticated(true);
+    if (userData?.tenants) {
+      setUserTenants(userData.tenants);
+    }
     localStorage.setItem('bella_user', JSON.stringify(userData));
     if (userToken) localStorage.setItem('bella_token', userToken);
   };
@@ -47,26 +99,94 @@ export function AuthProvider({ children }) {
   const logout = () => {
     setUser(null);
     setToken(null);
+    setUserTenants([]);
     setIsAuthenticated(false);
     localStorage.removeItem('bella_user');
     localStorage.removeItem('bella_token');
   };
 
-  const switchUserWithPin = async (pinCode) => {
+  const switchTenant = async (tenantId) => {
     try {
-      const res = await fetch('/api/auth/switch-user', {
+      const res = await fetch('/api/auth/switch-tenant', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ pinCode }),
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': token ? `Bearer ${token}` : ''
+        },
+        body: JSON.stringify({ tenantId }),
       });
       const data = await res.json();
-      if (!res.ok) throw new Error(data.error || 'PIN inválido');
+      if (!res.ok) throw new Error(data.error || 'Falha ao alternar projeto.');
+
+      // Manter a lista de tenants atualizada
+      const updatedUser = {
+        ...data.user,
+        tenants: user?.tenants || userTenants
+      };
+
+      login(updatedUser, data.token);
+      return { success: true, user: updatedUser };
+    } catch (err) {
+      return { success: false, error: err.message };
+    }
+  };
+
+  const createProject = async (projectData) => {
+    try {
+      const res = await fetch('/api/auth/create-tenant', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': token ? `Bearer ${token}` : ''
+        },
+        body: JSON.stringify(projectData),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Falha ao criar novo salão/projeto.');
 
       login(data.user, data.token);
       return { success: true, user: data.user };
     } catch (err) {
       return { success: false, error: err.message };
     }
+  };
+
+  const refreshTenants = async () => {
+    if (!token) return [];
+    try {
+      const res = await fetch('/api/auth/my-tenants', {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      const data = await res.json();
+      if (data && data.success && data.tenants) {
+        setUserTenants(data.tenants);
+        setUser(prev => {
+          if (!prev) return null;
+          const updated = { ...prev, tenants: data.tenants };
+          localStorage.setItem('bella_user', JSON.stringify(updated));
+          return updated;
+        });
+        return data.tenants;
+      }
+    } catch (e) {}
+    return [];
+  };
+
+  const exitImpersonation = () => {
+    const masterUser = localStorage.getItem('bella_master_user');
+    const masterToken = localStorage.getItem('bella_master_token');
+    if (masterUser && masterToken) {
+      try {
+        const parsed = JSON.parse(masterUser);
+        localStorage.removeItem('bella_master_user');
+        localStorage.removeItem('bella_master_token');
+        login(parsed, masterToken);
+        window.location.href = '/dashboard';
+        return;
+      } catch (e) {}
+    }
+    logout();
+    window.location.href = '/login';
   };
 
   const checkPermission = (moduleId) => {
@@ -88,10 +208,14 @@ export function AuthProvider({ children }) {
       value={{
         token,
         user,
+        userTenants,
         isAuthenticated,
         login,
         logout,
-        switchUserWithPin,
+        switchTenant,
+        createProject,
+        refreshTenants,
+        exitImpersonation,
         checkPermission,
         isMaster,
         isAdmin,

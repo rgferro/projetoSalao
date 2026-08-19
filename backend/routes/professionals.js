@@ -2,14 +2,20 @@ const express = require('express');
 const router = express.Router();
 const { query, get, run } = require('../database/db');
 const { hashPassword } = require('../services/authService');
+const { requireAuth } = require('../middleware/authMiddleware');
+
+// Todas as rotas de profissionais exigem autenticação válida
+router.use(requireAuth);
 
 // 1. Listar Especialidades / Funções Extensíveis por Tenant
 router.get('/specialties', async (req, res) => {
   try {
-    const tenantId = req.tenantId || 'tenant_default_salao';
+    const tenantId = req.tenantId;
+    if (!tenantId) return res.status(401).json({ error: 'Tenant não identificado.' });
+
     const list = await query(`
       SELECT * FROM custom_specialties 
-      WHERE tenant_id = ? OR tenant_id = 'tenant_default' OR tenant_id = 'tenant_default_salao'
+      WHERE tenant_id = ?
       ORDER BY category ASC, name ASC
     `, [tenantId]);
     res.json(list);
@@ -22,7 +28,8 @@ router.get('/specialties', async (req, res) => {
 router.post('/specialties', async (req, res) => {
   try {
     const { name, category = 'Geral', icon = 'Sparkles' } = req.body;
-    const tenantId = req.tenantId || 'tenant_default_salao';
+    const tenantId = req.tenantId;
+    if (!tenantId) return res.status(401).json({ error: 'Tenant não identificado.' });
     if (!name) return res.status(400).json({ error: 'Nome da especialidade é obrigatório.' });
 
     const result = await run(`
@@ -36,10 +43,12 @@ router.post('/specialties', async (req, res) => {
   }
 });
 
-// 3. Listar todos os profissionais da equipe do Tenant
+// 3. Listar todos os profissionais da equipe do Tenant Autenticado
 router.get('/', async (req, res) => {
   try {
-    const tenantId = req.tenantId || 'tenant_default_salao';
+    const tenantId = req.tenantId;
+    if (!tenantId) return res.status(401).json({ error: 'Não autenticado.' });
+
     const professionals = await query(`
       SELECT p.*,
         (SELECT COUNT(*) FROM appointment_items ai WHERE ai.professional_id = p.id AND ai.status = 'concluido' AND ai.tenant_id = ?) as total_services_completed
@@ -66,7 +75,9 @@ router.get('/', async (req, res) => {
 router.get('/:id', async (req, res) => {
   try {
     const { id } = req.params;
-    const tenantId = req.tenantId || 'tenant_default_salao';
+    const tenantId = req.tenantId;
+    if (!tenantId) return res.status(401).json({ error: 'Não autenticado.' });
+
     const prof = await get('SELECT * FROM professionals WHERE id = ? AND tenant_id = ?', [id, tenantId]);
     if (!prof) {
       return res.status(404).json({ error: 'Profissional não encontrado' });
@@ -112,7 +123,8 @@ router.post('/', async (req, res) => {
       work_schedule,
       custom_commissions
     } = req.body;
-    const tenantId = req.tenantId || 'tenant_default_salao';
+    const tenantId = req.tenantId;
+    if (!tenantId) return res.status(401).json({ error: 'Não autenticado.' });
 
     if (!name) {
       return res.status(400).json({ error: 'Nome do profissional é obrigatório.' });
@@ -182,7 +194,9 @@ router.post('/', async (req, res) => {
 router.put('/:id', async (req, res) => {
   try {
     const { id } = req.params;
-    const tenantId = req.tenantId || 'tenant_default_salao';
+    const tenantId = req.tenantId;
+    if (!tenantId) return res.status(401).json({ error: 'Não autenticado.' });
+
     const {
       name,
       nickname,
@@ -261,7 +275,9 @@ router.put('/:id', async (req, res) => {
 router.delete('/:id', async (req, res) => {
   try {
     const { id } = req.params;
-    const tenantId = req.tenantId || 'tenant_default_salao';
+    const tenantId = req.tenantId;
+    if (!tenantId) return res.status(401).json({ error: 'Não autenticado.' });
+
     await run('DELETE FROM professionals WHERE id = ? AND tenant_id = ?', [id, tenantId]);
     res.json({ message: 'Profissional removido com sucesso.' });
   } catch (error) {

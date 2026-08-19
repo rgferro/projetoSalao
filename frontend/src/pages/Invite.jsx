@@ -108,7 +108,7 @@ export default function Invite({ onNavigateLogin }) {
           {inviteData && (
             <p className="text-xs text-slate-500">
               Olá, <strong className="text-slate-800">{inviteData.name}</strong>! Crie sua senha de acesso para o salão{' '}
-              <strong className="text-pink-600">{inviteData.salon_name || 'BellaGestão'}</strong>.
+              <strong className="text-pink-600">{inviteData.salon_name || 'BelaGestão'}</strong>.
             </p>
           )}
         </div>

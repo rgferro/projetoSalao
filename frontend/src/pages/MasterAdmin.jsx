@@ -143,12 +143,23 @@ export default function MasterAdmin() {
     }
   };
 
+  const { login: authLogin, user: currentUser } = useAuth();
+
   const handleImpersonate = async (tenantId) => {
     try {
       const res = await api.post(`/master-admin/tenants/${tenantId}/impersonate`);
       if (res.data?.success && res.data.token) {
-        localStorage.setItem('salao_token', res.data.token);
-        localStorage.setItem('salao_user', JSON.stringify(res.data.user));
+        // Salvar sessão master atual para possibilitar o retorno posterior
+        const currentToken = localStorage.getItem('bella_token');
+        if (currentToken && currentUser) {
+          localStorage.setItem('bella_master_token', currentToken);
+          localStorage.setItem('bella_master_user', JSON.stringify(currentUser));
+        }
+        localStorage.removeItem('salao_token');
+        localStorage.removeItem('salao_user');
+
+        // Logar como o salão selecionado
+        authLogin(res.data.user, res.data.token);
         window.location.href = '/dashboard';
       }
     } catch (err) {

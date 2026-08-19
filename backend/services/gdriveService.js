@@ -32,12 +32,12 @@ class GDriveService {
     const userProfile = process.env.USERPROFILE || 'C:\\Users\\Default';
 
     const possibleCloudPaths = [
-      'G:\\Meu Drive\\BellaGestao_Backups_Nuvem',
-      'G:\\My Drive\\BellaGestao_Backups_Nuvem',
-      path.join(userProfile, 'Google Drive', 'BellaGestao_Backups_Nuvem'),
-      path.join(userProfile, 'GoogleDrive', 'BellaGestao_Backups_Nuvem'),
-      path.join(userProfile, 'OneDrive', 'BellaGestao_Backups_GoogleDrive'),
-      path.join(userProfile, 'OneDrive - Personal', 'BellaGestao_Backups_GoogleDrive'),
+      'G:\\Meu Drive\\BelaGestao_Backups_Nuvem',
+      'G:\\My Drive\\BelaGestao_Backups_Nuvem',
+      path.join(userProfile, 'Google Drive', 'BelaGestao_Backups_Nuvem'),
+      path.join(userProfile, 'GoogleDrive', 'BelaGestao_Backups_Nuvem'),
+      path.join(userProfile, 'OneDrive', 'BelaGestao_Backups_GoogleDrive'),
+      path.join(userProfile, 'OneDrive - Personal', 'BelaGestao_Backups_GoogleDrive'),
       path.join(BACKUP_DIR, 'nuvem_google_drive'),
     ];
 

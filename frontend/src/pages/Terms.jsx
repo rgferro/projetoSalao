@@ -14,7 +14,7 @@ export default function Terms() {
             </div>
             <div>
               <span className="text-lg sm:text-xl font-black tracking-tight text-slate-950">
-                BellaGestão<span className="text-pink-600 font-bold">Studio</span>
+                BelaGestão<span className="text-pink-600 font-bold">Studio</span>
               </span>
               <div className="text-[10px] text-slate-500 font-semibold uppercase tracking-wider">
                 Termos de Uso
@@ -46,7 +46,7 @@ export default function Terms() {
           <section className="space-y-2">
             <h2 className="text-base font-extrabold text-slate-900">1. Objeto e Aceitação</h2>
             <p>
-              Ao criar uma conta ou utilizar o <strong>BellaGestão Studio</strong>, você concorda expressamente com estes Termos de Uso. Esta plataforma destina-se ao gerenciamento operacional, financeiro, agendamento de atendimentos e automação de salões de beleza, clínicas de estética, esmalterias e barbearias.
+              Ao criar uma conta ou utilizar o <strong>BelaGestão Studio</strong>, você concorda expressamente com estes Termos de Uso. Esta plataforma destina-se ao gerenciamento operacional, financeiro, agendamento de atendimentos e automação de salões de beleza, clínicas de estética, esmalterias e barbearias.
             </p>
           </section>
 

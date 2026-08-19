@@ -11,22 +11,61 @@ function hashPassword(password) {
  * Inicializa dados essenciais padrão para um novo salão (templates de WhatsApp, especialidades e configurações)
  * Sem sujar a base com agendamentos, clientes, movimentações ou equipe fictícia.
  */
-const initializeTenantDefaults = async (tenantId, salonData = {}) => {
+const initializeTenantDefaults = async (tenantId, salonData = {}, segment = 'salao') => {
   try {
-    // 1. Especialidades & Funções Padrão
-    const defaultSpecialties = [
-      { name: 'Cabeleireira', category: 'Cabelo', icon: 'Scissors' },
-      { name: 'Colorista', category: 'Cabelo', icon: 'Palette' },
-      { name: 'Manicure', category: 'Unhas', icon: 'Sparkles' },
-      { name: 'Pedicure', category: 'Unhas', icon: 'Sparkles' },
-      { name: 'Nail Designer', category: 'Unhas', icon: 'Crown' },
-      { name: 'Depiladora', category: 'Depilação & Pele', icon: 'Flame' },
-      { name: 'Esteticista', category: 'Depilação & Pele', icon: 'Heart' },
-      { name: 'Maquiadora', category: 'Olhar & Make', icon: 'Smile' },
-      { name: 'Lash Designer', category: 'Olhar & Make', icon: 'Eye' },
-      { name: 'Barbeiro', category: 'Barba & Corte', icon: 'Zap' },
-      { name: 'Massoterapeuta', category: 'Bem-Estar', icon: 'Activity' }
-    ];
+    // 1. Especialidades & Funções Padrão por Segmento
+    let defaultSpecialties = [];
+
+    if (segment === 'barbearia') {
+      defaultSpecialties = [
+        { name: 'Barbeiro Master', category: 'Barba & Corte', icon: 'Zap' },
+        { name: 'Barbeiro Clássico', category: 'Barba & Corte', icon: 'Scissors' },
+        { name: 'Colorista Masculino', category: 'Química & Barba', icon: 'Palette' },
+        { name: 'Terapeuta Capilar', category: 'Tratamentos', icon: 'Activity' },
+        { name: 'Recepcionista / Bar', category: 'Atendimento', icon: 'Smile' },
+        { name: 'Tatuador', category: 'Arte & Estilo', icon: 'Flame' },
+      ];
+    } else if (segment === 'estetica') {
+      defaultSpecialties = [
+        { name: 'Esteticista Facial', category: 'Facial & Pele', icon: 'Sparkles' },
+        { name: 'Esteticista Corporal', category: 'Corporal & Drenagem', icon: 'Heart' },
+        { name: 'Biomédica / Harmonização', category: 'Injetáveis & Avançada', icon: 'Crown' },
+        { name: 'Massoterapeuta', category: 'Bem-Estar & Spa', icon: 'Activity' },
+        { name: 'Depiladora Laser', category: 'Depilação', icon: 'Flame' },
+        { name: 'Nutricionista / Saúde', category: 'Consultoria', icon: 'Smile' },
+      ];
+    } else if (segment === 'esmalteria') {
+      defaultSpecialties = [
+        { name: 'Nail Designer Fibra', category: 'Alongamento', icon: 'Crown' },
+        { name: 'Nail Designer Gel', category: 'Alongamento', icon: 'Sparkles' },
+        { name: 'Manicure Tradicional', category: 'Unhas', icon: 'Scissors' },
+        { name: 'Pedicure & Spa dos Pés', category: 'Unhas', icon: 'Sparkles' },
+        { name: 'Nail Art & Decoração', category: 'Arte', icon: 'Palette' },
+        { name: 'Podóloga', category: 'Saúde dos Pés', icon: 'Heart' },
+      ];
+    } else if (segment === 'lash') {
+      defaultSpecialties = [
+        { name: 'Lash Designer Master', category: 'Extensão de Cílios', icon: 'Eye' },
+        { name: 'Volume Russo / Brasileiro', category: 'Extensão de Cílios', icon: 'Sparkles' },
+        { name: 'Lash Lifting & Tintura', category: 'Cílios Naturais', icon: 'Heart' },
+        { name: 'Designer de Sobrancelhas', category: 'Sobrancelhas', icon: 'Crown' },
+        { name: 'Micropigmentadora', category: 'Sobrancelhas & Lábios', icon: 'Palette' },
+        { name: 'Brow Lamination', category: 'Sobrancelhas', icon: 'Smile' },
+      ];
+    } else {
+      // Salão de Beleza Padrão / Misto
+      defaultSpecialties = [
+        { name: 'Cabeleireira Master', category: 'Cabelo', icon: 'Scissors' },
+        { name: 'Colorista & Mechas', category: 'Cabelo', icon: 'Palette' },
+        { name: 'Terapeuta Capilar', category: 'Tratamentos', icon: 'Heart' },
+        { name: 'Manicure & Pedicure', category: 'Unhas', icon: 'Sparkles' },
+        { name: 'Nail Designer', category: 'Unhas', icon: 'Crown' },
+        { name: 'Maquiadora Profissional', category: 'Olhar & Make', icon: 'Smile' },
+        { name: 'Lash & Sobrancelhas', category: 'Olhar & Make', icon: 'Eye' },
+        { name: 'Depiladora', category: 'Depilação', icon: 'Flame' },
+        { name: 'Gestão & Recepção', category: 'Atendimento', icon: 'Zap' },
+      ];
+    }
 
     for (const spec of defaultSpecialties) {
       await run(`
@@ -45,7 +84,7 @@ const initializeTenantDefaults = async (tenantId, salonData = {}) => {
       {
         code: 'reminder_2h',
         title: 'Lembrete Imediato (2h antes)',
-        body: 'Oi {cliente}! Seu horário no {salao} está chegando: hoje às {horario} com {profissional}. Estamos preparando tudo com muito carinho para receber você! 💇‍♀️💅'
+        body: 'Oi {cliente}! Seu horário no {salao} está chegando: hoje às {horario} com {profissional}. Estamos preparando tudo com muito carinho para receber você! 🌸'
       },
       {
         code: 'welcome',
@@ -71,12 +110,13 @@ const initializeTenantDefaults = async (tenantId, salonData = {}) => {
       `, [t.code, t.title, t.body, tenantId]);
     }
 
-    // 3. Configurações Iniciais do Salão
+    // 3. Configurações Iniciais do Salão / Empresa
     const defaultSettings = [
       ['salon_name', salonData.name || 'Meu Salão & Studio'],
       ['salon_phone', salonData.ownerPhone || ''],
       ['salon_address', salonData.address || ''],
       ['salon_cnpj', salonData.document || ''],
+      ['salon_segment', segment || 'salao'],
       ['loyalty_rate_reais_per_point', '10']
     ];
 
@@ -107,7 +147,7 @@ const seedData = async () => {
           max_users, owner_email, owner_password, owner_name, owner_phone,
           is_master, is_exempt, active
         ) VALUES (
-          'tenant_master_platform', 'BellaGestão Plataforma Master', '00.000.000/0001-00',
+          'tenant_master_platform', 'BelaGestão Plataforma Master', '00.000.000/0001-00',
           'PREMIER', 'exempt', '2099-12-31 23:59:59',
           999, ?, ?, 'Rafael Gielow', '(11) 99999-9999',
           1, 1, 1
@@ -142,11 +182,11 @@ const seedData = async () => {
 
     // 3. Garantir especialidades e templates no tenant padrão e master
     await initializeTenantDefaults('tenant_default_salao', {
-      name: 'BellaGestão Studio & Estética',
+      name: 'BelaGestão Studio & Estética',
       address: 'Av. Paulista, 1000'
     });
     await initializeTenantDefaults('tenant_master_platform', {
-      name: 'BellaGestão Plataforma Master',
+      name: 'BelaGestão Plataforma Master',
       address: 'Studio Central'
     });
   } catch (error) {

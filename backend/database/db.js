@@ -133,20 +133,78 @@ const migrateTenantColumns = async () => {
     }
   } catch (e) {}
 
-  // Migração de extra_users_count e is_exempt na tabela tenants
+  // Migração de segment, extra_users_count e is_exempt na tabela tenants
   try {
     const tenantCols = await query('PRAGMA table_info(tenants)');
     if (tenantCols && tenantCols.length > 0) {
-      const hasExtra = tenantCols.some(c => c.name === 'extra_users_count');
-      if (!hasExtra) {
+      if (!tenantCols.some(c => c.name === 'segment')) {
+        await run("ALTER TABLE tenants ADD COLUMN segment TEXT DEFAULT 'salao'");
+      }
+      if (!tenantCols.some(c => c.name === 'extra_users_count')) {
         await run("ALTER TABLE tenants ADD COLUMN extra_users_count INTEGER DEFAULT 0");
       }
-      const hasExempt = tenantCols.some(c => c.name === 'is_exempt');
-      if (!hasExempt) {
+      if (!tenantCols.some(c => c.name === 'is_exempt')) {
         await run("ALTER TABLE tenants ADD COLUMN is_exempt INTEGER DEFAULT 0");
       }
+
+      // Verificar se a tabela tenants ainda tem restrição UNIQUE em owner_email
+      const tableDef = await get("SELECT sql FROM sqlite_master WHERE type='table' AND name='tenants'");
+      if (tableDef && tableDef.sql && tableDef.sql.includes('owner_email TEXT UNIQUE')) {
+        console.log('🔄 Migrando tabela tenants para suportar múltiplos salões/projetos por usuário...');
+        await exec(`
+          PRAGMA foreign_keys = OFF;
+          CREATE TABLE tenants_new (
+            id TEXT PRIMARY KEY,
+            name TEXT NOT NULL,
+            segment TEXT DEFAULT 'salao',
+            document TEXT,
+            plan TEXT DEFAULT 'SOLO',
+            subscription_status TEXT DEFAULT 'active',
+            subscription_expires_at DATETIME,
+            max_users INTEGER DEFAULT 1,
+            extra_users_count INTEGER DEFAULT 0,
+            owner_email TEXT NOT NULL,
+            owner_password TEXT,
+            owner_name TEXT NOT NULL,
+            owner_phone TEXT,
+            cep TEXT,
+            street TEXT,
+            number TEXT,
+            complement TEXT,
+            neighborhood TEXT,
+            city TEXT,
+            state TEXT,
+            is_master INTEGER DEFAULT 0,
+            is_exempt INTEGER DEFAULT 0,
+            active INTEGER DEFAULT 1,
+            created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+            updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+          );
+          INSERT INTO tenants_new (
+            id, name, segment, document, plan, subscription_status, subscription_expires_at,
+            max_users, extra_users_count, owner_email, owner_password, owner_name, owner_phone,
+            cep, street, number, complement, neighborhood, city, state, is_master, is_exempt, active,
+            created_at, updated_at
+          )
+          SELECT 
+            id, name, COALESCE(segment, 'salao'), document, plan, subscription_status, subscription_expires_at,
+            max_users, extra_users_count, owner_email, owner_password, owner_name, owner_phone,
+            cep, street, number, complement, neighborhood, city, state, is_master, is_exempt, active,
+            created_at, updated_at
+          FROM tenants;
+          DROP TABLE tenants;
+          ALTER TABLE tenants_new RENAME TO tenants;
+          CREATE INDEX IF NOT EXISTS idx_tenants_owner_email ON tenants(owner_email);
+          PRAGMA foreign_keys = ON;
+        `);
+        console.log('✅ Tabela tenants migrada com sucesso para Multi-Segmento!');
+      } else {
+        await run("CREATE INDEX IF NOT EXISTS idx_tenants_owner_email ON tenants(owner_email)");
+      }
     }
-  } catch (e) {}
+  } catch (e) {
+    console.error('Erro na migração da tabela tenants:', e.message);
+  }
 };
 
 // Inicialização automática das tabelas e migrações

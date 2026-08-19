@@ -124,7 +124,7 @@ export default function Dashboard({
               <span>Painel de Controle Inteligente</span>
             </div>
             <h2 className="text-xl sm:text-3xl font-extrabold tracking-tight">
-              Olá, {user?.name || 'Equipe BellaGestão'}!
+              Olá, {user?.name || 'Equipe BelaGestão'}!
             </h2>
             <p className="text-xs sm:text-sm text-rose-100 max-w-xl">
               {isProf 

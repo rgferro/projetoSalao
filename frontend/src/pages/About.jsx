@@ -14,7 +14,7 @@ export default function About() {
             </div>
             <div>
               <span className="text-lg sm:text-xl font-black tracking-tight text-slate-950">
-                BellaGestão<span className="text-pink-600 font-bold">Studio</span>
+                BelaGestão<span className="text-pink-600 font-bold">Studio</span>
               </span>
               <div className="text-[10px] text-slate-500 font-semibold uppercase tracking-wider">
                 Sobre Nós
@@ -43,7 +43,7 @@ export default function About() {
             Tecnologia de Ponta Feita para o Mercado da Beleza
           </h1>
           <p className="text-sm sm:text-base text-slate-600 leading-relaxed max-w-2xl mx-auto">
-            O BellaGestão Studio nasceu com um propósito claro: libertar profissionais da beleza e proprietários de salão do caos de cadernos e planilhas confusas.
+            O BelaGestão Studio nasceu com um propósito claro: libertar profissionais da beleza e proprietários de salão do caos de cadernos e planilhas confusas.
           </p>
         </div>
 
@@ -82,13 +82,13 @@ export default function About() {
 
         {/* Nossa Filosofia */}
         <div className="bg-white p-8 rounded-3xl border border-slate-200 shadow-sm space-y-6">
-          <h2 className="text-xl font-black text-slate-900">Por que Salões Escolhem o BellaGestão?</h2>
+          <h2 className="text-xl font-black text-slate-900">Por que Salões Escolhem o BelaGestão?</h2>
           <div className="space-y-3 text-xs sm:text-sm text-slate-700 leading-relaxed">
             <p>
               Salões de beleza e clínicas de estética possuem particularidades que sistemas genéricos de comércio não entendem: comissões diferenciadas por serviço, fichas de anamnese capilar com fórmulas químicas de coloração, multisserviços na mesma comanda e cálculo dinâmico de tempo de atendimento.
             </p>
             <p>
-              O <strong>BellaGestão Studio</strong> foi concebido de raiz para abraçar essa realidade. Cada funcionalidade foi polida para trazer lucro real, agilidade no balcão e fidelização dos clientes.
+              O <strong>BelaGestão Studio</strong> foi concebido de raiz para abraçar essa realidade. Cada funcionalidade foi polida para trazer lucro real, agilidade no balcão e fidelização dos clientes.
             </p>
           </div>
 

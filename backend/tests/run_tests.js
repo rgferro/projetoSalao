@@ -44,7 +44,7 @@ async function runTest(name, fn) {
 
 async function startTestSuite() {
   console.log('================================================================');
-  console.log('🚀 BATERIA DE TESTES DEVSECOPS & RESILIÊNCIA - BELLAGESTÃO STUDIO');
+  console.log('🚀 BATERIA DE TESTES DEVSECOPS & RESILIÊNCIA - BELAGESTÃO STUDIO');
   console.log('================================================================\n');
 
   // Setup inicial do banco de dados
@@ -229,10 +229,10 @@ async function startTestSuite() {
   await runTest('9.1 - Formatação de Mensagens e Sanitização Telefônica', async () => {
     const formatted = whatsappService.formatMessage('Olá {cliente}, seu horário no {salao} é às {horario}.', {
       cliente: 'Mariana',
-      salao: 'BellaGestão Studio',
+      salao: 'BelaGestão Studio',
       horario: '15:00',
     });
-    assert.strictEqual(formatted, 'Olá Mariana, seu horário no BellaGestão Studio é às 15:00.');
+    assert.strictEqual(formatted, 'Olá Mariana, seu horário no BelaGestão Studio é às 15:00.');
 
     const cleanPhone = whatsappService.sanitizePhone('(11) 98765-4321');
     assert.strictEqual(cleanPhone, '5511987654321');

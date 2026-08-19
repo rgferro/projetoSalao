@@ -46,7 +46,7 @@ export default function Contact() {
             </div>
             <div>
               <span className="text-lg sm:text-xl font-black tracking-tight text-slate-950">
-                BellaGestão<span className="text-pink-600 font-bold">Studio</span>
+                BelaGestão<span className="text-pink-600 font-bold">Studio</span>
               </span>
               <div className="text-[10px] text-slate-500 font-semibold uppercase tracking-wider">
                 Fale Conosco
@@ -83,36 +83,36 @@ export default function Contact() {
           {/* Informações de Contato Rápidas */}
           <div className="space-y-4">
             <div className="bg-white p-6 rounded-3xl border border-slate-200 shadow-sm space-y-4">
-              <h3 className="font-black text-slate-900 text-sm">Canais Oficiais</h3>
+              <h3 className="font-black text-slate-900 text-sm">Central de Atendimento</h3>
               
               <div className="space-y-3 text-xs text-slate-600">
                 <div className="flex items-start gap-3">
                   <div className="w-8 h-8 rounded-xl bg-pink-50 text-pink-600 flex items-center justify-center shrink-0">
-                    <Mail className="w-4 h-4" />
+                    <MessageSquare className="w-4 h-4" />
                   </div>
                   <div>
-                    <div className="font-bold text-slate-800">E-mail Suporte</div>
-                    <div>contato@bellagestao.com.br</div>
+                    <div className="font-bold text-slate-800">Fale Conosco Online</div>
+                    <div className="text-slate-500">Envio direto para a equipe de suporte e produto</div>
                   </div>
                 </div>
 
                 <div className="flex items-start gap-3">
                   <div className="w-8 h-8 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center shrink-0">
-                    <Phone className="w-4 h-4" />
+                    <CheckCircle2 className="w-4 h-4" />
                   </div>
                   <div>
-                    <div className="font-bold text-slate-800">WhatsApp Comercial</div>
-                    <div>(11) 98765-4321</div>
+                    <div className="font-bold text-slate-800">Retorno Rápido</div>
+                    <div className="text-slate-500">Resposta via e-mail e WhatsApp informados</div>
                   </div>
                 </div>
 
                 <div className="flex items-start gap-3">
                   <div className="w-8 h-8 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center shrink-0">
-                    <MapPin className="w-4 h-4" />
+                    <Sparkles className="w-4 h-4" />
                   </div>
                   <div>
-                    <div className="font-bold text-slate-800">Sede Corporativa</div>
-                    <div>Av. Paulista, 1000 • São Paulo - SP</div>
+                    <div className="font-bold text-slate-800">Atendimento a Clientes</div>
+                    <div className="text-slate-500">Suporte a todos os planos e períodos de teste</div>
                   </div>
                 </div>
               </div>
@@ -124,7 +124,7 @@ export default function Contact() {
                 <span>Horário de Atendimento</span>
               </div>
               <p className="text-xs text-slate-300 leading-relaxed">
-                Segunda a Sábado, das <strong>08h às 20h</strong>. Suporte a incidentes críticos e rotinas de backup 24/7.
+                Segunda a Sábado, das <strong>08h às 20h</strong>. Monitoramento do servidor e rotinas de backup 24/7.
               </p>
             </div>
           </div>

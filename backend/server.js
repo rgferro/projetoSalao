@@ -64,7 +64,7 @@ app.get('*', (req, res, next) => {
     res.sendFile(indexPath);
   } else {
     res.json({
-      name: 'BellaGestão Studio - Sistema de Gestão para Salão de Beleza e Estética API',
+      name: 'BelaGestão Studio - Sistema de Gestão para Salão de Beleza e Estética API',
       status: 'online',
       version: '2.0.0',
       resilience: 'Circuit Breaker + Grace Period + ACID Transactions + Multi-Tenancy',
@@ -114,7 +114,7 @@ const startServer = async () => {
     await seedData();
 
     app.listen(PORT, () => {
-      logger.info(`💈 BELLAGESTÃO STUDIO ERP - BACKEND INICIADO COM SUCESSO! Porta: ${PORT} | URL: ${process.env.APP_URL || 'https://belagestaostudio.com.br'}`);
+      logger.info(`💈 BELAGESTÃO STUDIO ERP - BACKEND INICIADO COM SUCESSO! Porta: ${PORT} | URL: ${process.env.APP_URL || 'https://belagestaostudio.com.br'}`);
     });
   } catch (error) {
     logger.error('Falha crítica ao iniciar servidor:', { error: error.message });

@@ -12,7 +12,7 @@ async function createMercadoPagoPixPayment(tenant, amount, planName = 'Plano Pro
   if (!MP_ACCESS_TOKEN) {
     logger.info(`[Mercado Pago Simulado] Gerando PIX Mensal de R$ ${amount} para ${tenant.name}`);
     const simulatedId = `pix_sim_${Date.now()}`;
-    const simulatedQrCode = `00020126580014br.gov.bcb.pix0136${tenant.id || 'bellagestao'}520400005303986540${amount}.005802BR5920BellaGestao Studio6009Sao Paulo62070503***6304E8A2`;
+    const simulatedQrCode = `00020126580014br.gov.bcb.pix0136${tenant.id || 'bellagestao'}520400005303986540${amount}.005802BR5920BelaGestao Studio6009Sao Paulo62070503***6304E8A2`;
 
     const QRCode = require('qrcode');
     const qrBase64 = await QRCode.toDataURL(simulatedQrCode);
@@ -97,7 +97,7 @@ async function createMercadoPagoPixPayment(tenant, amount, planName = 'Plano Pro
 /**
  * Cria assinatura recorrente no Cartão de Crédito via /preapproval com Circuit Breaker
  */
-async function createMercadoPagoPreapproval(tenant, amount, planName = 'Plano Pro BellaGestão') {
+async function createMercadoPagoPreapproval(tenant, amount, planName = 'Plano Pro BelaGestão') {
   if (!MP_ACCESS_TOKEN) {
     logger.info(`[Mercado Pago Simulado] Gerando Assinatura Mensal de R$ ${amount}/mês para ${tenant.name}`);
     return {

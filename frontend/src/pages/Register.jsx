@@ -31,8 +31,17 @@ import { useAuth } from '../context/AuthContext';
 export default function Register({ onNavigateLogin, onNavigateLanding, onRegisteredSuccess }) {
   const { login } = useAuth();
 
+  const getInitialSegment = () => {
+    if (typeof window !== 'undefined') {
+      const seg = new URLSearchParams(window.location.search).get('segment');
+      if (['barbearia', 'estetica', 'esmalteria', 'lash', 'salao'].includes(seg)) return seg;
+    }
+    return 'salao';
+  };
+
   const [formData, setFormData] = useState({
-    name: '', // Nome do Salão
+    name: '', // Nome do Salão / Empresa
+    segment: getInitialSegment(),
     document: '', // CPF ou CNPJ
     ownerName: '',
     ownerEmail: '',
@@ -199,7 +208,7 @@ export default function Register({ onNavigateLogin, onNavigateLanding, onRegiste
         </button>
 
         <span className="text-[11px] font-bold text-pink-600 uppercase tracking-wider">
-          BellaGestão Studio
+          BelaGestão Studio
         </span>
       </div>
 
@@ -211,7 +220,7 @@ export default function Register({ onNavigateLogin, onNavigateLanding, onRegiste
             ✨
           </div>
           <h1 className="text-2xl sm:text-3xl font-black text-slate-950 tracking-tight">
-            Crie sua Conta no BellaGestão Studio
+            Crie sua Conta no BelaGestão Studio
           </h1>
           <p className="text-xs sm:text-sm text-slate-500 font-medium">
             Experimente Grátis • Sem Cartão de Crédito • Setup Instantâneo
@@ -227,10 +236,40 @@ export default function Register({ onNavigateLogin, onNavigateLanding, onRegiste
 
         {/* Formulário */}
         <form onSubmit={handlePreSubmit} className="space-y-6">
+          {/* Segmento de Atuação */}
+          <div className="space-y-2">
+            <label className="text-xs font-black uppercase tracking-wider text-slate-700 flex items-center gap-1.5">
+              <Sparkles className="w-3.5 h-3.5 text-pink-600" /> Selecione o Segmento da sua Empresa:
+            </label>
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+              {[
+                { id: 'salao', label: '✂️ Salão & Cabelo', desc: 'Mechas, colorimetria, química' },
+                { id: 'barbearia', label: '💈 Barbearia', desc: 'Barba, corte, estilo masculino' },
+                { id: 'estetica', label: '✨ Estética & Spa', desc: 'Facial, corporal, harmonização' },
+                { id: 'esmalteria', label: '💅 Esmalteria', desc: 'Unhas, gel, fibra de vidro' },
+                { id: 'lash', label: '👁️ Lash & Sobrancelhas', desc: 'Extensão, mapping, henna' },
+              ].map((seg) => (
+                <button
+                  key={seg.id}
+                  type="button"
+                  onClick={() => handleInputChange('segment', seg.id)}
+                  className={`p-2.5 rounded-2xl border text-left transition-all ${
+                    formData.segment === seg.id
+                      ? 'border-pink-600 bg-pink-50 text-pink-950 font-bold ring-2 ring-pink-500/20 shadow-xs'
+                      : 'border-slate-200 hover:border-slate-300 text-slate-600'
+                  }`}
+                >
+                  <div className="text-xs font-bold">{seg.label}</div>
+                  <div className="text-[10px] text-slate-400 font-normal leading-tight mt-0.5">{seg.desc}</div>
+                </button>
+              ))}
+            </div>
+          </div>
+
           {/* Dados do Salão */}
           <div className="space-y-4">
             <div className="text-xs font-black uppercase tracking-wider text-pink-600 flex items-center gap-1.5">
-              <Building className="w-4 h-4" /> 1. Dados do Salão ou Estética
+              <Building className="w-4 h-4" /> 1. Dados da Empresa
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -239,7 +278,7 @@ export default function Register({ onNavigateLogin, onNavigateLanding, onRegiste
                 <input
                   type="text"
                   required
-                  placeholder="Ex: Bella Arte Studio & Cabelo"
+                  placeholder="Ex: Bela Arte Studio & Cabelo"
                   value={formData.name}
                   onChange={(e) => handleInputChange('name', e.target.value)}
                   className="w-full px-4 py-3 rounded-xl border border-slate-200 text-xs focus:outline-none focus:ring-2 focus:ring-pink-500 transition-all font-medium"
@@ -439,7 +478,7 @@ export default function Register({ onNavigateLogin, onNavigateLanding, onRegiste
         </form>
 
         <div className="text-center text-xs text-slate-500">
-          Já tem uma conta no BellaGestão?{' '}
+          Já tem uma conta no BelaGestão?{' '}
           <button
             onClick={onNavigateLogin}
             className="text-pink-600 font-bold hover:underline"

@@ -1,5 +1,5 @@
 /**
- * Definições dos passos do Tour Guiado Interativo para o BellaGestão Studio
+ * Definições dos passos do Tour Guiado Interativo para o BelaGestão Studio
  */
 export const PAGE_TOURS = {
   dashboard: {
