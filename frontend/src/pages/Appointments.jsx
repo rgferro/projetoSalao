@@ -21,6 +21,7 @@ import {
 } from 'lucide-react';
 import { api } from '../services/api';
 import { useAuth } from '../context/AuthContext';
+import { getSegmentConfig } from '../lib/segmentTheme';
 
 const STATUS_CONFIG = {
   agendado: { label: 'Agendado', bg: 'bg-blue-100 text-blue-800 dark:bg-blue-950/60 dark:text-blue-300' },
@@ -33,6 +34,8 @@ const STATUS_CONFIG = {
 
 export default function Appointments({ onOpenNewAppointment, onOpenPDV }) {
   const { user } = useAuth();
+  const segConfig = getSegmentConfig(user?.segment);
+  const segTheme = segConfig.theme;
   
   const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0]);
   const [viewMode, setViewMode] = useState('columns'); // 'columns' (por profissional), 'list'
@@ -240,13 +243,13 @@ export default function Appointments({ onOpenNewAppointment, onOpenPDV }) {
           <div className="flex bg-slate-100 dark:bg-slate-800 rounded-xl p-1 border border-slate-200 dark:border-slate-700">
             <button
               onClick={() => setViewMode('columns')}
-              className={`px-3 py-1 text-xs font-bold rounded-lg transition ${viewMode === 'columns' ? 'bg-white dark:bg-slate-900 text-pink-600 shadow-xs' : 'text-slate-500'}`}
+              className={`px-3 py-1 text-xs font-bold rounded-lg transition ${viewMode === 'columns' ? `${segTheme.activeTab}` : 'text-slate-500 hover:text-slate-800 dark:hover:text-slate-200'}`}
             >
               Grade por Equipe
             </button>
             <button
               onClick={() => setViewMode('list')}
-              className={`px-3 py-1 text-xs font-bold rounded-lg transition ${viewMode === 'list' ? 'bg-white dark:bg-slate-900 text-pink-600 shadow-xs' : 'text-slate-500'}`}
+              className={`px-3 py-1 text-xs font-bold rounded-lg transition ${viewMode === 'list' ? `${segTheme.activeTab}` : 'text-slate-500 hover:text-slate-800 dark:hover:text-slate-200'}`}
             >
               Lista do Dia
             </button>
@@ -263,7 +266,7 @@ export default function Appointments({ onOpenNewAppointment, onOpenPDV }) {
 
           <button
             onClick={onOpenNewAppointment}
-            className="px-3.5 py-1.5 text-xs font-bold rounded-xl text-white bg-gradient-to-r from-pink-600 to-purple-600 hover:from-pink-700 hover:to-purple-700 shadow-xs flex items-center gap-1.5"
+            className={`px-3.5 py-1.5 text-xs font-bold rounded-xl flex items-center gap-1.5 transition-all ${segTheme.buttonGradient}`}
           >
             <Plus className="w-4 h-4" />
             <span>Novo Agendamento</span>
@@ -276,7 +279,7 @@ export default function Appointments({ onOpenNewAppointment, onOpenPDV }) {
       {/* 🏷️ Barra de Abas de Funções / Especialidades (Para profissionais com múltiplas funções) */}
       <div className="flex items-center gap-2 overflow-x-auto pb-1">
         <span className="text-xs font-bold text-slate-500 flex items-center gap-1 shrink-0 pl-1">
-          <Tag className="w-3.5 h-3.5 text-pink-600" />
+          <Tag className={`w-3.5 h-3.5 ${segTheme.textAccent}`} />
           <span>Visão por Função:</span>
         </span>
 
@@ -284,11 +287,11 @@ export default function Appointments({ onOpenNewAppointment, onOpenPDV }) {
           onClick={() => setSelectedFunction('ALL')}
           className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all shrink-0 ${
             selectedFunction === 'ALL'
-              ? 'bg-pink-600 text-white shadow-xs'
-              : 'bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-700 hover:bg-pink-50'
+              ? `${segTheme.tagBadgeSelected}`
+              : 'bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-800'
           }`}
         >
-          ✨ Todas as Minhas Funções
+          ✨ Todas as Funções
         </button>
 
         {availableFunctions.map((fnName, idx) => (
@@ -297,8 +300,8 @@ export default function Appointments({ onOpenNewAppointment, onOpenPDV }) {
             onClick={() => setSelectedFunction(fnName)}
             className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all shrink-0 ${
               selectedFunction === fnName
-                ? 'bg-pink-600 text-white shadow-xs'
-                : 'bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-700 hover:bg-pink-50'
+                ? `${segTheme.tagBadgeSelected}`
+                : 'bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-800'
             }`}
           >
             {fnName}

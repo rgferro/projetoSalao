@@ -21,9 +21,21 @@ import {
   Tag
 } from 'lucide-react';
 import { api } from '../services/api';
+import { useAuth } from '../context/AuthContext';
 import { ROLE_CONFIG, DEFAULT_PROFESSIONAL_SUBTYPES } from '../lib/permissions';
+import { 
+  getSegmentConfig, 
+  getSegmentTheme, 
+  getSegmentSpecialties, 
+  getSegmentTeamConfig 
+} from '../lib/segmentTheme';
 
 export default function Professionals() {
+  const { user } = useAuth();
+  const segConfig = getSegmentConfig(user?.segment);
+  const segTheme = segConfig.theme;
+  const segTeam = segConfig.team;
+
   const [activeTab, setActiveTab] = useState('list'); // 'list', 'commissions-report', 'settlements'
   const [professionals, setProfessionals] = useState([]);
   const [services, setServices] = useState([]);
@@ -37,14 +49,14 @@ export default function Professionals() {
   const [profForm, setProfForm] = useState({
     name: '',
     nickname: '',
-    role: 'Cabeleireira',
+    role: segTeam.defaultRole,
     access_level: 'PROFISSIONAL',
-    subtypes: ['Cabeleireira'],
+    subtypes: [segTeam.defaultRole],
     phone: '',
     email: '',
     password: '',
-    color_hex: '#ec4899',
-    specialties: ['Cabelo'],
+    color_hex: segTeam.defaultColor,
+    specialties: [segConfig.shortLabel || 'Geral'],
     default_commission_type: 'percentage',
     default_commission_value: 50.0
   });
@@ -80,17 +92,26 @@ export default function Professionals() {
       setCommReport(rep);
       setSettlementHistory(setts);
 
-      // Carregar especialidades dinâmicas do backend
+      // Carregar especialidades dinâmicas do backend com fallback prioritário do segmento
       fetch('/api/professionals/specialties')
         .then(res => res.json())
         .then(data => {
+          const segSpecs = getSegmentSpecialties(user?.segment);
           if (Array.isArray(data) && data.length > 0) {
-            setSpecialtiesList(data);
+            // Mesclar evitando duplicatas
+            const existingNames = new Set(data.map(d => (d.name || d).toLowerCase()));
+            const merged = [...data];
+            segSpecs.forEach(s => {
+              if (!existingNames.has(s.name.toLowerCase())) {
+                merged.push(s);
+              }
+            });
+            setSpecialtiesList(merged);
           } else {
-            setSpecialtiesList(DEFAULT_PROFESSIONAL_SUBTYPES);
+            setSpecialtiesList(segSpecs);
           }
         })
-        .catch(() => setSpecialtiesList(DEFAULT_PROFESSIONAL_SUBTYPES));
+        .catch(() => setSpecialtiesList(getSegmentSpecialties(user?.segment)));
 
     } catch (err) {
       console.error('Erro ao carregar profissionais/comissões:', err);
@@ -101,7 +122,7 @@ export default function Professionals() {
 
   useEffect(() => {
     loadData();
-  }, [repProfId, startDate, endDate]);
+  }, [repProfId, startDate, endDate, user?.segment]);
 
   const handleSaveProf = async (e) => {
     e.preventDefault();
@@ -243,11 +264,11 @@ export default function Professionals() {
       <div className="glass-panel p-4 sm:p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <h2 className="text-lg sm:text-xl font-bold text-slate-800 dark:text-slate-100 flex items-center gap-2">
-            <UserCheck className="w-5 h-5 text-pink-600 shrink-0" />
-            Equipe, Especialidades & Repasse de Comissões
+            <span className="text-xl shrink-0">{segConfig.icon}</span>
+            <span>{segTeam.title}</span>
           </h2>
           <p className="text-xs text-slate-500 dark:text-slate-400">
-            Perfis de acesso, funções extensíveis (Cabeleireira, Manicure, Depiladora) e regras de comissão
+            {segTeam.subtitle}
           </p>
         </div>
 
@@ -257,22 +278,22 @@ export default function Professionals() {
             setProfForm({
               name: '',
               nickname: '',
-              role: 'Cabeleireira',
+              role: segTeam.defaultRole,
               access_level: 'PROFISSIONAL',
-              subtypes: ['Cabeleireira'],
+              subtypes: [segTeam.defaultRole],
               phone: '',
               email: '',
               password: '',
-              color_hex: '#ec4899',
-              specialties: ['Cabelo'],
+              color_hex: segTeam.defaultColor,
+              specialties: [segConfig.shortLabel || 'Geral'],
               default_commission_type: 'percentage',
               default_commission_value: 50.0
             });
             setShowProfModal(true);
           }}
-          className="w-full sm:w-auto px-4 py-2 text-xs font-bold rounded-xl text-white bg-gradient-to-r from-pink-600 to-purple-600 hover:from-pink-700 hover:to-purple-700 shadow-md shadow-pink-600/20 flex items-center justify-center gap-1.5 transition-all shrink-0"
+          className={`w-full sm:w-auto px-4 py-2 text-xs font-bold rounded-xl flex items-center justify-center gap-1.5 transition-all shrink-0 ${segTheme.buttonGradient}`}
         >
-          <Plus className="w-4 h-4" /> Novo Membro da Equipe
+          <Plus className="w-4 h-4" /> {segTeam.newMemberBtn}
         </button>
       </div>
 
@@ -288,7 +309,7 @@ export default function Professionals() {
         <button
           onClick={() => setActiveTab('list')}
           className={`flex-1 min-w-fit px-3 py-2 text-xs font-bold rounded-xl whitespace-nowrap transition ${
-            activeTab === 'list' ? 'bg-white dark:bg-slate-900 text-pink-600 shadow-xs' : 'text-slate-500'
+            activeTab === 'list' ? `${segTheme.activeTab}` : 'text-slate-500 hover:text-slate-800 dark:hover:text-slate-200'
           }`}
         >
           Membros & Acessos
@@ -296,7 +317,7 @@ export default function Professionals() {
         <button
           onClick={() => setActiveTab('commissions-report')}
           className={`flex-1 min-w-fit px-3 py-2 text-xs font-bold rounded-xl whitespace-nowrap transition ${
-            activeTab === 'commissions-report' ? 'bg-white dark:bg-slate-900 text-pink-600 shadow-xs' : 'text-slate-500'
+            activeTab === 'commissions-report' ? `${segTheme.activeTab}` : 'text-slate-500 hover:text-slate-800 dark:hover:text-slate-200'
           }`}
         >
           Relatório de Comissões
@@ -304,7 +325,7 @@ export default function Professionals() {
         <button
           onClick={() => setActiveTab('settlements')}
           className={`flex-1 min-w-fit px-3 py-2 text-xs font-bold rounded-xl whitespace-nowrap transition ${
-            activeTab === 'settlements' ? 'bg-white dark:bg-slate-900 text-pink-600 shadow-xs' : 'text-slate-500'
+            activeTab === 'settlements' ? `${segTheme.activeTab}` : 'text-slate-500 hover:text-slate-800 dark:hover:text-slate-200'
           }`}
         >
           Histórico de Repasses
@@ -319,14 +340,14 @@ export default function Professionals() {
             const subtypes = Array.isArray(p.subtypes) ? p.subtypes : (p.role ? [p.role] : []);
 
             return (
-              <div key={p.id} className="glass-panel p-5 space-y-4 flex flex-col justify-between hover:border-pink-200 dark:hover:border-pink-900/60 transition-all">
+              <div key={p.id} className="glass-panel p-5 space-y-4 flex flex-col justify-between hover:border-slate-300 dark:hover:border-slate-700 transition-all">
                 
                 <div className="space-y-3">
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-3">
                       <div 
                         className="w-12 h-12 rounded-2xl flex items-center justify-center text-white font-black text-lg shadow-md"
-                        style={{ backgroundColor: p.color_hex || '#ec4899' }}
+                        style={{ backgroundColor: p.color_hex || segTeam.defaultColor }}
                       >
                         {(p.nickname || p.name).charAt(0)}
                       </div>
@@ -369,7 +390,7 @@ export default function Professionals() {
                     <span className="text-[10px] uppercase font-bold text-slate-400">Funções & Especialidades:</span>
                     <div className="flex flex-wrap gap-1">
                       {subtypes.map((sub, idx) => (
-                        <span key={idx} className="text-[10px] font-bold px-2 py-0.5 rounded-md bg-pink-50 dark:bg-pink-950/50 text-pink-700 dark:text-pink-300 border border-pink-200 dark:border-pink-800/40">
+                        <span key={idx} className={`text-[10px] font-bold px-2 py-0.5 rounded-md ${segTheme.tagBadge}`}>
                           {sub}
                         </span>
                       ))}
@@ -380,7 +401,7 @@ export default function Professionals() {
                   <div className="p-3 bg-slate-50 dark:bg-slate-800/40 rounded-xl border border-slate-200/80 dark:border-slate-700 text-xs space-y-1">
                     <div className="flex justify-between">
                       <span className="text-slate-500">Comissão Padrão:</span>
-                      <span className="font-bold text-pink-600">
+                      <span className={`font-bold ${segTheme.textAccent}`}>
                         {p.default_commission_type === 'percentage' ? `${p.default_commission_value}%` : `R$ ${p.default_commission_value}`}
                       </span>
                     </div>
@@ -396,7 +417,7 @@ export default function Professionals() {
                   <button
                     onClick={() => handleSendInviteEmail(p)}
                     disabled={sendingInviteId === p.id}
-                    className="w-full py-1.5 text-xs font-bold rounded-xl bg-purple-50 hover:bg-purple-100 text-purple-700 dark:bg-purple-950/60 dark:text-purple-300 border border-purple-200 dark:border-purple-800/40 flex items-center justify-center gap-1.5 transition-colors disabled:opacity-50"
+                    className="w-full py-1.5 text-xs font-bold rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 border border-slate-200 dark:border-slate-700 flex items-center justify-center gap-1.5 transition-colors disabled:opacity-50"
                   >
                     <Send className="w-3 h-3" />
                     <span>{sendingInviteId === p.id ? 'Enviando...' : 'Enviar Convite por E-mail (Brevo)'}</span>
@@ -407,7 +428,7 @@ export default function Professionals() {
                       setRepProfId(p.id);
                       setActiveTab('commissions-report');
                     }}
-                    className="w-full py-2 text-xs font-bold rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-pink-50 dark:hover:bg-pink-950/40 hover:text-pink-600 text-slate-700 dark:text-slate-200 transition flex items-center justify-center gap-1"
+                    className="w-full py-2 text-xs font-bold rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 transition flex items-center justify-center gap-1"
                   >
                     <span>Ver Extrato de Repasse</span>
                     <ArrowRight className="w-3.5 h-3.5" />
@@ -453,7 +474,7 @@ export default function Professionals() {
 
             <div className="text-right">
               <span className="text-xs text-slate-400">Total a Repassar:</span>
-              <p className="text-xl font-black text-pink-600 dark:text-pink-400">
+              <p className={`text-xl font-black ${segTheme.textAccent}`}>
                 R$ {(commReport?.totalCommissionAll || 0).toFixed(2)}
               </p>
             </div>
@@ -471,7 +492,7 @@ export default function Professionals() {
                   <div className="flex items-center gap-3">
                     <div 
                       className="w-10 h-10 rounded-xl flex items-center justify-center text-white font-bold text-sm shadow"
-                      style={{ backgroundColor: profSummary.color_hex || '#ec4899' }}
+                      style={{ backgroundColor: profSummary.color_hex || segTeam.defaultColor }}
                     >
                       {profSummary.nickname.charAt(0)}
                     </div>
@@ -557,8 +578,9 @@ export default function Professionals() {
       {showProfModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-xs p-4 animate-fadeIn">
           <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl max-w-lg w-full p-6 sm:p-8 shadow-2xl space-y-5 max-h-[90vh] overflow-y-auto">
-            <h3 className="font-black text-lg text-slate-900 dark:text-white">
-              {editingProf ? 'Editar Profissional da Equipe' : 'Cadastrar Novo Profissional'}
+            <h3 className="font-black text-lg text-slate-900 dark:text-white flex items-center gap-2">
+              <span>{segConfig.icon}</span>
+              <span>{editingProf ? segTeam.editModalTitle : segTeam.newModalTitle}</span>
             </h3>
 
             <form onSubmit={handleSaveProf} className="space-y-4 text-xs">
@@ -568,20 +590,20 @@ export default function Professionals() {
                   <input
                     type="text"
                     required
-                    placeholder="Ex: Camila Silveira"
+                    placeholder={segTeam.placeholderName}
                     value={profForm.name}
                     onChange={(e) => setProfForm({ ...profForm, name: e.target.value })}
-                    className="w-full px-3 py-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800"
+                    className="w-full px-3 py-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 font-medium"
                   />
                 </div>
                 <div>
                   <label className="block font-bold text-slate-700 dark:text-slate-300 mb-1">Apelido na Grade</label>
                   <input
                     type="text"
-                    placeholder="Ex: Camila Hair"
+                    placeholder={segTeam.placeholderNickname}
                     value={profForm.nickname}
                     onChange={(e) => setProfForm({ ...profForm, nickname: e.target.value })}
-                    className="w-full px-3 py-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800"
+                    className="w-full px-3 py-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 font-medium"
                   />
                 </div>
               </div>
@@ -605,11 +627,11 @@ export default function Professionals() {
                 </select>
               </div>
 
-              {/* Subtipos / Funções de Atuação no Salão (Extensíveis) */}
-              <div className="space-y-2 p-3 bg-pink-50/50 dark:bg-pink-950/20 rounded-2xl border border-pink-200/60 dark:border-pink-800/40">
-                <label className="block font-bold text-pink-900 dark:text-pink-300 flex items-center gap-1.5">
-                  <Tag className="w-3.5 h-3.5 text-pink-600" />
-                  <span>Funções & Especialidades (Selecione uma ou mais):</span>
+              {/* Subtipos / Funções de Atuação no Segmento (Extensíveis) */}
+              <div className={`space-y-2 p-3 rounded-2xl border ${segTheme.bgLight} ${segTheme.borderLight}`}>
+                <label className={`block font-bold flex items-center gap-1.5 ${segTheme.textAccent}`}>
+                  <Tag className="w-3.5 h-3.5" />
+                  <span>Funções & Especialidades do Nicho ({segConfig.label}):</span>
                 </label>
 
                 <div className="flex flex-wrap gap-1.5">
@@ -623,7 +645,7 @@ export default function Professionals() {
                         onClick={() => handleToggleSubtype(name)}
                         className={`px-2.5 py-1 rounded-xl text-[11px] font-bold transition-all ${
                           isSelected
-                            ? 'bg-pink-600 text-white shadow-xs'
+                            ? `${segTheme.tagBadgeSelected}`
                             : 'bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-700'
                         }`}
                       >
@@ -637,15 +659,15 @@ export default function Professionals() {
                 <div className="flex items-center gap-2 pt-1">
                   <input
                     type="text"
-                    placeholder="Adicionar outra função (ex: Lash Designer, Massagem)..."
+                    placeholder={segTeam.placeholderCustomTag}
                     value={newTagInput}
                     onChange={(e) => setNewTagInput(e.target.value)}
-                    className="flex-1 px-3 py-1.5 rounded-xl border border-pink-200 dark:border-pink-800 text-xs bg-white dark:bg-slate-800"
+                    className="flex-1 px-3 py-1.5 rounded-xl border border-slate-200 dark:border-slate-700 text-xs bg-white dark:bg-slate-800"
                   />
                   <button
                     type="button"
                     onClick={handleAddNewCustomSubtype}
-                    className="px-3 py-1.5 bg-pink-600 text-white font-bold rounded-xl text-xs"
+                    className={`px-3 py-1.5 text-xs font-bold rounded-xl transition-all ${segTheme.buttonGradient}`}
                   >
                     + Criar
                   </button>
@@ -678,7 +700,7 @@ export default function Professionals() {
               <div className="grid grid-cols-2 gap-3">
                 <div>
                   <label className="block font-bold text-slate-700 dark:text-slate-300 mb-1 flex items-center gap-1">
-                    <Lock className="w-3.5 h-3.5 text-pink-600" />
+                    <Lock className="w-3.5 h-3.5 text-slate-500" />
                     <span>Senha de Acesso {editingProf ? '(opcional)' : ''}</span>
                   </label>
                   <input
@@ -740,7 +762,7 @@ export default function Professionals() {
                 </button>
                 <button
                   type="submit"
-                  className="px-5 py-2 font-bold rounded-xl text-white bg-gradient-to-r from-pink-600 to-purple-600 shadow-md shadow-pink-600/20"
+                  className={`px-5 py-2 font-bold rounded-xl transition-all ${segTheme.buttonGradient}`}
                 >
                   Salvar Profissional
                 </button>

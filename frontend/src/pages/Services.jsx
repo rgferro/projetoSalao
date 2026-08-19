@@ -11,16 +11,15 @@ import {
   Check
 } from 'lucide-react';
 import { api } from '../services/api';
-
-const CATEGORIES = [
-  { id: 'all', label: 'Todos os Serviços' },
-  { id: 'Cabelo', label: '💇 Cabelo & Química' },
-  { id: 'Manicure', label: '💅 Manicure & Pedicure' },
-  { id: 'Depilação', label: '✨ Depilação' },
-  { id: 'Maquiagem', label: '💄 Maquiagem & Estética' }
-];
+import { useAuth } from '../context/AuthContext';
+import { getSegmentConfig, getSegmentServiceCategories } from '../lib/segmentTheme';
 
 export default function Services() {
+  const { user } = useAuth();
+  const segConfig = getSegmentConfig(user?.segment);
+  const segTheme = segConfig.theme;
+  const categories = getSegmentServiceCategories(user?.segment);
+
   const [services, setServices] = useState([]);
   const [selectedCategory, setSelectedCategory] = useState('all');
   const [loading, setLoading] = useState(true);
@@ -30,7 +29,7 @@ export default function Services() {
   const [editingService, setEditingService] = useState(null);
   const [serviceForm, setServiceForm] = useState({
     name: '',
-    category: 'Cabelo',
+    category: categories[1]?.id || 'Geral',
     description: '',
     price: '',
     cost_price: '0.00',
@@ -104,8 +103,8 @@ export default function Services() {
       <div className="glass-panel p-4 sm:p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <h2 className="text-lg sm:text-xl font-bold text-slate-800 dark:text-slate-100 flex items-center gap-2">
-            <Scissors className="w-5 h-5 text-salon-600 shrink-0" />
-            Catálogo de Serviços & Tabela de Preços
+            <span className="text-xl shrink-0">{segConfig.icon}</span>
+            <span>Catálogo de Serviços ({segConfig.label})</span>
           </h2>
           <p className="text-xs text-slate-500 dark:text-slate-400">
             Cadastre os procedimentos, durações, custos de insumos e comissão padrão
@@ -117,7 +116,7 @@ export default function Services() {
             setEditingService(null);
             setServiceForm({
               name: '',
-              category: 'Cabelo',
+              category: categories[1]?.id || 'Geral',
               description: '',
               price: '',
               cost_price: '0.00',
@@ -127,7 +126,7 @@ export default function Services() {
             });
             setShowModal(true);
           }}
-          className="w-full sm:w-auto px-4 py-2 text-xs font-bold rounded-xl text-white bg-salon-600 hover:bg-salon-700 shadow-md shadow-salon-600/20 flex items-center justify-center gap-1.5 shrink-0"
+          className={`w-full sm:w-auto px-4 py-2 text-xs font-bold rounded-xl flex items-center justify-center gap-1.5 shrink-0 transition-all ${segTheme.buttonGradient}`}
         >
           <Plus className="w-4 h-4" /> Novo Serviço
         </button>
@@ -135,12 +134,12 @@ export default function Services() {
 
       {/* Categories Filter Tabs */}
       <div className="flex gap-1.5 sm:gap-2 p-1 bg-slate-100 dark:bg-slate-800 rounded-2xl overflow-x-auto no-scrollbar">
-        {CATEGORIES.map(cat => (
+        {categories.map(cat => (
           <button
             key={cat.id}
             onClick={() => setSelectedCategory(cat.id)}
             className={`min-w-fit px-3.5 py-2 text-xs font-bold rounded-xl whitespace-nowrap transition ${
-              selectedCategory === cat.id ? 'bg-white dark:bg-slate-900 text-salon-600 shadow-sm' : 'text-slate-500 hover:text-slate-700'
+              selectedCategory === cat.id ? `${segTheme.activeTab}` : 'text-slate-500 hover:text-slate-800 dark:hover:text-slate-200'
             }`}
           >
             {cat.label}
@@ -155,7 +154,7 @@ export default function Services() {
             
             <div className="space-y-2">
               <div className="flex items-start justify-between gap-2">
-                <span className="text-[10px] uppercase font-bold px-2 py-0.5 rounded-full bg-salon-50 dark:bg-salon-950/60 text-salon-600 dark:text-salon-400 border border-salon-200 dark:border-salon-800/60">
+                <span className={`text-[10px] uppercase font-bold px-2 py-0.5 rounded-full ${segTheme.tagBadge}`}>
                   {s.category}
                 </span>
 
@@ -233,13 +232,12 @@ export default function Services() {
                   <select
                     value={serviceForm.category}
                     onChange={(e) => setServiceForm({ ...serviceForm, category: e.target.value })}
-                    className="w-full px-3 py-2 text-xs rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800"
+                    className="w-full px-3 py-2 text-xs rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 font-bold"
                   >
-                    <option value="Cabelo">Cabelo</option>
-                    <option value="Manicure">Manicure</option>
-                    <option value="Depilação">Depilação</option>
-                    <option value="Maquiagem">Maquiagem</option>
-                    <option value="Outros">Outros</option>
+                    {categories.filter(c => c.id !== 'all').map(c => (
+                      <option key={c.id} value={c.id}>{c.label}</option>
+                    ))}
+                    <option value="Outros">Outros Procedimentos</option>
                   </select>
                 </div>
 
@@ -290,7 +288,7 @@ export default function Services() {
                   <select
                     value={serviceForm.default_commission_type}
                     onChange={(e) => setServiceForm({ ...serviceForm, default_commission_type: e.target.value })}
-                    className="w-full px-3 py-1.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900"
+                    className="w-full px-3 py-1.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 font-bold"
                   >
                     <option value="percentage">Porcentagem (%)</option>
                     <option value="fixed">Valor Fixo (R$)</option>
@@ -302,7 +300,7 @@ export default function Services() {
                     required
                     value={serviceForm.default_commission_value}
                     onChange={(e) => setServiceForm({ ...serviceForm, default_commission_value: parseFloat(e.target.value) })}
-                    className="w-full px-3 py-1.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900"
+                    className="w-full px-3 py-1.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 font-bold"
                   />
                 </div>
               </div>
@@ -317,7 +315,7 @@ export default function Services() {
                 </button>
                 <button
                   type="submit"
-                  className="px-4 py-2 font-bold rounded-xl text-white bg-salon-600 hover:bg-salon-700"
+                  className={`px-5 py-2 font-bold rounded-xl transition-all ${segTheme.buttonGradient}`}
                 >
                   Salvar Serviço
                 </button>

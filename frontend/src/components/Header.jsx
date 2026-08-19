@@ -26,13 +26,14 @@ import {
 import { useAuth } from '../context/AuthContext';
 import { ROLE_CONFIG } from '../lib/permissions';
 import { maskCEP, fetchViaCEP } from '../lib/validation';
+import { getSegmentConfig } from '../lib/segmentTheme';
 
 export const SEGMENT_MAP = {
   salao: { label: 'Salão & Cabelo', icon: '✂️', desc: 'Cabelo, mechas, química', gradient: 'from-pink-600 via-rose-500 to-purple-600' },
   barbearia: { label: 'Barbearia', icon: '💈', desc: 'Barba, corte masculino, navalha', gradient: 'from-amber-600 via-orange-600 to-red-600' },
-  estetica: { label: 'Estética & Spa', icon: '✨', desc: 'Facial, corporal, drenagem, pele', gradient: 'from-purple-600 via-fuchsia-600 to-pink-600' },
+  estetica: { label: 'Estética & Spa', icon: '✨', desc: 'Facial, corporal, drenagem, pele', gradient: 'from-emerald-600 via-teal-600 to-emerald-700' },
   esmalteria: { label: 'Esmalteria', icon: '💅', desc: 'Unhas, alongamento em gel/fibra', gradient: 'from-fuchsia-600 via-pink-600 to-rose-600' },
-  lash: { label: 'Lash & Sobrancelhas', icon: '👁️', desc: 'Extensão de cílios, mapping, brow', gradient: 'from-rose-600 via-orange-500 to-amber-600' },
+  lash: { label: 'Lash & Sobrancelhas', icon: '👁️', desc: 'Extensão de cílios, mapping, brow', gradient: 'from-rose-600 via-purple-600 to-indigo-600' },
 };
 
 export default function Header({ 
@@ -92,6 +93,8 @@ export default function Header({
   }).format(new Date());
 
   const currentRole = ROLE_CONFIG[user?.accessLevel] || ROLE_CONFIG.PROFISSIONAL;
+  const segConfig = getSegmentConfig(user?.segment);
+  const segTheme = segConfig.theme;
   const currentSegment = SEGMENT_MAP[user?.segment] || SEGMENT_MAP.salao;
 
   const handleSelectTenant = async (tenantId) => {
@@ -306,7 +309,7 @@ export default function Header({
                         setShowTenantMenu(false);
                         setShowNewProjectModal(true);
                       }}
-                      className="w-full flex items-center justify-center gap-2 py-2 px-3 rounded-xl bg-gradient-to-r from-pink-600 to-purple-600 hover:from-pink-700 hover:to-purple-700 text-white text-xs font-bold shadow-sm transition"
+                      className={`w-full flex items-center justify-center gap-2 py-2 px-3 rounded-xl text-xs font-bold shadow-sm transition ${segTheme.buttonGradient}`}
                     >
                       <Plus className="w-4 h-4" />
                       <span>+ Criar Novo Salão / Segmento</span>
@@ -354,7 +357,7 @@ export default function Header({
                 <div className="text-xs font-bold text-slate-800 dark:text-slate-200 leading-tight">
                   {user?.name || 'Profissional'}
                 </div>
-                <div className="text-[10px] text-pink-600 dark:text-pink-400 font-semibold">
+                <div className={`text-[10px] ${segTheme.textAccent} font-semibold`}>
                   {user?.role || currentRole.label}
                 </div>
               </div>
@@ -374,7 +377,7 @@ export default function Header({
               <button
                 id="tour-new-appointment-btn"
                 onClick={onOpenNewAppointment}
-                className="inline-flex items-center gap-1 sm:gap-1.5 px-2.5 sm:px-3.5 py-1.5 rounded-xl text-xs font-bold text-white bg-gradient-to-r from-pink-600 to-purple-600 hover:from-pink-700 hover:to-purple-700 shadow-xs shadow-pink-500/20 active:scale-95 transition"
+                className={`inline-flex items-center gap-1 sm:gap-1.5 px-2.5 sm:px-3.5 py-1.5 rounded-xl text-xs font-bold transition active:scale-95 ${segTheme.buttonGradient}`}
                 title="Novo Agendamento (F2)"
               >
                 <CalendarPlus className="w-3.5 h-3.5" />
@@ -385,7 +388,7 @@ export default function Header({
               {/* Botão de Tour Guiado */}
               <button
                 onClick={onStartTour}
-                className="p-1.5 sm:p-2 rounded-xl text-slate-500 hover:text-pink-600 hover:bg-pink-50 dark:hover:bg-slate-800 transition"
+                className="p-1.5 sm:p-2 rounded-xl text-slate-500 hover:text-slate-700 hover:bg-slate-100 dark:hover:bg-slate-800 transition"
                 title="Iniciar Tour Guiado Interativo"
               >
                 <HelpCircle className="w-4 h-4" />

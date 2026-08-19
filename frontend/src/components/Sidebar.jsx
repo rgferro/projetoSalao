@@ -17,6 +17,7 @@ import {
   X
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
+import { getSegmentConfig } from '../lib/segmentTheme';
 
 const ALL_MENU_ITEMS = [
   { id: 'dashboard', label: 'Visão Geral', icon: LayoutDashboard, category: 'Operacional' },
@@ -41,6 +42,8 @@ export default function Sidebar({
   onCloseMobile
 }) {
   const { user, checkPermission } = useAuth();
+  const segConfig = getSegmentConfig(user?.segment);
+  const segTheme = segConfig.theme;
 
   // Filtrar apenas módulos autorizados para o perfil do usuário
   const allowedMenuItems = ALL_MENU_ITEMS.filter((item) => checkPermission(item.id));
@@ -50,28 +53,20 @@ export default function Sidebar({
     if (onCloseMobile) onCloseMobile();
   };
 
-  const currentSegment = {
-    salao: { label: 'Salão & Cabelo', icon: '✂️' },
-    barbearia: { label: 'Barbearia', icon: '💈' },
-    estetica: { label: 'Estética & Spa', icon: '✨' },
-    esmalteria: { label: 'Esmalteria', icon: '💅' },
-    lash: { label: 'Lash & Sobrancelhas', icon: '👁️' },
-  }[user?.segment] || { label: 'Salão & Cabelo', icon: '✂️' };
-
   const sidebarContent = (
     <div className="flex flex-col h-full justify-between bg-white dark:bg-slate-900 select-none">
       {/* Navigation List */}
       <div className="p-3 sm:p-4 space-y-1 overflow-y-auto flex-1">
         {/* Unit & Segment info */}
-        <div className="px-3 py-2 mb-2 rounded-xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200/60 dark:border-slate-700/50 flex items-center justify-between">
+        <div className={`px-3 py-2 mb-2 rounded-xl border flex items-center justify-between ${segTheme.bgLight} ${segTheme.borderLight}`}>
           <div className="min-w-0 flex items-center gap-2">
-            <span className="text-base shrink-0">{currentSegment.icon}</span>
+            <span className="text-base shrink-0">{segConfig.icon}</span>
             <div className="min-w-0">
               <p className="text-[11px] font-black text-slate-800 dark:text-slate-200 truncate">
                 {user?.salonName || 'BelaGestão Studio'}
               </p>
-              <p className="text-[10px] font-bold text-pink-600 dark:text-pink-400 truncate">
-                {currentSegment.label}
+              <p className={`text-[10px] font-bold truncate ${segTheme.textAccent}`}>
+                {segConfig.shortLabel || segConfig.label}
               </p>
             </div>
           </div>
@@ -109,11 +104,11 @@ export default function Sidebar({
               onClick={() => handleSelectTab(item.id)}
               className={`w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-bold transition-all ${
                 isActive
-                  ? 'bg-pink-50 dark:bg-pink-950/50 text-pink-600 dark:text-pink-400 shadow-xs border border-pink-200 dark:border-pink-800/60'
+                  ? `${segTheme.bgLight} ${segTheme.textAccent} ${segTheme.borderLight} border shadow-xs`
                   : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100 hover:bg-slate-100 dark:hover:bg-slate-800/60'
               }`}
             >
-              <Icon className={`w-4 h-4 shrink-0 transition-transform ${isActive ? 'scale-110 text-pink-600 dark:text-pink-400' : 'text-slate-400 dark:text-slate-500'}`} />
+              <Icon className={`w-4 h-4 shrink-0 transition-transform ${isActive ? `scale-110 ${segTheme.textAccent}` : 'text-slate-400 dark:text-slate-500'}`} />
               <span className="truncate">{item.label}</span>
             </button>
           );
@@ -128,7 +123,7 @@ export default function Sidebar({
               if (onCloseMobile) onCloseMobile();
               onStartTour();
             }}
-            className="w-full flex items-center justify-between px-3 py-2 rounded-xl text-xs font-bold text-pink-600 dark:text-pink-400 bg-pink-50 dark:bg-pink-950/40 hover:bg-pink-100 dark:hover:bg-pink-900/60 transition"
+            className={`w-full flex items-center justify-between px-3 py-2 rounded-xl text-xs font-bold transition ${segTheme.bgLight} ${segTheme.textAccent} hover:opacity-90`}
           >
             <div className="flex items-center gap-2">
               <Compass className="w-4 h-4" />

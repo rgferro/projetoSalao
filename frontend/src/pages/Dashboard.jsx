@@ -18,6 +18,7 @@ import {
 } from 'lucide-react';
 import { api } from '../services/api';
 import { useAuth } from '../context/AuthContext';
+import { getSegmentConfig } from '../lib/segmentTheme';
 
 export default function Dashboard({ 
   onNavigate, 
@@ -27,6 +28,9 @@ export default function Dashboard({
   onOpenCashModal 
 }) {
   const { user, canViewFinancial, canViewCashRegister } = useAuth();
+  const segConfig = getSegmentConfig(user?.segment);
+  const segTheme = segConfig.theme;
+
   const [metrics, setMetrics] = useState(null);
   const [loading, setLoading] = useState(true);
   const [toastMsg, setToastMsg] = useState('');
@@ -84,7 +88,7 @@ export default function Dashboard({
   if (loading && !metrics) {
     return (
       <div className="flex items-center justify-center h-96">
-        <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-salon-600"></div>
+        <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-slate-600"></div>
       </div>
     );
   }
@@ -116,20 +120,20 @@ export default function Dashboard({
       )}
 
       {/* Top Banner with Quick Actions */}
-      <div className="relative overflow-hidden rounded-3xl bg-gradient-to-r from-salon-700 via-salon-600 to-rose-500 text-white p-5 sm:p-8 shadow-lg shadow-salon-600/15">
+      <div className={`relative overflow-hidden rounded-3xl bg-gradient-to-r ${segTheme.gradient} text-white p-5 sm:p-8 shadow-lg ${segTheme.glow}`}>
         <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-5 sm:gap-6">
           <div className="space-y-2">
             <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/20 backdrop-blur-md text-xs font-medium">
-              <Sparkles className="w-3.5 h-3.5 text-yellow-200" />
-              <span>Painel de Controle Inteligente</span>
+              <span className="text-sm shrink-0">{segConfig.icon}</span>
+              <span>Painel de Controle • {segConfig.label}</span>
             </div>
             <h2 className="text-xl sm:text-3xl font-extrabold tracking-tight">
               Olá, {user?.name || 'Equipe BelaGestão'}!
             </h2>
-            <p className="text-xs sm:text-sm text-rose-100 max-w-xl">
+            <p className="text-xs sm:text-sm text-white/90 max-w-xl">
               {isProf 
                 ? 'Acompanhe seus horários de atendimento, fichas de clientes e o extrato das suas comissões.'
-                : 'Gerencie seus atendimentos de cabelo, estética, manicure e depilação com agilidade e total controle.'
+                : `Gerencie seus atendimentos de ${segConfig.shortLabel || 'serviços'}, frente de caixa PDV e equipe com agilidade e total controle.`
               }
             </p>
           </div>
@@ -137,7 +141,7 @@ export default function Dashboard({
           <div className="flex flex-col sm:flex-row gap-2.5 sm:gap-3 w-full sm:w-auto">
             <button
               onClick={onOpenNewAppointment}
-              className="w-full sm:w-auto px-4 py-2.5 rounded-xl bg-white text-salon-700 hover:bg-rose-50 font-bold text-xs sm:text-sm shadow-md transition active:scale-95 flex items-center justify-center gap-2"
+              className="w-full sm:w-auto px-4 py-2.5 rounded-xl bg-white text-slate-900 hover:bg-slate-100 font-bold text-xs sm:text-sm shadow-md transition active:scale-95 flex items-center justify-center gap-2"
             >
               <CalendarCheck className="w-4 h-4" />
               <span>Novo Agendamento (F2)</span>
