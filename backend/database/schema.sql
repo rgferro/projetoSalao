@@ -319,12 +319,13 @@ CREATE TABLE IF NOT EXISTS commission_settlements (
 -- Modelos de Mensagens do WhatsApp
 CREATE TABLE IF NOT EXISTS whatsapp_templates (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
-    code TEXT UNIQUE NOT NULL, -- 'reminder_24h', 'reminder_2h', 'welcome', 'birthday', 'finished', 'custom'
+    code TEXT NOT NULL, -- 'reminder_24h', 'reminder_2h', 'welcome', 'birthday', 'finished', 'custom'
     title TEXT NOT NULL,
     body TEXT NOT NULL,
     active INTEGER DEFAULT 1,
     tenant_id TEXT DEFAULT 'tenant_default',
-    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE(tenant_id, code)
 );
 
 -- Histórico / Fila de Mensagens do WhatsApp

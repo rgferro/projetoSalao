@@ -21,8 +21,14 @@ import {
   Smartphone
 } from 'lucide-react';
 import { api } from '../services/api';
+import { useAuth } from '../context/AuthContext';
+import { getSegmentConfig } from '../lib/segmentTheme';
 
 export default function WhatsAppModule() {
+  const { user } = useAuth();
+  const segConfig = getSegmentConfig(user?.segment);
+  const segTheme = segConfig.theme;
+
   const [waStatus, setWaStatus] = useState(null);
   const [templates, setTemplates] = useState([]);
   const [logs, setLogs] = useState([]);
@@ -77,13 +83,13 @@ export default function WhatsAppModule() {
     // Polling a cada 2.5s para monitorar QR Code e Conexão Multi-Device
     const interval = setInterval(fetchStatus, 2500);
     return () => clearInterval(interval);
-  }, []);
+  }, [user?.tenantId]);
 
   const handleLogout = async () => {
-    if (!window.confirm('Deseja desconectar a sessão do WhatsApp e gerar um novo QR Code?')) return;
+    if (!window.confirm(`Deseja desconectar a sessão do WhatsApp de "${user?.salonName || 'seu salão'}" e gerar um novo QR Code?`)) return;
     try {
       await api.logoutWhatsApp();
-      showToast('Sessão desconectada. Gerando novo QR Code...');
+      showToast('Sessão deste salão desconectada. Gerando novo QR Code...');
       fetchStatus();
     } catch (err) {
       alert(err.message);
@@ -142,12 +148,14 @@ export default function WhatsAppModule() {
       {/* Header Bar */}
       <div className="glass-panel p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h2 className="text-xl font-bold text-slate-800 dark:text-slate-100 flex items-center gap-2">
-            <MessageSquareText className="w-5 h-5 text-emerald-600" />
-            WhatsApp Multi-Device Silencioso (Daemon Baileys)
-          </h2>
-          <p className="text-xs text-slate-500 dark:text-slate-400">
-            Envio 100% automático e em segundo plano (sem abrir novas abas no navegador)
+          <div className="flex items-center gap-2">
+            <span className="text-2xl shrink-0">{segConfig.icon}</span>
+            <h2 className="text-xl font-bold text-slate-800 dark:text-slate-100">
+              WhatsApp Multi-Device — {user?.salonName || 'Meu Salão'}
+            </h2>
+          </div>
+          <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
+            Conexão exclusiva deste salão ({segConfig.label}). Envio 100% automático em segundo plano sem abrir abas.
           </p>
         </div>
 
@@ -172,7 +180,7 @@ export default function WhatsAppModule() {
             ) : (
               <>
                 <RefreshCw className="w-4 h-4 text-slate-400 animate-spin" />
-                <span>INICIALIZANDO DAEMON...</span>
+                <span>INICIALIZANDO...</span>
               </>
             )}
           </div>
@@ -194,7 +202,7 @@ export default function WhatsAppModule() {
         <button
           onClick={() => setActiveTab('connection')}
           className={`flex-1 py-2 text-xs font-bold rounded-xl transition flex items-center justify-center gap-1.5 ${
-            activeTab === 'connection' ? 'bg-white dark:bg-slate-900 text-salon-600 shadow-sm' : 'text-slate-500'
+            activeTab === 'connection' ? `${segTheme.activeTab}` : 'text-slate-500 hover:text-slate-800 dark:hover:text-slate-200'
           }`}
         >
           <Smartphone className="w-4 h-4" />
@@ -203,7 +211,7 @@ export default function WhatsAppModule() {
         <button
           onClick={() => setActiveTab('templates')}
           className={`flex-1 py-2 text-xs font-bold rounded-xl transition flex items-center justify-center gap-1.5 ${
-            activeTab === 'templates' ? 'bg-white dark:bg-slate-900 text-salon-600 shadow-sm' : 'text-slate-500'
+            activeTab === 'templates' ? `${segTheme.activeTab}` : 'text-slate-500 hover:text-slate-800 dark:hover:text-slate-200'
           }`}
         >
           <FileCode className="w-4 h-4" />
@@ -212,7 +220,7 @@ export default function WhatsAppModule() {
         <button
           onClick={() => setActiveTab('direct-send')}
           className={`flex-1 py-2 text-xs font-bold rounded-xl transition flex items-center justify-center gap-1.5 ${
-            activeTab === 'direct-send' ? 'bg-white dark:bg-slate-900 text-salon-600 shadow-sm' : 'text-slate-500'
+            activeTab === 'direct-send' ? `${segTheme.activeTab}` : 'text-slate-500 hover:text-slate-800 dark:hover:text-slate-200'
           }`}
         >
           <Send className="w-4 h-4" />
@@ -221,7 +229,7 @@ export default function WhatsAppModule() {
         <button
           onClick={() => setActiveTab('logs')}
           className={`flex-1 py-2 text-xs font-bold rounded-xl transition flex items-center justify-center gap-1.5 ${
-            activeTab === 'logs' ? 'bg-white dark:bg-slate-900 text-salon-600 shadow-sm' : 'text-slate-500'
+            activeTab === 'logs' ? `${segTheme.activeTab}` : 'text-slate-500 hover:text-slate-800 dark:hover:text-slate-200'
           }`}
         >
           <ListOrdered className="w-4 h-4" />
@@ -337,6 +345,16 @@ export default function WhatsAppModule() {
                   <p className="text-slate-500">Assim que a leitura for feita, a tela mudará imediatamente para 🟢 CONECTADO.</p>
                 </div>
               </div>
+            </div>
+
+            <div className="p-4 rounded-2xl bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-900 text-amber-900 dark:text-amber-300 text-xs space-y-1">
+              <p className="font-bold flex items-center gap-1.5">
+                <span className="text-base shrink-0">{segConfig.icon}</span>
+                <span>Conexão Independente por Salão:</span>
+              </p>
+              <p className="text-[11px] leading-relaxed">
+                Este QR Code e sessão pertencem exclusivamente a <strong>{user?.salonName || 'seu salão atual'}</strong>. Caso você tenha mais de um salão (ex: Barbearia e Esmalteria), alterne de salão no topo para escanear e conectar o WhatsApp de cada um de forma independente.
+              </p>
             </div>
 
             <div className="p-4 rounded-2xl bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-900 text-emerald-800 dark:text-emerald-300 text-xs space-y-1">

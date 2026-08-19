@@ -205,6 +205,38 @@ const migrateTenantColumns = async () => {
   } catch (e) {
     console.error('Erro na migração da tabela tenants:', e.message);
   }
+
+  // Verificar se a tabela whatsapp_templates tem restrição UNIQUE global em code
+  try {
+    const waTableDef = await get("SELECT sql FROM sqlite_master WHERE type='table' AND name='whatsapp_templates'");
+    if (waTableDef && waTableDef.sql && waTableDef.sql.includes('code TEXT UNIQUE')) {
+      console.log('🔄 Migrando tabela whatsapp_templates para suportar templates por salão/tenant...');
+      await exec(`
+        PRAGMA foreign_keys = OFF;
+        CREATE TABLE whatsapp_templates_new (
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          code TEXT NOT NULL,
+          title TEXT NOT NULL,
+          body TEXT NOT NULL,
+          active INTEGER DEFAULT 1,
+          tenant_id TEXT DEFAULT 'tenant_default_salao',
+          updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+          UNIQUE(tenant_id, code)
+        );
+        INSERT OR IGNORE INTO whatsapp_templates_new (id, code, title, body, active, tenant_id, updated_at)
+        SELECT id, code, title, body, active, COALESCE(tenant_id, 'tenant_default_salao'), updated_at
+        FROM whatsapp_templates;
+        DROP TABLE whatsapp_templates;
+        ALTER TABLE whatsapp_templates_new RENAME TO whatsapp_templates;
+        CREATE INDEX IF NOT EXISTS idx_whatsapp_templates_tenant ON whatsapp_templates(tenant_id, code);
+        PRAGMA foreign_keys = ON;
+      `);
+    } else {
+      await run("CREATE INDEX IF NOT EXISTS idx_whatsapp_templates_tenant ON whatsapp_templates(tenant_id, code)");
+    }
+  } catch (e) {
+    console.error('Erro na migração da tabela whatsapp_templates:', e.message);
+  }
 };
 
 // Inicialização automática das tabelas e migrações
