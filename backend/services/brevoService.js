@@ -100,7 +100,7 @@ async function sendVerificationEmail(targetEmail, code, salonName = 'BellaGestã
         
         <p style="font-size: 15px; line-height: 1.5; color: #334155;">Olá!</p>
         <p style="font-size: 14px; line-height: 1.6; color: #475569;">
-          Obrigado por escolher o <strong>BellaGestão Studio</strong>. Para ativar seu cadastro no plano Starter gratuito, digite o código de confirmação abaixo:
+          Obrigado por escolher o <strong>BellaGestão Studio</strong>. Para ativar seu cadastro no plano Solo gratuito, digite o código de confirmação abaixo:
         </p>
         
         <div style="font-size: 38px; font-weight: 900; background: #fdf2f8; padding: 22px; border-radius: 18px; text-align: center; letter-spacing: 10px; color: #db2777; margin: 24px 0; border: 2px dashed #fbcfe8;">

@@ -142,15 +142,15 @@ router.post('/register', async (req, res) => {
     const tenantId = `tenant_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`;
     const hashedPassword = hashPassword(password);
 
-    // Criar Tenant
+    // Criar Tenant com Plano Solo (Gratuito para sempre)
     await run(`
       INSERT INTO tenants (
         id, name, document, plan, subscription_status, subscription_expires_at,
         max_users, owner_email, owner_password, owner_name, owner_phone,
         cep, street, number, complement, neighborhood, city, state, is_master, active
       ) VALUES (
-        ?, ?, ?, 'STARTER', 'active', datetime('now', '+30 days'),
-        2, ?, ?, ?, ?,
+        ?, ?, ?, 'SOLO', 'active', '2099-12-31 23:59:59',
+        1, ?, ?, ?, ?,
         ?, ?, ?, ?, ?, ?, ?, 0, 1
       )
     `, [
@@ -195,7 +195,7 @@ router.post('/register', async (req, res) => {
 
     res.json({
       success: true,
-      message: 'Salão cadastrado com sucesso! Bem-vinda ao BellaGestão Studio.',
+      message: 'Salão cadastrado com sucesso no Plano Solo! Bem-vinda ao BellaGestão Studio.',
       token,
       user: {
         id: tenantId,
@@ -204,7 +204,7 @@ router.post('/register', async (req, res) => {
         salonName: name,
         accessLevel: 'ADMIN',
         tenantId,
-        plan: 'STARTER'
+        plan: 'SOLO'
       }
     });
   } catch (error) {
@@ -258,7 +258,7 @@ router.post('/login', async (req, res) => {
           role: prof.role,
           subtypes: prof.subtypes ? JSON.parse(prof.subtypes) : [],
           tenantId: prof.tenant_id,
-          plan: prof.plan || 'STARTER',
+          plan: prof.plan || 'SOLO',
           isMaster: Boolean(prof.is_master)
         }
       });
@@ -291,7 +291,7 @@ router.post('/login', async (req, res) => {
           salonName: tenant.name,
           accessLevel: 'ADMIN',
           tenantId: tenant.id,
-          plan: tenant.plan,
+          plan: tenant.plan || 'SOLO',
           isMaster: isMasterUser
         }
       });
@@ -332,7 +332,7 @@ router.post('/login', async (req, res) => {
           role: professional.role,
           subtypes: professional.subtypes ? JSON.parse(professional.subtypes) : [],
           tenantId: professional.tenant_id,
-          plan: professional.plan || 'STARTER',
+          plan: professional.plan || 'SOLO',
           isMaster: isMasterUser
         }
       });
@@ -387,7 +387,7 @@ router.post('/switch-user', async (req, res) => {
         role: prof.role,
         subtypes: prof.subtypes ? JSON.parse(prof.subtypes) : [],
         tenantId: prof.tenant_id,
-        plan: prof.plan || 'STARTER',
+        plan: prof.plan || 'SOLO',
         isMaster: Boolean(prof.is_master)
       }
     });
@@ -608,7 +608,7 @@ router.post('/reset-password', async (req, res) => {
         accessLevel: 'ADMIN',
         role: 'Proprietário & Administrador',
         tenantId: tenant.id,
-        plan: tenant.plan || 'STARTER',
+        plan: tenant.plan || 'SOLO',
         isMaster: isMasterUser
       };
     } else {
@@ -640,7 +640,7 @@ router.post('/reset-password', async (req, res) => {
           role: prof.role,
           subtypes: prof.subtypes ? JSON.parse(prof.subtypes) : [],
           tenantId: prof.tenant_id,
-          plan: prof.plan || 'STARTER',
+          plan: prof.plan || 'SOLO',
           isMaster: Boolean(prof.is_master)
         };
       } else {

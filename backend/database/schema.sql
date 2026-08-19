@@ -8,10 +8,10 @@ CREATE TABLE IF NOT EXISTS tenants (
     id TEXT PRIMARY KEY,
     name TEXT NOT NULL,                -- Razão Social / Nome do Salão
     document TEXT,                     -- CNPJ ou CPF
-    plan TEXT DEFAULT 'STARTER',       -- SOLO, STARTER, STUDIO, PREMIER
+    plan TEXT DEFAULT 'SOLO',          -- SOLO, STARTER, STUDIO, PREMIER
     subscription_status TEXT DEFAULT 'active', -- active, past_due, canceled
     subscription_expires_at DATETIME,
-    max_users INTEGER DEFAULT 2,       -- Solo: 1, Starter: 2, Studio: 5, Premier: 15
+    max_users INTEGER DEFAULT 1,       -- Solo: 1, Starter: 2, Studio: 5, Premier: 15
     extra_users_count INTEGER DEFAULT 0, -- Profissionais extras adicionais (+R$ 15/mês cada)
     owner_email TEXT UNIQUE NOT NULL,
     owner_password TEXT,               -- Hash PBKDF2
