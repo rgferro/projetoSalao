@@ -10,8 +10,8 @@ export function AuthProvider({ children }) {
     if (saved) {
       try {
         const parsed = JSON.parse(saved);
-        // Limpar dados de demonstração legados se existirem em cache local
-        if (parsed.id === 'default_admin' || parsed.tenantId === 'tenant_default_salao') {
+        // Limpar dados legados inválidos se existirem em cache local
+        if (parsed.id === 'default_admin') {
           localStorage.removeItem('bella_user');
           localStorage.removeItem('bella_token');
           return null;
@@ -29,7 +29,7 @@ export function AuthProvider({ children }) {
     if (!saved) return false;
     try {
       const parsed = JSON.parse(saved);
-      if (parsed.id === 'default_admin' || parsed.tenantId === 'tenant_default_salao') return false;
+      if (parsed.id === 'default_admin') return false;
       return true;
     } catch {
       return false;

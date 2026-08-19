@@ -17,6 +17,20 @@ backend/backups/
 backend/whatsapp_auth/
 cloudflared.exe
 *.log
+bellagestao.tar.gz
+
+# SQLite Databases & Binaries (Anti-Overwrite & Privacy)
+*.db
+*.db-journal
+*.db-wal
+*.db-shm
+*.sqlite
+*.sqlite3
+*.db.bak
+backend/database/*.db
+backend/database/*.db-wal
+backend/database/*.db-shm
+backend/database/*.db.bak
 
 # Environment variables
 .env

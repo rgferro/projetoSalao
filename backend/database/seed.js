@@ -123,9 +123,30 @@ const seedData = async () => {
       `, [masterEmail]);
     }
 
-    // 2. Garantir especialidades e templates no tenant padrão
-    await initializeTenantDefaults('tenant_default', {
-      name: 'BellaGestão Studio',
+    // 2. Garantir perfil do Master na equipe de seu tenant
+    const masterProf = await get(`SELECT id FROM professionals WHERE email = ? AND tenant_id = 'tenant_master_platform'`, [masterEmail]);
+    if (!masterProf) {
+      const masterPassHash = hashPassword('Master@2026!');
+      await run(`
+        INSERT INTO professionals (
+          name, nickname, role, access_level, subtypes, phone, email, password,
+          pin_code, color_hex, specialties, default_commission_type, default_commission_value,
+          active, tenant_id
+        ) VALUES (
+          'Rafael Gielow', 'Rafael', 'Super Admin Master', 'ADMIN',
+          '["Gestão"]', '(11) 99999-9999', ?, ?, '1234', '#6366f1',
+          '["Gestão", "Administração"]', 'percentage', 100.0, 1, 'tenant_master_platform'
+        )
+      `, [masterEmail, masterPassHash]);
+    }
+
+    // 3. Garantir especialidades e templates no tenant padrão e master
+    await initializeTenantDefaults('tenant_default_salao', {
+      name: 'BellaGestão Studio & Estética',
+      address: 'Av. Paulista, 1000'
+    });
+    await initializeTenantDefaults('tenant_master_platform', {
+      name: 'BellaGestão Plataforma Master',
       address: 'Studio Central'
     });
   } catch (error) {
