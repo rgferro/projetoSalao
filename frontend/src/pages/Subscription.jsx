@@ -25,7 +25,7 @@ export default function Subscription() {
   const { user } = useAuth();
   const [subStatus, setSubStatus] = useState(null);
   const [loading, setLoading] = useState(false);
-  const [billingCycle, setBillingCycle] = useState('monthly'); // 'monthly' ou 'annual'
+  const billingCycle = 'monthly';
   const [extraSeats, setExtraSeats] = useState(0);
 
   // Modal PIX
@@ -258,33 +258,8 @@ export default function Subscription() {
         </div>
       </div>
 
-      {/* Alternador Mensal / Anual */}
+      {/* Add-on de Profissionais Extras */}
       <div className="flex flex-col items-center justify-center space-y-3 pt-2">
-        <div className="inline-flex items-center p-1 rounded-2xl bg-slate-200 dark:bg-slate-800 border border-slate-300 dark:border-slate-700">
-          <button
-            onClick={() => setBillingCycle('monthly')}
-            className={`px-5 py-2 rounded-xl text-xs font-black transition-all ${
-              billingCycle === 'monthly'
-                ? 'bg-white dark:bg-slate-900 text-slate-900 dark:text-white shadow-sm'
-                : 'text-slate-600 dark:text-slate-400 hover:text-slate-900'
-            }`}
-          >
-            Cobrança Mensal
-          </button>
-          <button
-            onClick={() => setBillingCycle('annual')}
-            className={`px-5 py-2 rounded-xl text-xs font-black transition-all flex items-center gap-1.5 ${
-              billingCycle === 'annual'
-                ? 'bg-pink-600 text-white shadow-sm'
-                : 'text-slate-600 dark:text-slate-400 hover:text-slate-900'
-            }`}
-          >
-            <span>Anual (15% OFF)</span>
-            <span className="text-[10px] bg-amber-400 text-slate-950 font-black px-1.5 py-0.2 rounded-full">Economize</span>
-          </button>
-        </div>
-
-        {/* Add-on de Profissionais Extras */}
         <div className="bg-pink-50 dark:bg-pink-950/40 border border-pink-200 dark:border-pink-800/80 rounded-2xl p-4 flex flex-col sm:flex-row items-center justify-between gap-4 max-w-xl w-full">
           <div className="flex items-center gap-3 text-left">
             <div className="w-9 h-9 rounded-xl bg-pink-600 text-white flex items-center justify-center font-bold shrink-0">
@@ -354,7 +329,7 @@ export default function Subscription() {
             <div className="text-xs font-black uppercase tracking-wider text-indigo-600">Starter</div>
             <div>
               <div className="text-3xl font-black text-slate-900 dark:text-white">
-                R$ {billingCycle === 'annual' ? '59,90' : '69,90'} <span className="text-xs font-normal text-slate-500">/mês</span>
+                R$ 69,90 <span className="text-xs font-normal text-slate-500">/mês</span>
               </div>
               <div className="text-[11px] text-emerald-600 font-bold mt-0.5">Agendamentos Ilimitados</div>
             </div>
@@ -387,7 +362,7 @@ export default function Subscription() {
             <div className="text-xs font-black uppercase tracking-wider text-pink-600">Studio Pro</div>
             <div>
               <div className="text-3xl font-black text-slate-900 dark:text-white">
-                R$ {(billingCycle === 'annual' ? 119.9 : 139.9) + (extraSeats * 15)} <span className="text-xs font-normal text-slate-500">/mês</span>
+                R$ {139.9 + (extraSeats * 15)} <span className="text-xs font-normal text-slate-500">/mês</span>
               </div>
               {extraSeats > 0 && (
                 <div className="text-[10px] text-pink-600 font-bold">
@@ -424,7 +399,7 @@ export default function Subscription() {
             <div className="text-xs font-black uppercase tracking-wider text-purple-600">Premier Express</div>
             <div>
               <div className="text-3xl font-black text-slate-900 dark:text-white">
-                R$ {(billingCycle === 'annual' ? 199.9 : 229.9) + (extraSeats * 15)} <span className="text-xs font-normal text-slate-500">/mês</span>
+                R$ {229.9 + (extraSeats * 15)} <span className="text-xs font-normal text-slate-500">/mês</span>
               </div>
               <div className="text-[11px] text-purple-600 font-bold mt-0.5">Para Redes e Grandes Espaços</div>
             </div>

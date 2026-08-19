@@ -161,10 +161,10 @@ router.get('/status', async (req, res) => {
 // 3. Gerar Cobrança PIX com Cálculo de Vagas Extras (+R$ 15/mês)
 router.post('/pix', async (req, res) => {
   try {
-    const { plan = 'STUDIO', extraUsers = 0, billingCycle = 'monthly' } = req.body;
+    const { plan = 'STUDIO', extraUsers = 0 } = req.body;
     const planConfig = SAAS_PLANS[plan] || SAAS_PLANS.STUDIO;
 
-    const basePrice = billingCycle === 'annual' ? planConfig.priceAnnualMonthly : planConfig.priceMonthly;
+    const basePrice = planConfig.priceMonthly;
     const extraSeatsCost = Number(extraUsers || 0) * 15.0;
     const amount = Number(basePrice + extraSeatsCost);
 
