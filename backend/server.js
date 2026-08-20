@@ -96,6 +96,9 @@ app.get('*', (req, res, next) => {
 // Middleware Global de Tratamento de Erros (Graceful Error Handling)
 app.use((err, req, res, next) => {
   logger.error(`Exceção capturada na rota [${req.method} ${req.path}]:`, { error: err.message });
+  if (err instanceof SyntaxError && 'body' in err) {
+    return res.status(400).json({ error: 'Corpo da requisição em formato inválido.' });
+  }
   res.status(500).json({
     error: 'Ocorreu uma instabilidade momentânea. O sistema continuará operando com segurança.',
     details: process.env.NODE_ENV === 'development' ? err.message : undefined,
