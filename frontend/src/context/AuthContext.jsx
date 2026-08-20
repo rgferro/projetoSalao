@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { canAccessModule, getDefaultTabForRole } from '../lib/permissions';
+import { getCsrfToken } from '../services/api';
 
 const AuthContext = createContext(null);
 
@@ -111,7 +112,8 @@ export function AuthProvider({ children }) {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': token ? `Bearer ${token}` : ''
+          'Authorization': token ? `Bearer ${token}` : '',
+          'X-CSRF-Token': await getCsrfToken(),
         },
         body: JSON.stringify({ tenantId }),
       });
@@ -137,7 +139,8 @@ export function AuthProvider({ children }) {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': token ? `Bearer ${token}` : ''
+          'Authorization': token ? `Bearer ${token}` : '',
+          'X-CSRF-Token': await getCsrfToken(),
         },
         body: JSON.stringify(projectData),
       });

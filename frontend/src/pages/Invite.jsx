@@ -8,6 +8,7 @@ import {
   Loader2,
 } from 'lucide-react';
 import { validatePasswordStrength } from '../lib/validation';
+import { getCsrfToken } from '../services/api';
 
 export default function Invite({ onNavigateLogin }) {
   const [token, setToken] = useState('');
@@ -63,7 +64,8 @@ export default function Invite({ onNavigateLogin }) {
       setSubmitting(true);
       const res = await fetch('/api/auth/invite/accept', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', 'X-CSRF-Token': await getCsrfToken() },
+        credentials: 'same-origin',
         body: JSON.stringify({
           token,
           password,

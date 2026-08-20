@@ -78,7 +78,8 @@ export default function Login({ onNavigateRegister, onNavigateLanding, onLoginSu
       setForgotLoading(true);
       const res = await fetch('/api/auth/forgot-password', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', 'X-CSRF-Token': await getCsrfToken() },
+        credentials: 'same-origin',
         body: JSON.stringify({ email: forgotEmail.trim() }),
       });
 
@@ -117,7 +118,8 @@ export default function Login({ onNavigateRegister, onNavigateLanding, onLoginSu
       setForgotLoading(true);
       const res = await fetch('/api/auth/reset-password', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', 'X-CSRF-Token': await getCsrfToken() },
+        credentials: 'same-origin',
         body: JSON.stringify({
           email: forgotEmail.trim(),
           code: forgotCode.trim(),

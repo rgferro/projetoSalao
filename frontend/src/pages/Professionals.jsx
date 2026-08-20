@@ -20,7 +20,7 @@ import {
   Shield,
   Tag
 } from 'lucide-react';
-import { api } from '../services/api';
+import { api, getCsrfToken } from '../services/api';
 import { useAuth } from '../context/AuthContext';
 import { ROLE_CONFIG, DEFAULT_PROFESSIONAL_SUBTYPES } from '../lib/permissions';
 import { 
@@ -210,7 +210,12 @@ export default function Professionals() {
       setSendingInviteId(prof.id);
       const res = await fetch('/api/auth/invite', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${localStorage.getItem('bella_token') || ''}`,
+          'X-CSRF-Token': await getCsrfToken(),
+        },
+        credentials: 'same-origin',
         body: JSON.stringify({
           employeeId: prof.id,
           employeeEmail: prof.email,
