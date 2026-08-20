@@ -492,7 +492,7 @@ export function NewAppointmentModal({ isOpen, onClose, onCreated }) {
           </div>
         )}
 
-        <form onSubmit={handleCreateAppointment} className="mt-4 space-y-4">
+        <form onSubmit={handleSubmit} className="mt-4 space-y-4">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="space-y-1">
               <label className="text-xs font-semibold text-slate-600 dark:text-slate-300">Cliente *</label>
