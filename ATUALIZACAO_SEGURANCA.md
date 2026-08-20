@@ -7,7 +7,7 @@ O arquivo `backend/.env` contem a credencial ativa e nao deve ser adicionado ao 
 ```powershell
 Set-Location 'C:\Users\rgfer\OneDrive\Documentos\repositorioIA\projetoSalao'
 git status
-git add .gitignore ecosystem.config.js ATUALIZACAO_SEGURANCA.md
+git add -A -- .gitignore ecosystem.config.js ATUALIZACAO_SEGURANCA.md bellagestao_deploy.tar.gz
 git commit -m "security: move Brevo credential to environment"
 git push origin main
 ```
@@ -23,8 +23,10 @@ A remocao no commit atual nao apaga a credencial dos commits anteriores. Coorden
 ```
 
 ```powershell
+$originUrl = git remote get-url origin
 git filter-repo --replace-text C:\caminho\seguro\brevo-replacements.txt --path bellagestao_deploy.tar.gz --invert-paths --force
-git push --force --all origin
+git remote add origin $originUrl
+git push --force origin main
 git push --force --tags origin
 Remove-Item C:\caminho\seguro\brevo-replacements.txt
 ```
