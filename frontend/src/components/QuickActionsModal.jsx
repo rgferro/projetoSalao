@@ -19,6 +19,8 @@ import {
   FolderSync
 } from 'lucide-react';
 import { api } from '../services/api';
+import { useAuth } from '../context/AuthContext';
+import { getSegmentConfig } from '../lib/segmentTheme';
 
 // Modal de Atalhos de Teclado (F1)
 export function ShortcutsModal({ isOpen, onClose }) {
@@ -335,7 +337,8 @@ export function CashManagementModal({ isOpen, onClose, cashStatus, onRefresh }) 
 
 // Modal de Novo Agendamento Multisserviços
 export function NewAppointmentModal({ isOpen, onClose, onCreated }) {
-  if (!isOpen) return null;
+  const { user } = useAuth();
+  const segmentConfig = getSegmentConfig(user?.segment);
 
   const [clients, setClients] = useState([]);
   const [professionals, setProfessionals] = useState([]);
@@ -356,8 +359,15 @@ export function NewAppointmentModal({ isOpen, onClose, onCreated }) {
   const [errorMsg, setErrorMsg] = useState('');
 
   useEffect(() => {
+    if (!isOpen || !user?.tenantId) return;
+
     async function loadData() {
       try {
+        setErrorMsg('');
+        setClientId('');
+        setClients([]);
+        setProfessionals([]);
+        setServices([]);
         const [cList, pList, sList] = await Promise.all([
           api.getClients(),
           api.getProfessionals(),
@@ -380,10 +390,11 @@ export function NewAppointmentModal({ isOpen, onClose, onCreated }) {
         }
       } catch (err) {
         console.error('Erro ao carregar dados:', err);
+        setErrorMsg(err.message || 'Não foi possível carregar os dados do salão ativo.');
       }
     }
     loadData();
-  }, [isOpen]);
+  }, [isOpen, user?.tenantId, user?.segment]);
 
   const handleServiceChange = (index, serviceId) => {
     const s = services.find(x => x.id === parseInt(serviceId));
@@ -471,14 +482,19 @@ export function NewAppointmentModal({ isOpen, onClose, onCreated }) {
     }
   };
 
+  if (!isOpen) return null;
+
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-3 sm:p-4 overflow-y-auto">
       <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl max-w-2xl w-full p-4 sm:p-6 shadow-2xl max-h-[92vh] overflow-y-auto my-auto">
         
         <div className="flex items-center justify-between pb-3 border-b border-slate-100 dark:border-slate-800">
           <div className="flex items-center gap-2">
-            <Calendar className="w-5 h-5 text-salon-600" />
-            <h3 className="font-bold text-lg text-slate-800 dark:text-slate-100">Novo Agendamento Multisserviços</h3>
+            <Calendar className={`w-5 h-5 ${segmentConfig.theme.textAccent}`} />
+            <div>
+              <h3 className="font-bold text-lg text-slate-800 dark:text-slate-100">Novo Agendamento</h3>
+              <p className="text-xs text-slate-500 dark:text-slate-400">{segmentConfig.icon} Agenda de {user?.salonName || segmentConfig.shortLabel}</p>
+            </div>
           </div>
           <button onClick={onClose} className="p-1 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-400">
             <X className="w-5 h-5" />

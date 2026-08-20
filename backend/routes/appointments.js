@@ -3,12 +3,16 @@ const router = express.Router();
 const { query, get, run, transaction } = require('../database/db');
 const whatsappService = require('../services/whatsappService');
 const logger = require('../services/logger');
+const { requireAuth } = require('../middleware/authMiddleware');
+
+// Cada agenda pertence exclusivamente ao tenant ativo na sessão autenticada.
+router.use(requireAuth);
 
 // Listar agendamentos com filtros (por data, por intervalo, por profissional, por status) isolado por Tenant
 router.get('/', async (req, res) => {
   try {
     const { date, startDate, endDate, professional_id, status } = req.query;
-    const tenantId = req.tenantId || 'tenant_default_salao';
+    const tenantId = req.tenantId;
 
     let sql = `
       SELECT a.*, c.name as client_name, c.phone as client_phone, c.email as client_email
@@ -73,7 +77,7 @@ router.get('/', async (req, res) => {
 router.post('/check-conflict', async (req, res) => {
   try {
     const { professional_id, date, start_time, end_time, exclude_appointment_id } = req.body;
-    const tenantId = req.tenantId || 'tenant_default_salao';
+    const tenantId = req.tenantId;
 
     if (!professional_id || !date || !start_time || !end_time) {
       return res.status(400).json({ error: 'Dados incompletos para verificação de conflito.' });
@@ -126,7 +130,7 @@ router.post('/check-conflict', async (req, res) => {
 router.post('/', async (req, res) => {
   try {
     const { client_id, date, notes, items, sendWhatsappReminder = true } = req.body;
-    const tenantId = req.tenantId || 'tenant_default_salao';
+    const tenantId = req.tenantId;
 
     if (!client_id || !date || !Array.isArray(items) || items.length === 0) {
       return res.status(400).json({ error: 'Cliente, Data e pelo menos 1 serviço são obrigatórios.' });
@@ -149,6 +153,14 @@ router.post('/', async (req, res) => {
 
     // Executa em transação atômica única com rollback garantido em caso de erro
     const creationResult = await transaction(async ({ get: tGet, run: tRun }) => {
+      const client = await tGet(
+        'SELECT id FROM clients WHERE id = ? AND tenant_id = ?',
+        [client_id, tenantId]
+      );
+      if (!client) {
+        throw new Error('A cliente selecionada não pertence ao salão ativo.');
+      }
+
       let totalPrice = 0;
       let totalDuration = 0;
       const processedItems = [];
@@ -157,7 +169,9 @@ router.post('/', async (req, res) => {
         const service = await tGet('SELECT * FROM services WHERE id = ? AND tenant_id = ?', [item.service_id, tenantId]);
         const prof = await tGet('SELECT * FROM professionals WHERE id = ? AND tenant_id = ?', [item.professional_id, tenantId]);
 
-        if (!service || !prof) continue;
+        if (!service || !prof) {
+          throw new Error('Serviço ou profissional não pertence ao salão ativo.');
+        }
 
         const price = item.price !== undefined ? parseFloat(item.price) : service.price;
         totalPrice += price;
@@ -182,6 +196,10 @@ router.post('/', async (req, res) => {
           commission_value: commVal,
           commission_amount: commAmount,
         });
+      }
+
+      if (processedItems.length === 0) {
+        throw new Error('Inclua ao menos um serviço válido para o salão ativo.');
       }
 
       // Criar cabeçalho do agendamento
@@ -243,7 +261,7 @@ router.patch('/:id/status', async (req, res) => {
   try {
     const { id } = req.params;
     const { status } = req.body;
-    const tenantId = req.tenantId || 'tenant_default_salao';
+    const tenantId = req.tenantId;
 
     const validStatuses = ['agendado', 'confirmado', 'em_atendimento', 'concluido', 'cancelado', 'no_show'];
     if (!validStatuses.includes(status)) {
@@ -279,7 +297,7 @@ router.patch('/:id/status', async (req, res) => {
 // Excluir agendamento
 router.delete('/:id', async (req, res) => {
   try {
-    const tenantId = req.tenantId || 'tenant_default_salao';
+    const tenantId = req.tenantId;
     await transaction(async ({ run: tRun }) => {
       await tRun('DELETE FROM appointment_items WHERE appointment_id = ? AND tenant_id = ?', [req.params.id, tenantId]);
       await tRun('DELETE FROM appointments WHERE id = ? AND tenant_id = ?', [req.params.id, tenantId]);
@@ -294,7 +312,7 @@ router.delete('/:id', async (req, res) => {
 router.get('/blocks/all', async (req, res) => {
   try {
     const { date } = req.query;
-    const tenantId = req.tenantId || 'tenant_default_salao';
+    const tenantId = req.tenantId;
     let sql = `
       SELECT tb.*, p.name as prof_name, p.nickname as prof_nickname, p.color_hex as prof_color
       FROM time_blocks tb
@@ -317,7 +335,7 @@ router.get('/blocks/all', async (req, res) => {
 router.post('/blocks', async (req, res) => {
   try {
     const { professional_id, date, start_time, end_time, reason } = req.body;
-    const tenantId = req.tenantId || 'tenant_default_salao';
+    const tenantId = req.tenantId;
     if (!date || !start_time || !end_time || !reason) {
       return res.status(400).json({ error: 'Data, Horários e Motivo do bloqueio são obrigatórios.' });
     }
@@ -336,7 +354,7 @@ router.post('/blocks', async (req, res) => {
 
 router.delete('/blocks/:id', async (req, res) => {
   try {
-    const tenantId = req.tenantId || 'tenant_default_salao';
+    const tenantId = req.tenantId;
     await run('DELETE FROM time_blocks WHERE id = ? AND tenant_id = ?', [req.params.id, tenantId]);
     res.json({ message: 'Bloqueio de horário removido.' });
   } catch (error) {
