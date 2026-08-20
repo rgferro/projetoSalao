@@ -18,6 +18,7 @@ backend/whatsapp_auth/
 cloudflared.exe
 *.log
 bellagestao.tar.gz
+bellagestao_deploy.tar.gz
 
 # SQLite Databases & Binaries (Anti-Overwrite & Privacy)
 *.db

@@ -9,7 +9,6 @@ module.exports = {
         PORT: 3002,
         WHATSAPP_PORT: 3006,
         APP_URL: 'https://belagestaostudio.com.br',
-        BREVO_API_KEY: 'REMOVED',
         BREVO_SENDER_NAME: 'BelaGestão Studio',
         BREVO_SENDER_EMAIL: 'contato@belagestaostudio.com.br',
         ADMIN_NOTIFICATION_EMAIL: 'rafael.gielow@gmail.com'
