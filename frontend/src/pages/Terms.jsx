@@ -85,6 +85,11 @@ export default function Terms() {
               A plataforma disponibiliza ferramentas automáticas e manuais para geração de backups locais compactados e sincronização com nuvem (Google Drive), garantindo portabilidade total dos dados.
             </p>
           </section>
+
+          <section className="space-y-2">
+            <h2 className="text-base font-extrabold text-slate-900">6. Privacidade e Canal do Encarregado</h2>
+            <p>Solicitações de privacidade, exportação ou exclusão de dados devem ser encaminhadas ao Encarregado de Dados (DPO), time de Privacidade BelaGestão Studio, pelo canal <strong>contato@belagestaostudio.com.br</strong>, com o assunto “LGPD”.</p>
+          </section>
         </div>
       </main>
     </div>

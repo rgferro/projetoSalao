@@ -1,4 +1,14 @@
 const API_BASE = '/api';
+let csrfToken = null;
+
+export async function getCsrfToken() {
+  if (csrfToken) return csrfToken;
+  const response = await fetch(`${API_BASE}/security/csrf-token`, { credentials: 'same-origin' });
+  const data = await response.json();
+  if (!response.ok || !data?.token) throw new Error('Não foi possível iniciar a proteção de segurança.');
+  csrfToken = data.token;
+  return csrfToken;
+}
 
 async function request(endpoint, options = {}) {
   const url = `${API_BASE}${endpoint}`;
@@ -16,13 +26,18 @@ async function request(endpoint, options = {}) {
     headers['Authorization'] = `Bearer ${token}`;
   }
 
+  if (!['GET', 'HEAD', 'OPTIONS'].includes(options.method || 'GET')) {
+    headers['X-CSRF-Token'] = await getCsrfToken();
+  }
+
   if (!(options.body instanceof FormData) && !headers['Content-Type']) {
     headers['Content-Type'] = 'application/json';
   }
 
   const config = {
     ...options,
-    headers
+    headers,
+    credentials: 'same-origin',
   };
 
   try {

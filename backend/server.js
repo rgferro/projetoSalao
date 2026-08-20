@@ -9,6 +9,7 @@ const gdriveService = require('./services/gdriveService');
 const logger = require('./services/logger');
 const { sanitizationMiddleware } = require('./middleware/sanitization');
 const { extractAuth } = require('./middleware/authMiddleware');
+const { securityHeaders, rateLimit, issueCsrfToken, requireCsrfToken } = require('./middleware/security');
 
 const clientsRoutes = require('./routes/clients');
 const professionalsRoutes = require('./routes/professionals');
@@ -27,18 +28,23 @@ const masterAdminRoutes = require('./routes/masterAdmin');
 
 const app = express();
 const PORT = process.env.PORT || 3001;
+app.set('trust proxy', 1);
 
 // Middlewares Globais de Segurança, Sanitização e Extração de Tenant
-app.use(cors());
+app.use(cors({ origin: process.env.APP_URL || true, credentials: true }));
+app.use(securityHeaders);
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 app.use(sanitizationMiddleware);
 app.use(extractAuth);
 
 // Rotas da API REST
-app.use('/api/auth', authRoutes);
+const authRateLimit = rateLimit({ windowMs: 15 * 60 * 1000, max: 20, message: 'Muitas tentativas. Aguarde alguns minutos para tentar novamente.' });
+const contactRateLimit = rateLimit({ windowMs: 15 * 60 * 1000, max: 8, message: 'Muitas mensagens enviadas. Aguarde alguns minutos para tentar novamente.' });
+app.get('/api/security/csrf-token', issueCsrfToken);
+app.use('/api/auth', authRateLimit, requireCsrfToken, authRoutes);
 app.use('/api/subscription', subscriptionRoutes);
-app.use('/api/contact', contactRoutes);
+app.use('/api/contact', contactRateLimit, requireCsrfToken, contactRoutes);
 app.use('/api/master-admin', masterAdminRoutes);
 app.use('/api/clients', clientsRoutes);
 app.use('/api/professionals', professionalsRoutes);

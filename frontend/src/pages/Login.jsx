@@ -15,6 +15,7 @@ import {
   ShieldCheck,
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
+import { getCsrfToken } from '../services/api';
 
 export default function Login({ onNavigateRegister, onNavigateLanding, onLoginSuccess }) {
   const { login } = useAuth();
@@ -44,7 +45,8 @@ export default function Login({ onNavigateRegister, onNavigateLanding, onLoginSu
       setLoading(true);
       const res = await fetch('/api/auth/login', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', 'X-CSRF-Token': await getCsrfToken() },
+        credentials: 'same-origin',
         body: JSON.stringify({ login: loginValue.trim(), password }),
       });
 

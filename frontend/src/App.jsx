@@ -42,6 +42,7 @@ import {
   Menu as MenuIcon 
 } from 'lucide-react';
 import { api } from './services/api';
+import { updateSeo } from './lib/seo';
 
 function MainApp() {
   const { user, isAuthenticated, logout, defaultTab } = useAuth();
@@ -95,6 +96,10 @@ function MainApp() {
   const [showAppointmentModal, setShowAppointmentModal] = useState(false);
   const [showClientModal, setShowClientModal] = useState(false);
   const [activeTour, setActiveTour] = useState(null);
+
+  useEffect(() => {
+    updateSeo(currentView);
+  }, [currentView]);
 
   // Escutar mudanças de navegação pelo histórico
   useEffect(() => {

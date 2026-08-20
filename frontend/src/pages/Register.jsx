@@ -27,6 +27,8 @@ import {
   fetchViaCEP,
 } from '../lib/validation';
 import { useAuth } from '../context/AuthContext';
+import { getCsrfToken } from '../services/api';
+import { Link } from '../components/Link';
 
 export default function Register({ onNavigateLogin, onNavigateLanding, onRegisteredSuccess }) {
   const { login } = useAuth();
@@ -61,6 +63,7 @@ export default function Register({ onNavigateLogin, onNavigateLanding, onRegiste
   const [errorMsg, setErrorMsg] = useState('');
   const [successMsg, setSuccessMsg] = useState('');
   const [loadingCep, setLoadingCep] = useState(false);
+  const [acceptTerms, setAcceptTerms] = useState(false);
 
   // Modal de Verificação do Código de 6 Dígitos da Brevo
   const [showCodeModal, setShowCodeModal] = useState(false);
@@ -130,12 +133,16 @@ export default function Register({ onNavigateLogin, onNavigateLanding, onRegiste
     if (!passwordCheck.isValid) {
       return setErrorMsg('A senha precisa atender aos critérios de segurança.');
     }
+    if (!acceptTerms) {
+      return setErrorMsg('Leia e aceite os Termos de Uso e a Política de Privacidade para continuar.');
+    }
 
     try {
       setLoading(true);
       const res = await fetch('/api/auth/send-code', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', 'X-CSRF-Token': await getCsrfToken() },
+        credentials: 'same-origin',
         body: JSON.stringify({
           email: formData.ownerEmail,
           salonName: formData.name,
@@ -174,6 +181,7 @@ export default function Register({ onNavigateLogin, onNavigateLanding, onRegiste
         body: JSON.stringify({
           ...formData,
           code: verificationCode.trim(),
+          acceptTerms,
         }),
       });
 
@@ -457,6 +465,11 @@ export default function Register({ onNavigateLogin, onNavigateLanding, onRegiste
               </div>
             )}
           </div>
+
+          <label className="flex items-start gap-2 rounded-xl border border-slate-200 bg-slate-50 p-3 text-xs text-slate-600">
+            <input type="checkbox" checked={acceptTerms} onChange={(event) => setAcceptTerms(event.target.checked)} className="mt-0.5" />
+            <span>Li e aceito os <Link to="/termos" className="font-bold text-pink-700 underline">Termos de Uso</Link> e a <Link to="/privacidade" className="font-bold text-pink-700 underline">Política de Privacidade</Link>.</span>
+          </label>
 
           <button
             type="submit"

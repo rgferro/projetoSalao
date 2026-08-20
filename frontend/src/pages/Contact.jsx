@@ -9,7 +9,8 @@ export default function Contact() {
     email: '',
     phone: '',
     subject: '',
-    message: ''
+    message: '',
+    acceptTerms: false,
   });
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState(false);
@@ -21,13 +22,17 @@ export default function Contact() {
       setError('Por favor, preencha nome, e-mail e sua mensagem.');
       return;
     }
+    if (!formData.acceptTerms) {
+      setError('Confirme a Política de Privacidade para enviar sua mensagem.');
+      return;
+    }
 
     try {
       setLoading(true);
       setError(null);
       await api.post('/contact', formData);
       setSuccess(true);
-      setFormData({ name: '', email: '', phone: '', subject: '', message: '' });
+      setFormData({ name: '', email: '', phone: '', subject: '', message: '', acceptTerms: false });
     } catch (err) {
       setError(err.response?.data?.error || 'Erro ao despachar mensagem. Tente novamente.');
     } finally {
@@ -218,6 +223,11 @@ export default function Contact() {
                     className="w-full p-3.5 bg-slate-50 border border-slate-200 rounded-2xl font-semibold focus:outline-none focus:ring-2 focus:ring-pink-500 resize-none"
                   />
                 </div>
+
+                <label className="flex items-start gap-2 rounded-xl border border-slate-200 bg-slate-50 p-3 text-slate-600">
+                  <input type="checkbox" checked={formData.acceptTerms} onChange={(e) => setFormData({ ...formData, acceptTerms: e.target.checked })} className="mt-0.5" />
+                  <span>Li e concordo com a <Link to="/privacidade" className="font-bold text-pink-700 underline">Política de Privacidade</Link> e o tratamento dos meus dados para responder a este contato.</span>
+                </label>
 
                 <button
                   type="submit"

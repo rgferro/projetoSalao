@@ -72,8 +72,13 @@ export default function Privacy() {
           <section className="space-y-2">
             <h2 className="text-base font-extrabold text-slate-900">4. Direitos do Titular (LGPD Art. 18)</h2>
             <p>
-              O titular dos dados possui o direito inalienável de solicitar a confirmação, correção, exportação em arquivo portátil ou exclusão definitiva de seus dados a qualquer momento através do nosso canal de <strong>Fale Conosco</strong>.
+              O titular pode solicitar confirmação, correção, exportação em arquivo portátil ou exclusão definitiva dos dados. Para exercer seus direitos, envie uma solicitação para <strong>contato@belagestaostudio.com.br</strong> com o assunto “LGPD — Exportação” ou “LGPD — Exclusão”.
             </p>
+          </section>
+
+          <section className="space-y-2">
+            <h2 className="text-base font-extrabold text-slate-900">5. Encarregado de Dados (DPO)</h2>
+            <p>O Encarregado de Dados do BelaGestão Studio é o time de Privacidade BelaGestão Studio. Canal direto: <strong>contato@belagestaostudio.com.br</strong>, assunto “LGPD”.</p>
           </section>
         </div>
       </main>

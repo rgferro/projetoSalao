@@ -1,0 +1,6 @@
+User-agent: *
+Allow: /
+Disallow: /dashboard
+Disallow: /master-admin
+Disallow: /api/
+Sitemap: https://belagestaostudio.com.br/sitemap.xml

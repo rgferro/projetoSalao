@@ -92,6 +92,7 @@ router.post('/register', async (req, res) => {
       ownerPhone,
       password,
       code, // Código de 6 dígitos da Brevo
+      acceptTerms,
       cep,
       street,
       number,
@@ -103,6 +104,9 @@ router.post('/register', async (req, res) => {
 
     if (!name || !ownerName || !ownerEmail || !password) {
       return res.status(400).json({ error: 'Preencha todos os campos obrigatórios.' });
+    }
+    if (acceptTerms !== true) {
+      return res.status(400).json({ error: 'É necessário aceitar os Termos de Uso e a Política de Privacidade.' });
     }
 
     const cleanEmail = ownerEmail.trim().toLowerCase();

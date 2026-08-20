@@ -5,9 +5,12 @@ const { sendContactEmail } = require('../services/brevoService');
 
 router.post('/', async (req, res) => {
   try {
-    const { name, email, phone, subject, message } = req.body;
+    const { name, email, phone, subject, message, acceptTerms } = req.body;
     if (!name || !email || !message) {
       return res.status(400).json({ error: 'Nome, e-mail e mensagem são obrigatórios.' });
+    }
+    if (acceptTerms !== true) {
+      return res.status(400).json({ error: 'Confirme a Política de Privacidade para enviar sua mensagem.' });
     }
 
     const id = `msg_${Date.now()}`;
