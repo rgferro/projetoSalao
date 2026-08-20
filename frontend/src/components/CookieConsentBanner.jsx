@@ -15,7 +15,10 @@ export default function CookieConsentBanner() {
   };
 
   return (
-    <aside className="fixed inset-x-3 bottom-3 z-[70] mx-auto max-w-3xl border border-slate-200 bg-white p-4 shadow-2xl sm:bottom-6 sm:p-5" aria-label="Preferências de cookies">
+    <aside
+      className="fixed inset-x-3 bottom-20 md:bottom-6 z-[45] mx-auto max-w-3xl rounded-2xl border border-slate-200 bg-white/95 backdrop-blur-md p-4 sm:p-5 shadow-2xl transition-all"
+      aria-label="Preferências de cookies"
+    >
       <div className="flex flex-col gap-4 sm:flex-row sm:items-start">
         <div className="flex-1">
           <h2 className="text-sm font-black text-slate-900">Sua privacidade importa</h2>
