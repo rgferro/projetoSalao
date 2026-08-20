@@ -138,12 +138,18 @@ function MainApp() {
   };
 
   useEffect(() => {
-    if (currentView === 'app' || currentView === 'app_master') {
+    if (isAuthenticated && (currentView === 'app' || currentView === 'app_master')) {
       refreshGlobalState();
       const interval = setInterval(refreshGlobalState, 30000);
       return () => clearInterval(interval);
     }
-  }, [currentView]);
+  }, [currentView, isAuthenticated]);
+
+  useEffect(() => {
+    if ((currentView === 'app' || currentView === 'app_master') && !isAuthenticated) {
+      navigateTo('login', '/login');
+    }
+  }, [currentView, isAuthenticated]);
 
   // Global Keyboard Shortcuts (F1, F2, F3, F4, ESC)
   useEffect(() => {
