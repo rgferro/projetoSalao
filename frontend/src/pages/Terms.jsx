@@ -44,9 +44,12 @@ export default function Terms() {
 
         <div className="bg-white p-6 sm:p-8 rounded-3xl border border-slate-200 shadow-sm space-y-6 text-xs sm:text-sm text-slate-700 leading-relaxed">
           <section className="space-y-2">
-            <h2 className="text-base font-extrabold text-slate-900">1. Objeto e Aceitação</h2>
+            <h2 className="text-base font-extrabold text-slate-900">1. Identificação do Responsável e Objeto</h2>
             <p>
-              Ao criar uma conta ou utilizar o <strong>BelaGestão Studio</strong>, você concorda expressamente com estes Termos de Uso. Esta plataforma destina-se ao gerenciamento operacional, financeiro, agendamento de atendimentos e automação de salões de beleza, clínicas de estética, esmalterias e barbearias.
+              O <strong>Torque ERP / BelaGestão Studio</strong> é um software como serviço (SaaS) desenvolvido e operado sob responsabilidade de <strong>Rafael Gielow</strong>, Pessoa Física, inscrito no <strong>CPF sob o nº 116.658.727-48</strong>, com sede em Juiz de Fora - MG.
+            </p>
+            <p>
+              A plataforma é disponibilizada no estado em que se encontra ("as is") para gestão operacional, financeira, agendamento de atendimentos e automação de salões de beleza, barbearias, clínicas de estética e esmalterias.
             </p>
           </section>
 
@@ -75,7 +78,7 @@ export default function Terms() {
           <section className="space-y-2">
             <h2 className="text-base font-extrabold text-slate-900">4. Responsabilidade pelos Dados e Anamneses</h2>
             <p>
-              O salão contratante é o controlador dos dados pessoais e registros de anamnese capilar/estética inseridos na plataforma, competindo-lhe coletar o devido consentimento de seus clientes em conformidade com a legislação aplicável.
+              O contratante é o controlador dos dados pessoais e registros inseridos na plataforma, competindo-lhe coletar o devido consentimento de seus clientes em conformidade com a legislação aplicável (LGPD - Lei nº 13.709/2018).
             </p>
           </section>
 
@@ -87,8 +90,14 @@ export default function Terms() {
           </section>
 
           <section className="space-y-2">
-            <h2 className="text-base font-extrabold text-slate-900">6. Privacidade e Canal do Encarregado</h2>
-            <p>Solicitações de privacidade, exportação ou exclusão de dados devem ser encaminhadas ao Encarregado de Dados (DPO), time de Privacidade BelaGestão Studio, pelo canal <strong>contato@belagestaostudio.com.br</strong>, com o assunto “LGPD”.</p>
+            <h2 className="text-base font-extrabold text-slate-900">6. Atendimento, Suporte e Canal LGPD</h2>
+            <p>
+              Todas as solicitações de suporte técnico, cancelamento, dúvidas ou requisições de privacidade de dados (LGPD) devem ser abertas diretamente através do canal oficial de{' '}
+              <Link to="/contato" className="text-pink-600 font-bold underline hover:text-pink-700">
+                Fale Conosco (Atendimento & Suporte)
+              </Link>{' '}
+              da nossa plataforma.
+            </p>
           </section>
         </div>
       </main>

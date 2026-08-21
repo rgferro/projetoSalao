@@ -28,6 +28,7 @@ import SistemaEstetica from './pages/SistemaEstetica';
 import SistemaEsmalteria from './pages/SistemaEsmalteria';
 import SistemaLash from './pages/SistemaLash';
 import PageTourModal from './components/PageTourModal';
+import CookieBanner from './components/CookieBanner';
 import { 
   ShortcutsModal, 
   CashManagementModal, 
@@ -439,6 +440,8 @@ function MainApp() {
         onClose={() => setActiveTour(null)}
       />
 
+      {/* Banner LGPD & Cookies */}
+      <CookieBanner />
     </div>
   );
 }

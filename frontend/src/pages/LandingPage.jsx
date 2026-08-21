@@ -24,6 +24,7 @@ import {
   ArrowUpRight
 } from 'lucide-react';
 import { Link } from '../components/Link';
+import DynamicCpfFooter from '../components/DynamicCpfFooter';
 
 export default function LandingPage({ onNavigateLogin, onNavigateRegister, onEnterDemo }) {
   const [openFaq, setOpenFaq] = useState(null);
@@ -521,8 +522,8 @@ export default function LandingPage({ onNavigateLogin, onNavigateRegister, onEnt
           </div>
         </div>
 
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 border-t border-slate-100 mt-8 pt-6 text-center text-[10px] text-slate-400">
-          Copyright © {new Date().getFullYear()} BelaGestão Studio ERP. Todos os direitos reservados.
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 border-t border-slate-100 mt-8 pt-6">
+          <DynamicCpfFooter />
         </div>
       </footer>
 
