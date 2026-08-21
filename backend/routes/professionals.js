@@ -2,7 +2,7 @@ const express = require('express');
 const router = express.Router();
 const { query, get, run } = require('../database/db');
 const { hashPassword } = require('../services/authService');
-const { requireAuth } = require('../middleware/authMiddleware');
+const { requireAuth, requireRole } = require('../middleware/authMiddleware');
 
 // Todas as rotas de profissionais exigem autenticação válida
 router.use(requireAuth);
