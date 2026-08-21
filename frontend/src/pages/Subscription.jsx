@@ -22,6 +22,38 @@ import {
   Eye,
   ExternalLink
 } from 'lucide-react';
+import { useAuth } from '../context/AuthContext';
+
+function safeFormatDateTime(dateStr) {
+  if (!dateStr) return '-';
+  try {
+    const cleanStr = String(dateStr).trim().replace(' ', 'T');
+    const d = new Date(cleanStr);
+    if (isNaN(d.getTime())) return String(dateStr);
+    return d.toLocaleString('pt-BR', {
+      day: '2-digit',
+      month: '2-digit',
+      year: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit',
+    });
+  } catch (e) {
+    return String(dateStr);
+  }
+}
+
+function safeFormatDate(dateStr) {
+  if (!dateStr) return '-';
+  try {
+    const cleanStr = String(dateStr).trim().replace(' ', 'T');
+    const d = new Date(cleanStr);
+    if (isNaN(d.getTime())) return String(dateStr);
+    return d.toLocaleDateString('pt-BR');
+  } catch (e) {
+    return String(dateStr);
+  }
+}
+
 function getNichePlanDetails(segment) {
   const seg = String(segment || 'salao').toLowerCase();
   
@@ -695,11 +727,11 @@ export default function Subscription() {
                 <div className="text-xs font-black uppercase tracking-wider text-pink-600">{segDetails.studio.title}</div>
                 <div>
                   <div className="text-3xl font-black text-slate-900 dark:text-white">
-                    R$ {139.9 + (extraSeats * 15)} <span className="text-xs font-normal text-slate-500">/mês</span>
+                    R$ {(139.9 + (extraSeats * 15)).toFixed(2).replace('.', ',')} <span className="text-xs font-normal text-slate-500">/mês</span>
                   </div>
                   {extraSeats > 0 && (
                     <div className="text-[10px] text-pink-600 font-bold">
-                      Inclui +{extraSeats} vagas extras (+R$ {extraSeats * 15}/mês)
+                      Inclui +{extraSeats} vagas extras (+R$ {(extraSeats * 15).toFixed(2).replace('.', ',')}/mês)
                     </div>
                   )}
                 </div>
@@ -732,7 +764,7 @@ export default function Subscription() {
                 <div className="text-xs font-black uppercase tracking-wider text-purple-600">{segDetails.premier.title}</div>
                 <div>
                   <div className="text-3xl font-black text-slate-900 dark:text-white">
-                    R$ {229.9 + (extraSeats * 15)} <span className="text-xs font-normal text-slate-500">/mês</span>
+                    R$ {(229.9 + (extraSeats * 15)).toFixed(2).replace('.', ',')} <span className="text-xs font-normal text-slate-500">/mês</span>
                   </div>
                   <div className="text-[11px] text-purple-600 font-bold mt-0.5">Para Redes e Grandes Espaços</div>
                 </div>
@@ -831,21 +863,8 @@ export default function Subscription() {
                   };
                   const planTitle = planLabels[p.plan] || p.plan || 'Plano Studio Pro';
 
-                  const dateFormatted = p.created_at
-                    ? new Date(p.created_at).toLocaleString('pt-BR', {
-                        day: '2-digit',
-                        month: '2-digit',
-                        year: 'numeric',
-                        hour: '2-digit',
-                        minute: '2-digit',
-                      })
-                    : '-';
-
-                  const paidDateFormatted = p.paid_at
-                    ? new Date(p.paid_at).toLocaleDateString('pt-BR')
-                    : p.created_at
-                    ? new Date(p.created_at).toLocaleDateString('pt-BR')
-                    : '-';
+                  const dateFormatted = safeFormatDateTime(p.created_at);
+                  const paidDateFormatted = safeFormatDate(p.paid_at || p.created_at);
 
                   const isApproved = p.status === 'approved';
                   const isPending = p.status === 'pending';
