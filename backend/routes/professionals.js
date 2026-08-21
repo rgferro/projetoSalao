@@ -115,7 +115,6 @@ router.post('/', requireRole(['ADMIN', 'GERENTE']), async (req, res) => {
       phone,
       email,
       password,
-      pin_code = '1234',
       color_hex,
       specialties,
       default_commission_type,
@@ -160,9 +159,9 @@ router.post('/', requireRole(['ADMIN', 'GERENTE']), async (req, res) => {
     const result = await run(
       `INSERT INTO professionals (
         name, nickname, role, access_level, subtypes, phone, email, password,
-        pin_code, color_hex, specialties, default_commission_type, default_commission_value,
+        color_hex, specialties, default_commission_type, default_commission_value,
         work_schedule, active, tenant_id
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1, ?)`,
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1, ?)`,
       [
         name,
         nickname || name.split(' ')[0],
@@ -172,7 +171,6 @@ router.post('/', requireRole(['ADMIN', 'GERENTE']), async (req, res) => {
         phone || null,
         email || null,
         hashedPassword,
-        pin_code || '1234',
         color_hex || '#ec4899',
         JSON.stringify(specialties || []),
         default_commission_type || 'percentage',
@@ -227,7 +225,6 @@ router.put('/:id', async (req, res) => {
       subtypes,
       phone,
       email,
-      pin_code,
       password,
       color_hex,
       specialties,
@@ -253,7 +250,6 @@ router.put('/:id', async (req, res) => {
       JSON.stringify(subtypes || []),
       phone,
       email,
-      pin_code,
       color_hex,
       JSON.stringify(specialties || []),
       safeCommissionType,
@@ -272,7 +268,7 @@ router.put('/:id', async (req, res) => {
     await run(
       `UPDATE professionals 
        SET name = ?, nickname = ?, role = COALESCE(?, role), access_level = COALESCE(?, access_level),
-           subtypes = ?, phone = ?, email = ?, pin_code = COALESCE(?, pin_code), color_hex = ?, 
+           subtypes = ?, phone = ?, email = ?, color_hex = ?, 
            specialties = ?, default_commission_type = COALESCE(?, default_commission_type), default_commission_value = COALESCE(?, default_commission_value), 
            work_schedule = ?, active = COALESCE(?, active) ${updatePasswordSql}
        WHERE id = ? AND tenant_id = ?`,

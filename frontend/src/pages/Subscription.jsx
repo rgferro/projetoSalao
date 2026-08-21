@@ -46,7 +46,7 @@ function getNichePlanDetails(segment) {
         bullets: [
           'Até 2 Barbeiros Cadastrados',
           'Agendamentos Ilimitados',
-          'Troca Rápida por PIN de 4 dígitos',
+          'Login e Acesso Individual por Barbeiro',
           'Caixa Diário PDV & Baixa por Comanda',
           'Lembretes Automáticos no WhatsApp'
         ]

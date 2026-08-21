@@ -187,9 +187,9 @@ router.post('/register', async (req, res) => {
     await run(`
       INSERT INTO professionals (
         name, nickname, role, access_level, subtypes, phone, email, password,
-        pin_code, color_hex, specialties, default_commission_type, default_commission_value,
+        color_hex, specialties, default_commission_type, default_commission_value,
         active, tenant_id
-      ) VALUES (?, ?, ?, 'ADMIN', ?, ?, ?, ?, '1234', '#ec4899', ?, 'percentage', 60.0, 1, ?)
+      ) VALUES (?, ?, ?, 'ADMIN', ?, ?, ?, ?, '#ec4899', ?, 'percentage', 60.0, 1, ?)
     `, [
       ownerName, ownerName.split(' ')[0], initialRole, JSON.stringify(initialSubtypes),
       ownerPhone || null, cleanEmail, hashedPassword, JSON.stringify(initialSpecialties), tenantId
@@ -601,9 +601,9 @@ router.post('/create-tenant', async (req, res) => {
     await run(`
       INSERT INTO professionals (
         name, nickname, role, access_level, subtypes, phone, email, password,
-        pin_code, color_hex, specialties, default_commission_type, default_commission_value,
+        color_hex, specialties, default_commission_type, default_commission_value,
         active, tenant_id
-      ) VALUES (?, ?, ?, 'ADMIN', ?, ?, ?, ?, '1234', '#ec4899', ?, 'percentage', 60.0, 1, ?)
+      ) VALUES (?, ?, ?, 'ADMIN', ?, ?, ?, ?, '#ec4899', ?, 'percentage', 60.0, 1, ?)
     `, [
       ownerName, ownerName.split(' ')[0], initialRole, JSON.stringify(initialSubtypes),
       ownerPhone, cleanEmail, ownerPassword, JSON.stringify(initialSpecialties), tenantId
@@ -763,10 +763,10 @@ router.get('/invite/:token', async (req, res) => {
   }
 });
 
-// 9. Aceitar Convite e Definir Senha Pessoal
+// 9. Aceitar Convite e Definir Senha Pessoal (Login Individual)
 router.post('/invite/accept', async (req, res) => {
   try {
-    const { token, password, pinCode } = req.body;
+    const { token, password } = req.body;
     if (!token || !password) {
       return res.status(400).json({ error: 'Token e nova senha são obrigatórios.' });
     }
@@ -784,11 +784,11 @@ router.post('/invite/accept', async (req, res) => {
     const hashedPassword = hashPassword(password);
     await run(`
       UPDATE professionals
-      SET password = ?, pin_code = COALESCE(?, pin_code), invite_token = NULL, invite_expires_at = NULL
+      SET password = ?, invite_token = NULL, invite_expires_at = NULL
       WHERE id = ?
-    `, [hashedPassword, pinCode || null, prof.id]);
+    `, [hashedPassword, prof.id]);
 
-    res.json({ success: true, message: 'Senha cadastrada com sucesso! Agora você pode fazer login.' });
+    res.json({ success: true, message: 'Senha cadastrada com sucesso! Agora você pode fazer login individual.' });
   } catch (error) {
     res.status(500).json({ error: 'Erro ao salvar senha.' });
   }

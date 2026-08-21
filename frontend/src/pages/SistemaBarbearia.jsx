@@ -55,7 +55,7 @@ export default function SistemaBarbearia() {
           </h1>
 
           <p className="text-sm sm:text-lg text-slate-400 leading-relaxed max-w-2xl mx-auto">
-            Frente de caixa rápida com QR Code PIX dinâmico na tela, terminal de troca rápida por PIN de 4 dígitos e disparo de WhatsApp de retorno automático.
+            Frente de caixa rápida com QR Code PIX dinâmico na tela, acesso individual com login para cada barbeiro e disparo de WhatsApp de retorno automático.
           </p>
 
           <div className="flex flex-col sm:flex-row items-center justify-center gap-4 pt-4">
@@ -84,9 +84,9 @@ export default function SistemaBarbearia() {
             <div className="w-12 h-12 rounded-2xl bg-amber-950/60 border border-amber-800 text-amber-400 flex items-center justify-center">
               <Zap className="w-6 h-6" />
             </div>
-            <h3 className="text-lg font-black text-white">Troca Rápida de Barbeiro por PIN</h3>
+            <h3 className="text-lg font-black text-white">Login Individual & Agenda por Cadeira</h3>
             <p className="text-xs text-slate-400 leading-relaxed">
-              No tablet ou computador da bancada, cada barbeiro digita seu PIN de 4 dígitos em 1 segundo para lançar o corte sem precisar deslogar.
+              Cada barbeiro possui seu login exclusivo com controle de permissões para acompanhar sua grade de horários, lançar serviços e consultar comissões em tempo real.
             </p>
           </div>
 

@@ -170,11 +170,11 @@ const seedData = async () => {
       await run(`
         INSERT INTO professionals (
           name, nickname, role, access_level, subtypes, phone, email, password,
-          pin_code, color_hex, specialties, default_commission_type, default_commission_value,
+          color_hex, specialties, default_commission_type, default_commission_value,
           active, tenant_id
         ) VALUES (
           'Rafael Gielow', 'Rafael', 'Super Admin Master', 'ADMIN',
-          '["Gestão"]', '(11) 99999-9999', ?, ?, '1234', '#6366f1',
+          '["Gestão"]', '(11) 99999-9999', ?, ?, '#6366f1',
           '["Gestão", "Administração"]', 'percentage', 100.0, 1, 'tenant_master_platform'
         )
       `, [masterEmail, masterPassHash]);
