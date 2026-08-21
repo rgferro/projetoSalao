@@ -258,11 +258,10 @@ async function startInterfaceTests() {
   });
 
   // ==========================================================================
-  // BLOCO 5: FLUXO DE EQUIPE, TROCA DE USUÁRIO POR PIN E COMISSÕES
+  // BLOCO 5: FLUXO DE EQUIPE, CREDENCIAIS INDIVIDUAIS E MATRIZ DE PERMISSÕES
   // ==========================================================================
-  await runTest('5.1 - Fluxo de Equipe: PIN de 4 Dígitos, Comissões e Troca Rápida de Usuário', async () => {
-    const rawPin = '5821';
-    const hashedPass = hashPassword('BellaSenha123');
+  await runTest('5.1 - Fluxo de Equipe: Login Individual por E-mail/Senha, Comissões e Convites', async () => {
+    const hashedPass = hashPassword('ProfSenhaForte2026!');
 
     // 1. Cadastrar Profissional com Especialidades e Comissões
     const profRes = await run(
@@ -288,6 +287,35 @@ async function startInterfaceTests() {
       [profId, testTenant]
     );
     assert.ok(settleRes.lastID);
+  });
+
+  await runTest('5.2 - Matriz Customizada de Permissões: Dono Configura e Salva Acessos por Cargo', async () => {
+    // 1. Salvar configuração customizada para o salão
+    const customPerms = {
+      ADMIN: ['dashboard', 'appointments', 'clients', 'cash-register', 'financial', 'professionals', 'services', 'whatsapp', 'subscription', 'manual', 'backup'],
+      GERENTE: ['dashboard', 'appointments', 'clients', 'cash-register', 'financial', 'services', 'whatsapp'],
+      RECEPCAO: ['appointments', 'clients', 'cash-register'],
+      PROFISSIONAL: ['appointments', 'clients'],
+      AUXILIAR: ['appointments']
+    };
+
+    await run(
+      `INSERT OR REPLACE INTO settings (key, value, tenant_id)
+       VALUES ('custom_role_permissions', ?, ?)`,
+      [JSON.stringify(customPerms), testTenant]
+    );
+
+    // 2. Recuperar do banco e validar
+    const row = await get(
+      `SELECT value FROM settings WHERE key = 'custom_role_permissions' AND tenant_id = ?`,
+      [testTenant]
+    );
+    assert.ok(row && row.value);
+    const parsed = JSON.parse(row.value);
+    assert.strictEqual(parsed.RECEPCAO.includes('cash-register'), true);
+    assert.strictEqual(parsed.RECEPCAO.includes('financial'), false);
+    assert.strictEqual(canAccessModule('RECEPCAO', 'cash-register', parsed), true);
+    assert.strictEqual(canAccessModule('RECEPCAO', 'financial', parsed), false);
   });
 
   // ==========================================================================
@@ -365,6 +393,18 @@ async function startInterfaceTests() {
     assert.strictEqual(profissionalCanSeeFinancial, false, 'Profissional NÃO deve ver financeiro geral do salão');
   });
 
+  await runTest('7.5 - Adaptação de Nicho em Assinatura: Validação dos 5 Segmentos Operacionais', async () => {
+    const validSegments = ['salao', 'barbearia', 'estetica', 'esmalteria', 'lash'];
+    for (const seg of validSegments) {
+      const tenantSeg = await run(
+        `INSERT INTO tenants (id, name, owner_name, owner_email, segment, plan, active)
+         VALUES (?, ?, 'Proprietário Nicho', ?, ?, 'STUDIO', 1)`,
+        [`tenant_${seg}_${Date.now()}`, `Espaço ${seg}`, `nicho_${seg}_${Date.now()}@teste.com`, seg]
+      );
+      assert.ok(tenantSeg.lastID || tenantSeg.changes);
+    }
+  });
+
   // ==========================================================================
   // BLOCO 8: FLUXO DE BACKUP E SEGURANÇA
   // ==========================================================================
@@ -390,10 +430,12 @@ async function startInterfaceTests() {
       'privacidade',
       'sistema-salao',
       'sistema-barbearia',
-      'sistema-estetica'
+      'sistema-estetica',
+      'sistema-esmalteria',
+      'sistema-lash'
     ];
 
-    assert.strictEqual(validPublicViews.length, 11, 'Todas as 11 rotas públicas devem estar registradas');
+    assert.strictEqual(validPublicViews.length, 13, 'Todas as 13 rotas públicas devem estar registradas');
   });
 
   // Limpeza

@@ -387,9 +387,8 @@ router.put('/role-permissions/matrix', requireRole(['ADMIN']), async (req, res) 
 
     const valueStr = JSON.stringify(permissions);
     await run(`
-      INSERT INTO settings (key, value, tenant_id)
+      INSERT OR REPLACE INTO settings (key, value, tenant_id)
       VALUES ('custom_role_permissions', ?, ?)
-      ON CONFLICT(key, tenant_id) DO UPDATE SET value = excluded.value
     `, [valueStr, tenantId]);
 
     res.json({ success: true, message: 'Permissões atualizadas com sucesso!', permissions });
