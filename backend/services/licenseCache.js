@@ -71,44 +71,80 @@ class LicenseCacheManager {
           maxUsers: dbTenant.max_users || 999,
           isDegraded: false,
           gracePeriodActive: false,
-          daysRemaining: 9999,
+          daysRemaining: null,
           isExempt: true,
           message: 'Salão com Isenção Vitalícia / Cortesia Master ativa.',
         };
       }
 
-      const expDate = dbTenant.subscription_expires_at ? new Date(dbTenant.subscription_expires_at) : new Date(Date.now() + 30 * 24 * 60 * 60 * 1000);
-      const isExpired = expDate < now;
+      // 1.2 Se for Plano SOLO (gratuito)
+      if ((dbTenant.plan || 'SOLO').toUpperCase() === 'SOLO') {
+        return {
+          status: 'ACTIVE',
+          plan: 'SOLO',
+          maxUsers: 1,
+          isDegraded: false,
+          gracePeriodActive: false,
+          daysRemaining: null,
+          isExempt: false,
+          message: 'Plano Solo Gratuito ativo.',
+        };
+      }
+
+      // 1.3 Planos Pagos (STARTER, STUDIO, PREMIER)
+      let expDate = null;
+      if (dbTenant.subscription_expires_at) {
+        const rawDate = String(dbTenant.subscription_expires_at).trim();
+        // Se a data do banco for fictícia do plano Solo (ex: 2099), define como 30 dias a partir de agora
+        if (rawDate.startsWith('2099') || rawDate.startsWith('2100')) {
+          expDate = new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000);
+        } else {
+          const isoString = rawDate.includes('T')
+            ? (rawDate.endsWith('Z') ? rawDate : rawDate + 'Z')
+            : rawDate.replace(' ', 'T') + 'Z';
+          expDate = new Date(isoString);
+          if (isNaN(expDate.getTime())) {
+            expDate = new Date(rawDate);
+          }
+        }
+      } else {
+        expDate = new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000);
+      }
+
+      const diffMs = expDate.getTime() - now.getTime();
+      const isExpired = diffMs < 0;
+      const daysRemaining = Math.max(0, Math.ceil(diffMs / (1000 * 60 * 60 * 24)));
 
       if (!isExpired) {
         // Licença ativa e regular
         this.cacheLicense(tenantId, dbTenant.plan, expDate.toISOString(), dbTenant.max_users);
         return {
           status: 'ACTIVE',
-          plan: dbTenant.plan || 'PRO',
-          maxUsers: dbTenant.max_users || 5,
+          plan: dbTenant.plan || 'STARTER',
+          maxUsers: dbTenant.max_users || (dbTenant.plan === 'STARTER' ? 2 : dbTenant.plan === 'STUDIO' ? 5 : 15),
           isDegraded: false,
           gracePeriodActive: false,
-          daysRemaining: Math.max(0, Math.ceil((expDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24))),
+          daysRemaining,
+          expiresAt: expDate.toISOString(),
           message: 'Licença ativa e regular.',
         };
       }
 
       // 2. Licença expirada: Checar se está dentro do Período de Carência (Grace Period)
-      const diffMs = now.getTime() - expDate.getTime();
-      const diffDays = Math.ceil(diffMs / (1000 * 60 * 60 * 24));
+      const expiredDays = Math.ceil(Math.abs(diffMs) / (1000 * 60 * 60 * 24));
 
-      if (diffDays <= GRACE_PERIOD_DAYS) {
-        const graceDaysLeft = GRACE_PERIOD_DAYS - diffDays;
+      if (expiredDays <= GRACE_PERIOD_DAYS) {
+        const graceDaysLeft = Math.max(0, GRACE_PERIOD_DAYS - expiredDays);
         logger.warn(`[LicenseCache] Tenant ${tenantId} operando em Grace Period (${graceDaysLeft} dias restantes).`);
         return {
           status: 'GRACE_PERIOD',
-          plan: dbTenant.plan || 'PRO',
-          maxUsers: dbTenant.max_users || 5,
+          plan: dbTenant.plan || 'STARTER',
+          maxUsers: dbTenant.max_users || 2,
           isDegraded: true,
           gracePeriodActive: true,
           graceDaysRemaining: graceDaysLeft,
           daysRemaining: 0,
+          expiresAt: expDate.toISOString(),
           message: `Sua assinatura expirou. Modo de Carência ativo por mais ${graceDaysLeft} dias sem interrupção do salão.`,
         };
       }

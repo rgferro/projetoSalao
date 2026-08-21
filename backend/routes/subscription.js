@@ -281,6 +281,22 @@ router.post('/webhook', async (req, res) => {
           const plan = subPayment?.plan || 'STUDIO';
           const maxUsers = plan === 'PREMIER' ? 15 : plan === 'STUDIO' ? 5 : plan === 'STARTER' ? 2 : 1;
 
+          const currentTenant = await tGet(`SELECT subscription_expires_at FROM tenants WHERE id = ?`, [tenantId]);
+          const now = new Date();
+          let currentExp = null;
+          if (currentTenant?.subscription_expires_at) {
+            const raw = String(currentTenant.subscription_expires_at);
+            if (!raw.startsWith('2099') && !raw.startsWith('2100')) {
+              currentExp = new Date(raw.includes('T') ? (raw.endsWith('Z') ? raw : raw + 'Z') : raw.replace(' ', 'T') + 'Z');
+            }
+          }
+          let newExpiresAt;
+          if (!currentExp || isNaN(currentExp.getTime()) || currentExp < now) {
+            newExpiresAt = new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000);
+          } else {
+            newExpiresAt = new Date(currentExp.getTime() + 30 * 24 * 60 * 60 * 1000);
+          }
+
           await tRun(
             `UPDATE subscription_payments
              SET status = 'approved', paid_at = datetime('now')
@@ -291,16 +307,16 @@ router.post('/webhook', async (req, res) => {
           await tRun(
             `UPDATE tenants
              SET plan = ?, subscription_status = 'active', max_users = ?,
-                 subscription_expires_at = datetime(COALESCE(subscription_expires_at, 'now'), '+30 days'),
+                 subscription_expires_at = ?,
                  updated_at = datetime('now')
              WHERE id = ?`,
-            [plan, maxUsers, tenantId]
+            [plan, maxUsers, newExpiresAt.toISOString(), tenantId]
           );
 
           licenseManager.cacheLicense(
             tenantId,
             plan,
-            new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
+            newExpiresAt.toISOString(),
             maxUsers
           );
         });
@@ -366,6 +382,22 @@ router.post('/check-payment/:paymentId', async (req, res) => {
         const plan = subPayment?.plan || 'STUDIO';
         const maxUsers = plan === 'PREMIER' ? 15 : plan === 'STUDIO' ? 5 : plan === 'STARTER' ? 2 : 1;
 
+        const currentTenant = await tGet(`SELECT subscription_expires_at FROM tenants WHERE id = ?`, [activeTenantId]);
+        const now = new Date();
+        let currentExp = null;
+        if (currentTenant?.subscription_expires_at) {
+          const raw = String(currentTenant.subscription_expires_at);
+          if (!raw.startsWith('2099') && !raw.startsWith('2100')) {
+            currentExp = new Date(raw.includes('T') ? (raw.endsWith('Z') ? raw : raw + 'Z') : raw.replace(' ', 'T') + 'Z');
+          }
+        }
+        let newExpiresAt;
+        if (!currentExp || isNaN(currentExp.getTime()) || currentExp < now) {
+          newExpiresAt = new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000);
+        } else {
+          newExpiresAt = new Date(currentExp.getTime() + 30 * 24 * 60 * 60 * 1000);
+        }
+
         await tRun(
           `UPDATE subscription_payments
            SET status = 'approved', paid_at = datetime('now')
@@ -376,16 +408,16 @@ router.post('/check-payment/:paymentId', async (req, res) => {
         await tRun(
           `UPDATE tenants
            SET plan = ?, subscription_status = 'active', max_users = ?,
-               subscription_expires_at = datetime(COALESCE(subscription_expires_at, 'now'), '+30 days'),
+               subscription_expires_at = ?,
                updated_at = datetime('now')
            WHERE id = ?`,
-          [plan, maxUsers, activeTenantId]
+          [plan, maxUsers, newExpiresAt.toISOString(), activeTenantId]
         );
 
         licenseManager.cacheLicense(
           activeTenantId,
           plan,
-          new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
+          newExpiresAt.toISOString(),
           maxUsers
         );
       });

@@ -146,7 +146,7 @@ router.post('/register', async (req, res) => {
         max_users, owner_email, owner_password, owner_name, owner_phone,
         cep, street, number, complement, neighborhood, city, state, is_master, is_exempt, active
       ) VALUES (
-        ?, ?, ?, ?, 'SOLO', 'active', '2099-12-31 23:59:59',
+        ?, ?, ?, ?, 'SOLO', 'active', NULL,
         1, ?, ?, ?, ?,
         ?, ?, ?, ?, ?, ?, ?, ?, ?, 1
       )
@@ -560,7 +560,7 @@ router.post('/create-tenant', async (req, res) => {
         max_users, owner_email, owner_password, owner_name, owner_phone,
         cep, street, number, complement, neighborhood, city, state, is_master, is_exempt, active
       ) VALUES (
-        ?, ?, ?, ?, 'SOLO', 'active', '2099-12-31 23:59:59',
+        ?, ?, ?, ?, 'SOLO', 'active', NULL,
         1, ?, ?, ?, ?,
         ?, ?, ?, ?, ?, ?, ?, ?, ?, 1
       )

@@ -254,6 +254,9 @@ const initDb = async () => {
     }
 
     await migrateTenantColumns();
+    try {
+      await run("UPDATE tenants SET subscription_expires_at = NULL WHERE plan = 'SOLO' AND (subscription_expires_at LIKE '2099%' OR subscription_expires_at LIKE '2100%')");
+    } catch (e) {}
     console.log('✅ Estrutura do banco de dados SQLite Multi-Tenant inicializada.');
   } catch (error) {
     console.error('❌ Erro ao inicializar tabelas do banco:', error);
