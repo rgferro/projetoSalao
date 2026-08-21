@@ -67,8 +67,8 @@ export const SYSTEM_MODULES = [
   { id: 'backup', name: 'Backup & Nuvem', icon: 'HardDrive', category: 'Administrativo' },
 ];
 
-// Matriz de Módulos Permitidos por Nível de Acesso
-export const PERMISSIONS_MAP = {
+// Matriz de Módulos Permitidos Padrão por Nível de Acesso
+export const DEFAULT_PERMISSIONS_MAP = {
   ADMIN: [
     'dashboard',
     'appointments',
@@ -113,6 +113,8 @@ export const PERMISSIONS_MAP = {
     'manual',
   ],
 };
+
+export const PERMISSIONS_MAP = DEFAULT_PERMISSIONS_MAP;
 
 // Matriz de Módulos Permitidos por Plano Contratado do Salão
 export const PLAN_MODULES_MAP = {
@@ -206,9 +208,10 @@ export const ROLE_DEFAULT_TABS = {
   AUXILIAR: 'appointments',
 };
 
-export function canAccessModule(accessLevel, moduleId) {
+export function canAccessModule(accessLevel, moduleId, customMap = null) {
   if (!accessLevel) return false;
-  const allowed = PERMISSIONS_MAP[accessLevel] || [];
+  const map = customMap || PERMISSIONS_MAP;
+  const allowed = map[accessLevel] || [];
   return allowed.includes(moduleId);
 }
 

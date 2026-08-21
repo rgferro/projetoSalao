@@ -309,4 +309,106 @@ router.delete('/:id', requireRole(['ADMIN', 'GERENTE']), async (req, res) => {
   }
 });
 
+// 8. Obter matriz de permissões customizada do salão
+const DEFAULT_ROLE_PERMISSIONS = {
+  ADMIN: [
+    'dashboard',
+    'appointments',
+    'clients',
+    'cash-register',
+    'financial',
+    'professionals',
+    'services',
+    'whatsapp',
+    'subscription',
+    'manual',
+    'backup',
+  ],
+  GERENTE: [
+    'dashboard',
+    'appointments',
+    'clients',
+    'cash-register',
+    'financial',
+    'professionals',
+    'services',
+    'whatsapp',
+    'manual',
+  ],
+  RECEPCAO: [
+    'dashboard',
+    'appointments',
+    'clients',
+    'cash-register',
+    'services',
+    'whatsapp',
+    'manual',
+  ],
+  PROFISSIONAL: [
+    'dashboard',
+    'appointments',
+    'clients',
+    'manual',
+  ],
+  AUXILIAR: [
+    'appointments',
+    'manual',
+  ],
+};
+
+router.get('/role-permissions/matrix', async (req, res) => {
+  try {
+    const tenantId = req.tenantId;
+    if (!tenantId) return res.status(401).json({ error: 'Não autenticado.' });
+
+    const row = await get(`SELECT value FROM settings WHERE key = 'custom_role_permissions' AND tenant_id = ?`, [tenantId]);
+    if (row && row.value) {
+      try {
+        const parsed = JSON.parse(row.value);
+        return res.json({ success: true, permissions: { ...DEFAULT_ROLE_PERMISSIONS, ...parsed } });
+      } catch (e) {}
+    }
+    res.json({ success: true, permissions: DEFAULT_ROLE_PERMISSIONS });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// 9. Salvar matriz de permissões customizada do salão (Apenas ADMIN ou Master)
+router.put('/role-permissions/matrix', requireRole(['ADMIN']), async (req, res) => {
+  try {
+    const tenantId = req.tenantId;
+    if (!tenantId) return res.status(401).json({ error: 'Não autenticado.' });
+
+    const { permissions } = req.body;
+    if (!permissions || typeof permissions !== 'object') {
+      return res.status(400).json({ error: 'Matriz de permissões inválida.' });
+    }
+
+    const valueStr = JSON.stringify(permissions);
+    await run(`
+      INSERT INTO settings (key, value, tenant_id)
+      VALUES ('custom_role_permissions', ?, ?)
+      ON CONFLICT(key, tenant_id) DO UPDATE SET value = excluded.value
+    `, [valueStr, tenantId]);
+
+    res.json({ success: true, message: 'Permissões atualizadas com sucesso!', permissions });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// 10. Restaurar permissões padrão do salão (Apenas ADMIN ou Master)
+router.post('/role-permissions/reset', requireRole(['ADMIN']), async (req, res) => {
+  try {
+    const tenantId = req.tenantId;
+    if (!tenantId) return res.status(401).json({ error: 'Não autenticado.' });
+
+    await run(`DELETE FROM settings WHERE key = 'custom_role_permissions' AND tenant_id = ?`, [tenantId]);
+    res.json({ success: true, message: 'Permissões restauradas para os padrões com sucesso!', permissions: DEFAULT_ROLE_PERMISSIONS });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
 module.exports = router;

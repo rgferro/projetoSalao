@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
-import { canAccessModule, canPlanAccessModule, getDefaultTabForRole } from '../lib/permissions';
+import { canAccessModule, canPlanAccessModule, getDefaultTabForRole, DEFAULT_PERMISSIONS_MAP } from '../lib/permissions';
 import { getCsrfToken } from '../services/api';
 
 const AuthContext = createContext(null);
@@ -23,6 +23,16 @@ export function AuthProvider({ children }) {
       }
     }
     return null;
+  });
+
+  const [permissionsMap, setPermissionsMap] = useState(() => {
+    const saved = localStorage.getItem('bella_role_permissions');
+    if (saved) {
+      try {
+        return JSON.parse(saved);
+      } catch (e) {}
+    }
+    return DEFAULT_PERMISSIONS_MAP;
   });
 
   const [isAuthenticated, setIsAuthenticated] = useState(() => {
@@ -49,6 +59,25 @@ export function AuthProvider({ children }) {
     }
     return [];
   });
+
+  // Carregar matriz de permissões customizada do salão
+  const loadPermissionsMatrix = async () => {
+    if (!token) return;
+    try {
+      const res = await fetch('/api/professionals/role-permissions/matrix', {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      if (res.ok) {
+        const data = await res.json();
+        if (data.success && data.permissions) {
+          setPermissionsMap(data.permissions);
+          localStorage.setItem('bella_role_permissions', JSON.stringify(data.permissions));
+        }
+      }
+    } catch (e) {
+      console.warn('[AuthContext] Erro ao carregar permissões:', e);
+    }
+  };
 
   // Validar sessão no backend ao iniciar para evitar estados residuais ou inconsistências
   useEffect(() => {
@@ -81,6 +110,7 @@ export function AuthProvider({ children }) {
           if (data.user.tenants) {
             setUserTenants(data.user.tenants);
           }
+          loadPermissionsMatrix();
         }
       })
       .catch(() => {});
@@ -95,6 +125,7 @@ export function AuthProvider({ children }) {
     }
     localStorage.setItem('bella_user', JSON.stringify(userData));
     if (userToken) localStorage.setItem('bella_token', userToken);
+    loadPermissionsMatrix();
   };
 
   const logout = () => {
@@ -104,6 +135,7 @@ export function AuthProvider({ children }) {
     setIsAuthenticated(false);
     localStorage.removeItem('bella_user');
     localStorage.removeItem('bella_token');
+    localStorage.removeItem('bella_role_permissions');
   };
 
   const switchTenant = async (tenantId) => {
@@ -195,10 +227,71 @@ export function AuthProvider({ children }) {
   const isMaster = Boolean(user?.isMaster || user?.email?.toLowerCase() === 'rafael.gielow@gmail.com');
   const isExempt = Boolean(user?.isExempt || user?.subscription_status === 'exempt');
 
+  // Alternar permissão de um módulo para um perfil específico
+  const toggleRolePermission = (role, moduleId) => {
+    setPermissionsMap(prev => {
+      const currentRolePerms = prev[role] || DEFAULT_PERMISSIONS_MAP[role] || [];
+      const hasPerm = currentRolePerms.includes(moduleId);
+      const nextRolePerms = hasPerm
+        ? currentRolePerms.filter(m => m !== moduleId)
+        : [...currentRolePerms, moduleId];
+
+      const nextMap = {
+        ...prev,
+        [role]: nextRolePerms
+      };
+      localStorage.setItem('bella_role_permissions', JSON.stringify(nextMap));
+      return nextMap;
+    });
+  };
+
+  // Salvar matriz no backend
+  const saveRolePermissions = async (customMatrix) => {
+    const matrixToSave = customMatrix || permissionsMap;
+    try {
+      const res = await fetch('/api/professionals/role-permissions/matrix', {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': token ? `Bearer ${token}` : '',
+          'X-CSRF-Token': await getCsrfToken(),
+        },
+        body: JSON.stringify({ permissions: matrixToSave }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Falha ao salvar permissões.');
+      setPermissionsMap(matrixToSave);
+      localStorage.setItem('bella_role_permissions', JSON.stringify(matrixToSave));
+      return { success: true, message: data.message };
+    } catch (err) {
+      return { success: false, error: err.message };
+    }
+  };
+
+  // Restaurar padrões
+  const resetRolePermissions = async () => {
+    try {
+      const res = await fetch('/api/professionals/role-permissions/reset', {
+        method: 'POST',
+        headers: {
+          'Authorization': token ? `Bearer ${token}` : '',
+          'X-CSRF-Token': await getCsrfToken(),
+        },
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Falha ao resetar permissões.');
+      setPermissionsMap(DEFAULT_PERMISSIONS_MAP);
+      localStorage.setItem('bella_role_permissions', JSON.stringify(DEFAULT_PERMISSIONS_MAP));
+      return { success: true, message: data.message };
+    } catch (err) {
+      return { success: false, error: err.message };
+    }
+  };
+
   const checkRolePermission = (moduleId) => {
     if (!user) return false;
     if (isMaster) return true;
-    return canAccessModule(user.accessLevel, moduleId);
+    return canAccessModule(user.accessLevel, moduleId, permissionsMap);
   };
 
   const isPlanAllowed = (moduleId) => {
@@ -228,6 +321,11 @@ export function AuthProvider({ children }) {
         user,
         userTenants,
         isAuthenticated,
+        permissionsMap,
+        toggleRolePermission,
+        saveRolePermissions,
+        resetRolePermissions,
+        loadPermissionsMatrix,
         login,
         logout,
         switchTenant,

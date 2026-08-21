@@ -18,11 +18,23 @@ import {
   Lock,
   KeyRound,
   Shield,
-  Tag
+  Tag,
+  Sliders,
+  RotateCcw,
+  LayoutDashboard,
+  CreditCard,
+  Users,
+  MessageSquare,
+  HelpCircle,
+  HardDrive,
+  X,
+  AlertCircle,
+  CheckCircle2,
+  Loader2
 } from 'lucide-react';
 import { api, getCsrfToken } from '../services/api';
 import { useAuth } from '../context/AuthContext';
-import { ROLE_CONFIG, DEFAULT_PROFESSIONAL_SUBTYPES } from '../lib/permissions';
+import { ROLE_CONFIG, DEFAULT_PROFESSIONAL_SUBTYPES, SYSTEM_MODULES, ACCESS_LEVELS } from '../lib/permissions';
 import { 
   getSegmentConfig, 
   getSegmentTheme, 
@@ -31,16 +43,31 @@ import {
 } from '../lib/segmentTheme';
 
 export default function Professionals() {
-  const { user } = useAuth();
+  const { 
+    user, 
+    isAdmin, 
+    isMaster, 
+    permissionsMap, 
+    toggleRolePermission, 
+    saveRolePermissions, 
+    resetRolePermissions 
+  } = useAuth();
+
   const segConfig = getSegmentConfig(user?.segment);
   const segTheme = segConfig.theme;
   const segTeam = segConfig.team;
 
-  const [activeTab, setActiveTab] = useState('list'); // 'list', 'commissions-report', 'settlements'
+  const [activeTab, setActiveTab] = useState('list'); // 'list', 'commissions-report', 'settlements', 'permissions'
   const [professionals, setProfessionals] = useState([]);
   const [services, setServices] = useState([]);
   const [specialtiesList, setSpecialtiesList] = useState([]);
   const [loading, setLoading] = useState(true);
+
+  // Gestão de Permissões
+  const [selectedRoleToEdit, setSelectedRoleToEdit] = useState('PROFISSIONAL');
+  const [savingPermissions, setSavingPermissions] = useState(false);
+  const [permSuccessMsg, setPermSuccessMsg] = useState('');
+  const [permErrorMsg, setPermErrorMsg] = useState('');
 
   // New/Edit Professional Modal
   const [showProfModal, setShowProfModal] = useState(false);
@@ -335,6 +362,17 @@ export default function Professionals() {
         >
           Histórico de Repasses
         </button>
+        {isAdmin && (
+          <button
+            onClick={() => setActiveTab('permissions')}
+            className={`flex-1 min-w-fit px-3 py-2 text-xs font-bold rounded-xl whitespace-nowrap transition flex items-center justify-center gap-1.5 ${
+              activeTab === 'permissions' ? `${segTheme.activeTab}` : 'text-slate-500 hover:text-slate-800 dark:hover:text-slate-200'
+            }`}
+          >
+            <Sliders className="w-3.5 h-3.5" />
+            <span>Permissões por Perfil</span>
+          </button>
+        )}
       </div>
 
       {/* TAB 1: Lista de Profissionais com Perfis e Subtipos */}
@@ -576,6 +614,237 @@ export default function Professionals() {
               ))}
             </div>
           )}
+        </div>
+      )}
+
+      {/* TAB 4: Matriz de Permissões por Perfil (Exclusivo Dono / Admin) */}
+      {activeTab === 'permissions' && (
+        <div className="glass-panel p-6 sm:p-8 space-y-6 animate-fadeIn">
+          <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 border-b border-slate-200 dark:border-slate-800 pb-5">
+            <div>
+              <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-purple-50 dark:bg-purple-950/60 border border-purple-200 dark:border-purple-800 text-purple-700 dark:text-purple-300 text-xs font-bold mb-2">
+                <Shield className="w-3.5 h-3.5" />
+                <span>Gerenciamento de Perfis & Segurança</span>
+              </div>
+              <h3 className="text-xl sm:text-2xl font-black text-slate-900 dark:text-white">
+                Personalização de Acessos por Perfil
+              </h3>
+              <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400">
+                Defina exatamente quais módulos e telas cada perfil de colaborador pode acessar no seu espaço.
+              </p>
+            </div>
+
+            <div className="flex items-center gap-2.5 flex-wrap">
+              <button
+                type="button"
+                onClick={async () => {
+                  if (!window.confirm('Deseja restaurar a matriz de permissões para os padrões recomendados do sistema?')) return;
+                  const res = await resetRolePermissions();
+                  if (res.success) {
+                    setPermSuccessMsg('Permissões restauradas para os padrões recomendados com sucesso!');
+                    setTimeout(() => setPermSuccessMsg(''), 4000);
+                  } else {
+                    setPermErrorMsg(res.error || 'Erro ao resetar permissões.');
+                    setTimeout(() => setPermErrorMsg(''), 4000);
+                  }
+                }}
+                className="px-4 py-2.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 hover:bg-slate-50 font-bold text-xs flex items-center gap-1.5 transition-all"
+              >
+                <RotateCcw className="w-3.5 h-3.5 text-slate-400" />
+                <span>Restaurar Padrões</span>
+              </button>
+
+              <button
+                type="button"
+                disabled={savingPermissions}
+                onClick={async () => {
+                  setSavingPermissions(true);
+                  const res = await saveRolePermissions(permissionsMap);
+                  setSavingPermissions(false);
+                  if (res.success) {
+                    setPermSuccessMsg('Matriz de permissões salva com sucesso e sincronizada com toda a equipe!');
+                    setTimeout(() => setPermSuccessMsg(''), 4000);
+                  } else {
+                    setPermErrorMsg(res.error || 'Erro ao salvar permissões.');
+                    setTimeout(() => setPermErrorMsg(''), 4000);
+                  }
+                }}
+                className="px-5 py-2.5 rounded-xl bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 text-white font-black text-xs shadow-md shadow-purple-600/30 flex items-center gap-1.5 transition-all disabled:opacity-50"
+              >
+                {savingPermissions ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Check className="w-3.5 h-3.5" />}
+                <span>{savingPermissions ? 'Salvando...' : 'Salvar Alterações'}</span>
+              </button>
+            </div>
+          </div>
+
+          {permSuccessMsg && (
+            <div className="p-3.5 rounded-2xl bg-emerald-50 text-emerald-800 border border-emerald-200 dark:bg-emerald-950/40 dark:text-emerald-300 dark:border-emerald-800 text-xs font-bold flex items-center gap-2 animate-fadeIn">
+              <CheckCircle2 className="w-4 h-4 shrink-0 text-emerald-600" />
+              <span>{permSuccessMsg}</span>
+            </div>
+          )}
+
+          {permErrorMsg && (
+            <div className="p-3.5 rounded-2xl bg-rose-50 text-rose-800 border border-rose-200 dark:bg-rose-950/40 dark:text-rose-300 dark:border-rose-800 text-xs font-bold flex items-center gap-2 animate-fadeIn">
+              <AlertCircle className="w-4 h-4 shrink-0 text-rose-600" />
+              <span>{permErrorMsg}</span>
+            </div>
+          )}
+
+          {/* Seletor de Perfil para Configuração */}
+          <div className="space-y-3">
+            <label className="text-xs font-bold text-slate-700 dark:text-slate-300 block">
+              Selecione o Cargo / Perfil para Editar:
+            </label>
+
+            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-2.5">
+              {Object.keys(ACCESS_LEVELS).map((lvl) => {
+                const conf = ROLE_CONFIG[lvl] || { label: lvl, icon: '👤', badgeColor: 'bg-slate-100' };
+                const isSelected = selectedRoleToEdit === lvl;
+
+                return (
+                  <button
+                    key={lvl}
+                    type="button"
+                    onClick={() => setSelectedRoleToEdit(lvl)}
+                    className={`p-3 rounded-2xl border text-left transition-all flex flex-col justify-between gap-2 ${
+                      isSelected
+                        ? 'border-purple-500 bg-purple-50/80 dark:bg-purple-950/50 shadow-md ring-2 ring-purple-500/20'
+                        : 'border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900/60 hover:border-slate-300 opacity-80 hover:opacity-100'
+                    }`}
+                  >
+                    <div className="flex items-center justify-between">
+                      <span className="text-xl">{conf.icon}</span>
+                      <span className={`text-[10px] font-black uppercase px-2 py-0.5 rounded-full border ${conf.badgeColor}`}>
+                        {lvl}
+                      </span>
+                    </div>
+                    <div>
+                      <div className="font-bold text-xs text-slate-900 dark:text-white leading-tight">
+                        {conf.label}
+                      </div>
+                    </div>
+                  </button>
+                );
+              })}
+            </div>
+
+            {/* Banner explicativo do perfil ativo */}
+            {(() => {
+              const activeConf = ROLE_CONFIG[selectedRoleToEdit] || ROLE_CONFIG.PROFISSIONAL;
+              const allowedModulesCount = (permissionsMap[selectedRoleToEdit] || []).length;
+
+              return (
+                <div className="p-4 rounded-2xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700/60 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                  <div className="space-y-0.5">
+                    <div className="flex items-center gap-2">
+                      <span className="text-base">{activeConf.icon}</span>
+                      <span className="text-xs font-black text-slate-900 dark:text-white">{activeConf.label}</span>
+                      <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full border ${activeConf.badgeColor}`}>
+                        {allowedModulesCount} de {SYSTEM_MODULES.length} telas liberadas
+                      </span>
+                    </div>
+                    <p className="text-xs text-slate-500 dark:text-slate-400">
+                      {activeConf.description}
+                    </p>
+                  </div>
+
+                  {selectedRoleToEdit === 'ADMIN' && (
+                    <div className="text-[11px] font-bold text-purple-700 dark:text-purple-300 bg-purple-100/70 dark:bg-purple-950/60 px-3 py-1.5 rounded-xl border border-purple-300 dark:border-purple-800 shrink-0">
+                      👑 Perfil Dono (Recomendado manter acesso irrestrito)
+                    </div>
+                  )}
+                </div>
+              );
+            })()}
+          </div>
+
+          {/* Grade de Módulos e Acessos */}
+          <div className="space-y-3 pt-2">
+            <div className="flex items-center justify-between">
+              <h4 className="font-black text-sm text-slate-900 dark:text-white flex items-center gap-2">
+                <span>Telas & Módulos Disponíveis</span>
+                <span className="text-xs font-normal text-slate-400">
+                  (Clique no card para ativar ou bloquear)
+                </span>
+              </h4>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+              {SYSTEM_MODULES.map((mod) => {
+                const currentRoleAllowed = permissionsMap[selectedRoleToEdit] || [];
+                const isAllowed = currentRoleAllowed.includes(mod.id);
+
+                const getModuleIcon = (iconName) => {
+                  switch (iconName) {
+                    case 'LayoutDashboard': return <LayoutDashboard className="w-5 h-5" />;
+                    case 'Calendar': return <Calendar className="w-5 h-5" />;
+                    case 'Users': return <Users className="w-5 h-5" />;
+                    case 'CreditCard': return <CreditCard className="w-5 h-5" />;
+                    case 'DollarSign': return <DollarSign className="w-5 h-5" />;
+                    case 'UserCheck': return <UserCheck className="w-5 h-5" />;
+                    case 'Scissors': return <Scissors className="w-5 h-5" />;
+                    case 'MessageSquare': return <MessageSquare className="w-5 h-5" />;
+                    case 'Sparkles': return <Sparkles className="w-5 h-5" />;
+                    case 'HelpCircle': return <HelpCircle className="w-5 h-5" />;
+                    case 'HardDrive': return <HardDrive className="w-5 h-5" />;
+                    default: return <Sparkles className="w-5 h-5" />;
+                  }
+                };
+
+                const categoryColors = {
+                  'Operacional': 'bg-emerald-50 text-emerald-800 border-emerald-200 dark:bg-emerald-950/60 dark:text-emerald-300 dark:border-emerald-800',
+                  'Gestão': 'bg-blue-50 text-blue-800 border-blue-200 dark:bg-blue-950/60 dark:text-blue-300 dark:border-blue-800',
+                  'Administrativo': 'bg-purple-50 text-purple-800 border-purple-200 dark:bg-purple-950/60 dark:text-purple-300 dark:border-purple-800',
+                };
+
+                return (
+                  <div
+                    key={mod.id}
+                    onClick={() => toggleRolePermission(selectedRoleToEdit, mod.id)}
+                    className={`p-4 rounded-2xl border cursor-pointer transition-all flex items-center justify-between select-none ${
+                      isAllowed
+                        ? 'bg-gradient-to-r from-emerald-50/90 to-teal-50/80 dark:from-emerald-950/40 dark:to-teal-950/30 border-emerald-300 dark:border-emerald-800/80 shadow-xs'
+                        : 'bg-slate-50 dark:bg-slate-800/30 border-slate-200 dark:border-slate-800 text-slate-400 opacity-60 hover:opacity-90'
+                    }`}
+                  >
+                    <div className="flex items-center gap-3">
+                      <div
+                        className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 shadow-xs ${
+                          isAllowed
+                            ? 'bg-emerald-500 text-white shadow-emerald-500/20'
+                            : 'bg-slate-200 dark:bg-slate-700 text-slate-400'
+                        }`}
+                      >
+                        {getModuleIcon(mod.icon)}
+                      </div>
+                      <div>
+                        <div className="font-bold text-xs text-slate-900 dark:text-white flex items-center gap-1.5">
+                          <span>{mod.name}</span>
+                        </div>
+                        <div className="flex items-center gap-1.5 mt-0.5">
+                          <span className={`text-[9px] font-bold px-1.5 py-0.2 rounded border ${categoryColors[mod.category] || 'bg-slate-100'}`}>
+                            {mod.category}
+                          </span>
+                          <span className="text-[10px] text-slate-400 font-mono">#{mod.id}</span>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div
+                      className={`w-7 h-7 rounded-xl flex items-center justify-center text-xs font-bold transition-transform ${
+                        isAllowed
+                          ? 'bg-emerald-600 text-white shadow-sm scale-105'
+                          : 'bg-slate-200 dark:bg-slate-700 text-slate-400'
+                      }`}
+                    >
+                      {isAllowed ? <Check className="w-4 h-4" /> : <Lock className="w-3.5 h-3.5" />}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
         </div>
       )}
 
