@@ -102,16 +102,21 @@ export default function LandingPage({ onNavigateLogin, onNavigateRegister, onEnt
       
       {/* Top Navigation Bar */}
       <header className="sticky top-0 z-40 bg-white/95 backdrop-blur-md border-b border-slate-200/80 shadow-xs">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 sm:h-20 flex items-center justify-between gap-4">
-          <Link to="/" className="flex items-center gap-3 min-w-0">
-            <div className="w-10 h-10 rounded-2xl bg-gradient-to-tr from-pink-600 via-purple-600 to-indigo-600 flex items-center justify-center text-white font-black text-xl shadow-md shadow-pink-500/20 shrink-0">
+        <div className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 h-16 sm:h-20 flex items-center justify-between gap-2 sm:gap-4">
+          <Link to="/" className="flex items-center gap-2 sm:gap-3 min-w-0">
+            <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-2xl bg-gradient-to-tr from-pink-600 via-purple-600 to-indigo-600 flex items-center justify-center text-white font-black text-lg sm:text-xl shadow-md shadow-pink-500/20 shrink-0">
               ✨
             </div>
             <div className="min-w-0">
-              <div className="text-lg font-black tracking-tight text-slate-950 flex items-center gap-2">
-                BelaGestão <span className="text-pink-600 font-extrabold text-xs px-2 py-0.5 rounded-full bg-pink-50 border border-pink-200 shrink-0">Platform</span>
+              <div className="text-base sm:text-lg font-black tracking-tight text-slate-950 flex items-center gap-1.5">
+                <span className="truncate">BelaGestão</span>
+                <span className="hidden md:inline-flex text-pink-600 font-extrabold text-[11px] px-2 py-0.5 rounded-full bg-pink-50 border border-pink-200 shrink-0">
+                  Platform
+                </span>
               </div>
-              <p className="text-[10px] text-slate-500 font-medium hidden sm:block truncate">Ecossistema Multi-Segmentos para Beleza & Bem-Estar</p>
+              <p className="text-[10px] text-slate-500 font-medium hidden sm:block truncate">
+                Ecossistema Multi-Segmentos para Beleza & Bem-Estar
+              </p>
             </div>
           </Link>
 
@@ -123,19 +128,20 @@ export default function LandingPage({ onNavigateLogin, onNavigateRegister, onEnt
             <Link to="/contato" className="hover:text-pink-600 transition-colors">Fale Conosco</Link>
           </nav>
 
-          <div className="flex items-center gap-2 sm:gap-3 shrink-0">
+          <div className="flex items-center gap-1.5 sm:gap-3 shrink-0">
             <Link
               to="/login"
-              className="px-3 sm:px-4 py-2 rounded-xl text-xs font-bold text-slate-700 hover:text-pink-600 transition-colors"
+              className="px-2.5 sm:px-4 py-2 rounded-xl text-xs font-bold text-slate-700 hover:text-pink-600 transition-colors"
             >
               Entrar
             </Link>
             <Link
               to="/cadastro"
-              className="px-4 sm:px-5 py-2.5 rounded-xl bg-gradient-to-r from-pink-600 to-purple-600 hover:from-pink-700 hover:to-purple-700 text-white font-black text-xs shadow-md shadow-pink-600/25 transition-all transform hover:-translate-y-0.5 active:scale-95 flex items-center gap-1.5"
+              className="px-3 sm:px-5 py-2 sm:py-2.5 rounded-xl bg-gradient-to-r from-pink-600 to-purple-600 hover:from-pink-700 hover:to-purple-700 text-white font-black text-xs shadow-md shadow-pink-600/25 transition-all transform hover:-translate-y-0.5 active:scale-95 flex items-center gap-1.5 whitespace-nowrap"
             >
               <Sparkles className="w-3.5 h-3.5" />
-              <span>Criar Conta Grátis</span>
+              <span className="hidden sm:inline">Criar Conta Grátis</span>
+              <span className="sm:hidden">Começar</span>
             </Link>
           </div>
         </div>
