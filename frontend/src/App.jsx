@@ -29,6 +29,7 @@ import SistemaEsmalteria from './pages/SistemaEsmalteria';
 import SistemaLash from './pages/SistemaLash';
 import PageTourModal from './components/PageTourModal';
 import CookieBanner from './components/CookieBanner';
+import PlanRestrictedView from './components/PlanRestrictedView';
 import { 
   ShortcutsModal, 
   CashManagementModal, 
@@ -46,7 +47,7 @@ import { api } from './services/api';
 import { updateSeo } from './lib/seo';
 
 function MainApp() {
-  const { user, isAuthenticated, logout, defaultTab } = useAuth();
+  const { user, isAuthenticated, logout, defaultTab, isPlanAllowed } = useAuth();
 
   const [darkMode, setDarkMode] = useState(() => {
     return localStorage.getItem('bella_theme') === 'dark';
@@ -313,11 +314,11 @@ function MainApp() {
           )}
 
           {activeTab === 'financial' && (
-            <Financial />
+            isPlanAllowed('financial') ? <Financial /> : <PlanRestrictedView moduleId="financial" onNavigateTab={setActiveTab} />
           )}
 
           {activeTab === 'professionals' && (
-            <Professionals />
+            isPlanAllowed('professionals') ? <Professionals /> : <PlanRestrictedView moduleId="professionals" onNavigateTab={setActiveTab} />
           )}
 
           {activeTab === 'services' && (
@@ -325,7 +326,7 @@ function MainApp() {
           )}
 
           {activeTab === 'whatsapp' && (
-            <WhatsAppModule />
+            isPlanAllowed('whatsapp') ? <WhatsAppModule /> : <PlanRestrictedView moduleId="whatsapp" onNavigateTab={setActiveTab} />
           )}
 
           {activeTab === 'subscription' && (
@@ -339,7 +340,7 @@ function MainApp() {
           )}
 
           {activeTab === 'backup' && (
-            <BackupSettings />
+            isPlanAllowed('backup') ? <BackupSettings /> : <PlanRestrictedView moduleId="backup" onNavigateTab={setActiveTab} />
           )}
         </main>
 

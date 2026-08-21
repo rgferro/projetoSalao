@@ -165,7 +165,7 @@ export default function LandingPage({ onNavigateLogin, onNavigateRegister, onEnt
             className="w-full sm:w-auto px-9 py-4 rounded-2xl bg-gradient-to-r from-pink-600 via-purple-600 to-indigo-600 hover:opacity-95 text-white font-black text-base shadow-xl shadow-pink-600/30 flex items-center justify-center gap-2.5 transition-all transform hover:-translate-y-0.5 active:scale-95"
           >
             <Sparkles className="w-5 h-5 text-amber-300 fill-current" />
-            <span>Criar Conta Grátis (2 Usuários)</span>
+            <span>Começar Agora Grátis</span>
             <ArrowRight className="w-5 h-5" />
           </Link>
 
@@ -336,69 +336,132 @@ export default function LandingPage({ onNavigateLogin, onNavigateRegister, onEnt
       </section>
 
       {/* 💰 4. TABELA DE PREÇOS */}
-      <section id="planos" className="max-w-6xl mx-auto px-4 sm:px-6 py-16 space-y-12">
+      <section id="planos" className="max-w-7xl mx-auto px-4 sm:px-6 py-16 space-y-12">
         <div className="text-center space-y-3 max-w-2xl mx-auto">
           <span className="text-xs font-black uppercase tracking-widest text-pink-600">Planos Transparentes</span>
           <h2 className="text-3xl sm:text-4xl font-black text-slate-950">Planos Feitos para o Seu Tamanho</h2>
           <p className="text-xs sm:text-sm text-slate-600">Comece 100% grátis e faça upgrade apenas quando sua equipe crescer.</p>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 items-stretch">
-          {/* Starter / Solo */}
-          <div className="bg-white rounded-3xl p-6 sm:p-8 border border-slate-200 shadow-sm space-y-6 flex flex-col justify-between">
-            <div className="space-y-3">
-              <div className="text-xs font-bold uppercase tracking-wider text-slate-500">Plano Solo</div>
-              <div className="text-3xl font-black text-slate-900">R$ 0,00 <span className="text-xs font-normal text-slate-500">/mês</span></div>
-              <div className="text-[11px] font-semibold text-emerald-700 bg-emerald-50 p-2.5 rounded-xl border border-emerald-200">
-                ✓ 2 Usuários / Colaboradores Inclusos
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 items-stretch">
+          {/* 1. SOLO / AUTÔNOMA */}
+          <div className="bg-white rounded-3xl p-6 sm:p-7 border border-slate-200 shadow-sm space-y-6 flex flex-col justify-between hover:border-slate-300 transition-all">
+            <div className="space-y-4">
+              <div className="text-xs font-black uppercase tracking-wider text-slate-500">Solo / Autônoma</div>
+              <div>
+                <div className="text-3xl font-black text-slate-900">
+                  R$ 0,00 <span className="text-xs font-normal text-slate-500">/mês</span>
+                </div>
+                <div className="text-[11px] text-slate-500 mt-0.5">Degustação sem cartão</div>
               </div>
+              <div className="text-xs text-slate-700 bg-slate-100 p-2.5 rounded-xl font-bold">
+                ✓ 1 Profissional • até 40 agendamentos/mês
+              </div>
+              <ul className="space-y-2 text-xs text-slate-600">
+                <li className="flex items-center gap-2"><Check className="w-3.5 h-3.5 text-emerald-600 shrink-0" /> Manicure / Lash Solo</li>
+                <li className="flex items-center gap-2"><Check className="w-3.5 h-3.5 text-emerald-600 shrink-0" /> Agenda simples</li>
+                <li className="flex items-center gap-2"><Check className="w-3.5 h-3.5 text-emerald-600 shrink-0" /> Cadastro de Clientes CRM</li>
+                <li className="flex items-center gap-2"><Check className="w-3.5 h-3.5 text-emerald-600 shrink-0" /> Comissão fixa 100% autônoma</li>
+                <li className="flex items-center gap-2"><Check className="w-3.5 h-3.5 text-emerald-600 shrink-0" /> Frente de Caixa Balcão</li>
+              </ul>
             </div>
             <Link
               to="/cadastro"
-              className="w-full py-3.5 rounded-2xl bg-slate-100 hover:bg-slate-200 text-slate-900 font-bold text-xs text-center transition-all"
+              className="w-full py-3.5 rounded-2xl bg-slate-100 hover:bg-slate-200 text-slate-900 font-black text-xs text-center transition-all"
             >
               Começar Grátis
             </Link>
           </div>
 
-          {/* Pro (Destaque) */}
-          <div className="bg-gradient-to-b from-slate-900 via-slate-950 to-slate-900 text-white rounded-3xl p-6 sm:p-8 border-2 border-pink-500 shadow-2xl space-y-6 flex flex-col justify-between relative transform md:-translate-y-2">
-            <div className="absolute -top-3.5 left-1/2 -translate-x-1/2 bg-gradient-to-r from-pink-500 to-purple-600 text-white text-[11px] font-black uppercase px-4 py-1 rounded-full shadow-md">
-              ⭐ Mais Escolhido
-            </div>
-            <div className="space-y-3 pt-2">
-              <div className="text-xs font-bold uppercase tracking-wider text-pink-400">Plano Pro</div>
-              <div className="text-4xl font-black text-white">
-                R$ 69,90 <span className="text-xs font-normal text-slate-400">/mês</span>
+          {/* 2. STARTER */}
+          <div className="bg-white rounded-3xl p-6 sm:p-7 border border-slate-200 shadow-sm space-y-6 flex flex-col justify-between hover:border-indigo-300 transition-all">
+            <div className="space-y-4">
+              <div className="text-xs font-black uppercase tracking-wider text-indigo-600">Starter</div>
+              <div>
+                <div className="text-3xl font-black text-slate-900">
+                  R$ 69,90 <span className="text-xs font-normal text-slate-500">/mês</span>
+                </div>
+                <div className="text-[11px] text-emerald-600 font-bold mt-0.5">Agendamentos Ilimitados</div>
               </div>
-              <div className="text-xs text-pink-300 font-bold bg-pink-950/60 p-2.5 rounded-xl border border-pink-800/80">
-                🔥 Até 10 Usuários & Robô WhatsApp Completo
+              <div className="text-xs text-indigo-700 bg-indigo-50 p-2.5 rounded-xl font-bold border border-indigo-200">
+                ✓ Até 2 Profissionais Inclusos
               </div>
+              <ul className="space-y-2 text-xs text-slate-600">
+                <li className="flex items-center gap-2"><Check className="w-3.5 h-3.5 text-emerald-600 shrink-0" /> 2 Profissionais / Cadeiras</li>
+                <li className="flex items-center gap-2"><Check className="w-3.5 h-3.5 text-emerald-600 shrink-0" /> Agendamentos Ilimitados</li>
+                <li className="flex items-center gap-2"><Check className="w-3.5 h-3.5 text-emerald-600 shrink-0" /> Caixa Diário & PDV Balcão</li>
+                <li className="flex items-center gap-2"><Check className="w-3.5 h-3.5 text-emerald-600 shrink-0" /> Histórico & Anamnese Técnica</li>
+                <li className="flex items-center gap-2"><Check className="w-3.5 h-3.5 text-emerald-600 shrink-0" /> Lembretes automáticos</li>
+              </ul>
             </div>
             <Link
               to="/cadastro"
-              className="w-full py-4 rounded-2xl bg-gradient-to-r from-pink-600 via-rose-500 to-purple-600 text-white font-black text-sm text-center shadow-xl hover:opacity-95 transition-all"
+              className="w-full py-3.5 rounded-2xl bg-indigo-50 hover:bg-indigo-100 text-indigo-700 font-black text-xs text-center border border-indigo-200 transition-all"
             >
-              Assinar Plano Pro
+              Assinar Starter
             </Link>
           </div>
 
-          {/* Elite */}
-          <div className="bg-white rounded-3xl p-6 sm:p-8 border border-slate-200 shadow-sm space-y-6 flex flex-col justify-between">
-            <div className="space-y-3">
-              <div className="text-xs font-bold uppercase tracking-wider text-purple-600">Plano Elite</div>
-              <div className="text-3xl font-black text-slate-900">
-                R$ 129,90 <span className="text-xs font-normal text-slate-500">/mês</span>
+          {/* 3. STUDIO PRO (DESTAQUE) */}
+          <div className="bg-gradient-to-b from-slate-900 via-slate-950 to-slate-900 text-white rounded-3xl p-6 sm:p-7 border-2 border-pink-500 shadow-2xl space-y-6 flex flex-col justify-between relative transform lg:-translate-y-2">
+            <div className="absolute -top-3.5 left-1/2 -translate-x-1/2 bg-gradient-to-r from-pink-500 to-purple-600 text-white text-[10px] font-black uppercase px-3.5 py-1 rounded-full shadow-md whitespace-nowrap">
+              ⭐ Mais Escolhido por Salões
+            </div>
+            <div className="space-y-4 pt-2">
+              <div className="text-xs font-black uppercase tracking-wider text-pink-400">Studio Pro</div>
+              <div>
+                <div className="text-3xl sm:text-4xl font-black text-white">
+                  R$ 139,90 <span className="text-xs font-normal text-slate-400">/mês</span>
+                </div>
+                <div className="text-[11px] text-pink-300 font-bold mt-0.5">Sem Taxa de Adesão</div>
               </div>
-              <div className="text-[11px] font-semibold text-purple-700 bg-purple-50 p-2.5 rounded-xl border border-purple-200">
-                ✓ Usuários Ilimitados & Suporte VIP
+              <div className="text-xs text-pink-300 font-bold bg-pink-950/80 p-2.5 rounded-xl border border-pink-800">
+                ✓ Até 5 Profissionais (+ R$ 15/extra)
               </div>
+              <ul className="space-y-2 text-xs text-slate-200">
+                <li className="flex items-center gap-2"><Check className="w-3.5 h-3.5 text-pink-400 shrink-0" /> <strong>Comissões Sem Planilha</strong> (Lei Salão Parceiro)</li>
+                <li className="flex items-center gap-2"><Check className="w-3.5 h-3.5 text-pink-400 shrink-0" /> <strong>Comandas Multisserviços</strong> (Express)</li>
+                <li className="flex items-center gap-2"><Check className="w-3.5 h-3.5 text-pink-400 shrink-0" /> Agendas individuais por cadeira</li>
+                <li className="flex items-center gap-2"><Check className="w-3.5 h-3.5 text-pink-400 shrink-0" /> WhatsApp Automático (24h e 2h)</li>
+                <li className="flex items-center gap-2"><Check className="w-3.5 h-3.5 text-pink-400 shrink-0" /> Estoque de bancada vs revenda</li>
+                <li className="flex items-center gap-2"><Check className="w-3.5 h-3.5 text-pink-400 shrink-0" /> Backup Nuvem Google Drive</li>
+              </ul>
             </div>
             <Link
               to="/cadastro"
-              className="w-full py-3.5 rounded-2xl bg-purple-600 hover:bg-purple-700 text-white font-bold text-xs text-center transition-all"
+              className="w-full py-4 rounded-2xl bg-gradient-to-r from-pink-600 via-rose-500 to-purple-600 text-white font-black text-xs sm:text-sm text-center shadow-xl hover:opacity-95 transition-all"
             >
-              Assinar Elite
+              Assinar Studio Pro
+            </Link>
+          </div>
+
+          {/* 4. PREMIER EXPRESS / REDES */}
+          <div className="bg-white rounded-3xl p-6 sm:p-7 border border-slate-200 shadow-sm space-y-6 flex flex-col justify-between hover:border-purple-300 transition-all">
+            <div className="space-y-4">
+              <div className="text-xs font-black uppercase tracking-wider text-purple-600">Premier Express</div>
+              <div>
+                <div className="text-3xl font-black text-slate-900">
+                  R$ 229,90 <span className="text-xs font-normal text-slate-500">/mês</span>
+                </div>
+                <div className="text-[11px] text-purple-600 font-bold mt-0.5">Para Redes e Grandes Espaços</div>
+              </div>
+              <div className="text-xs text-purple-700 bg-purple-50 p-2.5 rounded-xl font-bold border border-purple-200">
+                ✓ Até 15 Profissionais (+ R$ 15/extra)
+              </div>
+              <ul className="space-y-2 text-xs text-slate-600">
+                <li className="flex items-center gap-2"><Check className="w-3.5 h-3.5 text-purple-600 shrink-0" /> <strong>CRM Reativação de Clientes</strong></li>
+                <li className="flex items-center gap-2"><Check className="w-3.5 h-3.5 text-purple-600 shrink-0" /> Multi-agenda de alto fluxo</li>
+                <li className="flex items-center gap-2"><Check className="w-3.5 h-3.5 text-purple-600 shrink-0" /> Relatórios de Produtividade DRE</li>
+                <li className="flex items-center gap-2"><Check className="w-3.5 h-3.5 text-purple-600 shrink-0" /> Múltiplas filiais e unidades</li>
+                <li className="flex items-center gap-2"><Check className="w-3.5 h-3.5 text-purple-600 shrink-0" /> Treinamento VIP com especialista</li>
+                <li className="flex items-center gap-2"><Check className="w-3.5 h-3.5 text-purple-600 shrink-0" /> Suporte Prioritário 24/7</li>
+              </ul>
+            </div>
+            <Link
+              to="/cadastro"
+              className="w-full py-3.5 rounded-2xl bg-purple-600 hover:bg-purple-700 text-white font-black text-xs text-center shadow-md transition-all"
+            >
+              Assinar Premier
             </Link>
           </div>
         </div>
@@ -533,7 +596,7 @@ export default function LandingPage({ onNavigateLogin, onNavigateRegister, onEnt
           <div className="bg-slate-950/95 backdrop-blur-md text-white p-3 sm:px-6 sm:py-3.5 rounded-2xl shadow-2xl border border-slate-700 flex items-center justify-between gap-4">
             <div className="hidden sm:block">
               <div className="text-xs font-black text-white">BelaGestão Studio Platform</div>
-              <div className="text-[10px] text-pink-400 font-bold">2 Usuários Grátis • Sem Cartão</div>
+              <div className="text-[10px] text-pink-400 font-bold">Plano Solo 100% Grátis • Sem Cartão</div>
             </div>
             <Link
               to="/cadastro"

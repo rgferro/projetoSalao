@@ -14,10 +14,12 @@ import {
   BookOpen,
   ShieldCheck,
   Compass,
-  X
+  X,
+  Lock
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { getSegmentConfig } from '../lib/segmentTheme';
+import { MODULE_PLAN_REQUIREMENTS } from '../lib/permissions';
 
 const ALL_MENU_ITEMS = [
   { id: 'dashboard', label: 'Visão Geral', icon: LayoutDashboard, category: 'Operacional' },
@@ -41,11 +43,11 @@ export default function Sidebar({
   isOpenMobile,
   onCloseMobile
 }) {
-  const { user, checkPermission } = useAuth();
+  const { user, checkPermission, isPlanAllowed } = useAuth();
   const segConfig = getSegmentConfig(user?.segment);
   const segTheme = segConfig.theme;
 
-  // Filtrar apenas módulos autorizados para o perfil do usuário
+  // Filtrar apenas módulos autorizados para o perfil do usuário (RBAC)
   const allowedMenuItems = ALL_MENU_ITEMS.filter((item) => checkPermission(item.id));
 
   const handleSelectTab = (id) => {
@@ -98,18 +100,38 @@ export default function Sidebar({
         {allowedMenuItems.map((item) => {
           const Icon = item.icon;
           const isActive = activeTab === item.id;
+          const isAllowedByPlan = isPlanAllowed(item.id);
+          const req = MODULE_PLAN_REQUIREMENTS[item.id];
+
           return (
             <button
               key={item.id}
               onClick={() => handleSelectTab(item.id)}
-              className={`w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-bold transition-all ${
+              className={`w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl text-xs font-bold transition-all ${
                 isActive
                   ? `${segTheme.bgLight} ${segTheme.textAccent} ${segTheme.borderLight} border shadow-xs`
+                  : !isAllowedByPlan
+                  ? 'text-slate-400 dark:text-slate-500 hover:text-pink-600 hover:bg-pink-50/40 dark:hover:bg-pink-950/20'
                   : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100 hover:bg-slate-100 dark:hover:bg-slate-800/60'
               }`}
             >
-              <Icon className={`w-4 h-4 shrink-0 transition-transform ${isActive ? `scale-110 ${segTheme.textAccent}` : 'text-slate-400 dark:text-slate-500'}`} />
-              <span className="truncate">{item.label}</span>
+              <div className="flex items-center gap-3 min-w-0">
+                <Icon className={`w-4 h-4 shrink-0 transition-transform ${
+                  isActive 
+                    ? `scale-110 ${segTheme.textAccent}` 
+                    : !isAllowedByPlan
+                    ? 'text-slate-400'
+                    : 'text-slate-400 dark:text-slate-500'
+                }`} />
+                <span className="truncate">{item.label}</span>
+              </div>
+
+              {!isAllowedByPlan && req && (
+                <span className="shrink-0 flex items-center gap-1 text-[9px] font-black uppercase px-1.5 py-0.5 rounded-md bg-pink-100 dark:bg-pink-950/80 text-pink-700 dark:text-pink-300 border border-pink-200 dark:border-pink-800/60">
+                  <Lock className="w-2.5 h-2.5" />
+                  <span>PRO</span>
+                </span>
+              )}
             </button>
           );
         })}

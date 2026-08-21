@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
-import { canAccessModule, getDefaultTabForRole } from '../lib/permissions';
+import { canAccessModule, canPlanAccessModule, getDefaultTabForRole } from '../lib/permissions';
 import { getCsrfToken } from '../services/api';
 
 const AuthContext = createContext(null);
@@ -192,13 +192,28 @@ export function AuthProvider({ children }) {
     window.location.href = '/login';
   };
 
-  const checkPermission = (moduleId) => {
+  const isMaster = Boolean(user?.isMaster || user?.email?.toLowerCase() === 'rafael.gielow@gmail.com');
+  const isExempt = Boolean(user?.isExempt || user?.subscription_status === 'exempt');
+
+  const checkRolePermission = (moduleId) => {
     if (!user) return false;
-    if (user.isMaster) return true;
+    if (isMaster) return true;
     return canAccessModule(user.accessLevel, moduleId);
   };
 
-  const isMaster = Boolean(user?.isMaster || user?.email?.toLowerCase() === 'rafael.gielow@gmail.com');
+  const isPlanAllowed = (moduleId) => {
+    if (!user) return false;
+    if (isMaster || isExempt) return true;
+    return canPlanAccessModule(user.plan, moduleId, isMaster, isExempt);
+  };
+
+  const checkPermission = (moduleId) => {
+    if (!user) return false;
+    if (isMaster) return true;
+    // Permissão completa exige que o papel (RBAC) permita
+    return checkRolePermission(moduleId);
+  };
+
   const isAdmin = isMaster || user?.accessLevel === 'ADMIN';
   const isGerente = isAdmin || user?.accessLevel === 'GERENTE';
   const canViewFinancial = isMaster || ['ADMIN', 'GERENTE'].includes(user?.accessLevel);
@@ -220,7 +235,10 @@ export function AuthProvider({ children }) {
         refreshTenants,
         exitImpersonation,
         checkPermission,
+        checkRolePermission,
+        isPlanAllowed,
         isMaster,
+        isExempt,
         isAdmin,
         isGerente,
         canViewFinancial,

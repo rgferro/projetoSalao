@@ -316,10 +316,113 @@ router.post('/webhook', async (req, res) => {
   }
 });
 
-// 6. Simulação Instantânea de Teste com Suporte a Vagas Extras
+// 6. Listar Histórico de Pagamentos do Salão (Auditoria do SaaS)
+router.get('/payments', async (req, res) => {
+  try {
+    const authHeader = req.headers.authorization;
+    let tenantId = 'tenant_default_salao';
+
+    if (authHeader) {
+      const token = authHeader.replace('Bearer ', '');
+      const session = verifySessionToken(token);
+      if (session && session.tenantId) tenantId = session.tenantId;
+    }
+
+    const payments = await query(
+      `SELECT * FROM subscription_payments WHERE tenant_id = ? ORDER BY created_at DESC`,
+      [tenantId]
+    );
+
+    res.json({ success: true, payments: payments || [] });
+  } catch (error) {
+    logger.error('Erro ao buscar histórico de pagamentos:', { error: error.message });
+    res.status(500).json({ error: 'Erro ao buscar histórico de pagamentos.' });
+  }
+});
+
+// 7. Validar Status do Pagamento Diretamente no Mercado Pago
+router.post('/check-payment/:paymentId', async (req, res) => {
+  try {
+    const { paymentId } = req.params;
+    const authHeader = req.headers.authorization;
+    let tenantId = 'tenant_default_salao';
+
+    if (authHeader) {
+      const token = authHeader.replace('Bearer ', '');
+      const session = verifySessionToken(token);
+      if (session && session.tenantId) tenantId = session.tenantId;
+    }
+
+    const payment = await getMercadoPagoPaymentStatus(paymentId);
+
+    if (payment && payment.status === 'approved') {
+      await transaction(async ({ get: tGet, run: tRun }) => {
+        const subPayment = await tGet(
+          `SELECT * FROM subscription_payments WHERE payment_id = ?`,
+          [String(paymentId)]
+        );
+
+        const activeTenantId = subPayment?.tenant_id || tenantId;
+        const plan = subPayment?.plan || 'STUDIO';
+        const maxUsers = plan === 'PREMIER' ? 15 : plan === 'STUDIO' ? 5 : plan === 'STARTER' ? 2 : 1;
+
+        await tRun(
+          `UPDATE subscription_payments
+           SET status = 'approved', paid_at = datetime('now')
+           WHERE payment_id = ?`,
+          [String(paymentId)]
+        );
+
+        await tRun(
+          `UPDATE tenants
+           SET plan = ?, subscription_status = 'active', max_users = ?,
+               subscription_expires_at = datetime(COALESCE(subscription_expires_at, 'now'), '+30 days'),
+               updated_at = datetime('now')
+           WHERE id = ?`,
+          [plan, maxUsers, activeTenantId]
+        );
+
+        licenseManager.cacheLicense(
+          activeTenantId,
+          plan,
+          new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
+          maxUsers
+        );
+      });
+
+      return res.json({
+        success: true,
+        status: 'approved',
+        message: 'Pagamento confirmado com sucesso! Assinatura ativada por mais 30 dias.',
+      });
+    }
+
+    res.json({
+      success: true,
+      status: payment?.status || 'pending',
+      message: payment?.status === 'pending'
+        ? 'Pagamento ainda pendente de confirmação no Mercado Pago. Se já realizou a transferência, aguarde alguns segundos e clique novamente.'
+        : `Status no Mercado Pago: ${payment?.status || 'desconhecido'}`,
+    });
+  } catch (error) {
+    logger.error('Erro ao validar pagamento:', { error: error.message });
+    res.status(500).json({ error: 'Erro ao validar status do pagamento no Mercado Pago.' });
+  }
+});
+
+// 8. Simulação Instantânea de Teste com Suporte a Vagas Extras
 router.post('/simulate-approval', async (req, res) => {
   try {
     const { paymentId, plan = 'STUDIO', extraUsers = 0 } = req.body;
+    const authHeader = req.headers.authorization;
+    let tenantId = 'tenant_default_salao';
+
+    if (authHeader) {
+      const token = authHeader.replace('Bearer ', '');
+      const session = verifySessionToken(token);
+      if (session && session.tenantId) tenantId = session.tenantId;
+    }
+
     const maxUsers = plan === 'PREMIER' ? 15 : plan === 'STUDIO' ? 5 : plan === 'STARTER' ? 2 : 1;
 
     await transaction(async ({ run: tRun }) => {
@@ -337,12 +440,12 @@ router.post('/simulate-approval', async (req, res) => {
          SET plan = ?, subscription_status = 'active', max_users = ?, extra_users_count = ?,
              subscription_expires_at = datetime('now', '+30 days'),
              updated_at = datetime('now')
-         WHERE id = 'tenant_default_salao'`,
-        [plan, maxUsers, Number(extraUsers || 0)]
+         WHERE id = ?`,
+        [plan, maxUsers, Number(extraUsers || 0), tenantId]
       );
 
       licenseManager.cacheLicense(
-        'tenant_default_salao',
+        tenantId,
         plan,
         new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
         maxUsers + Number(extraUsers || 0)

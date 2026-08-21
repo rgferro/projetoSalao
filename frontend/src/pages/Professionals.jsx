@@ -229,7 +229,7 @@ export default function Professionals() {
       setSendingInviteId(null);
 
       if (data.success) {
-        setInviteSuccessMsg(`Convite enviado via Brevo para ${prof.email}!`);
+        setInviteSuccessMsg(`Convite de acesso enviado com sucesso para ${prof.email}!`);
         setTimeout(() => setInviteSuccessMsg(''), 4000);
       } else {
         alert(data.error || 'Erro ao enviar convite.');
@@ -425,7 +425,7 @@ export default function Professionals() {
                     className="w-full py-1.5 text-xs font-bold rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 border border-slate-200 dark:border-slate-700 flex items-center justify-center gap-1.5 transition-colors disabled:opacity-50"
                   >
                     <Send className="w-3 h-3" />
-                    <span>{sendingInviteId === p.id ? 'Enviando...' : 'Enviar Convite por E-mail (Brevo)'}</span>
+                    <span>{sendingInviteId === p.id ? 'Enviando...' : 'Enviar Convite por E-mail'}</span>
                   </button>
 
                   <button

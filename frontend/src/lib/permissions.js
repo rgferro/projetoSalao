@@ -114,6 +114,88 @@ export const PERMISSIONS_MAP = {
   ],
 };
 
+// Matriz de Módulos Permitidos por Plano Contratado do Salão
+export const PLAN_MODULES_MAP = {
+  SOLO: [
+    'dashboard',
+    'appointments',
+    'clients',
+    'cash-register',
+    'services',
+    'subscription',
+    'manual',
+  ],
+  STARTER: [
+    'dashboard',
+    'appointments',
+    'clients',
+    'cash-register',
+    'services',
+    'subscription',
+    'manual',
+  ],
+  STUDIO: [
+    'dashboard',
+    'appointments',
+    'clients',
+    'cash-register',
+    'financial',
+    'professionals',
+    'services',
+    'whatsapp',
+    'subscription',
+    'manual',
+    'backup',
+  ],
+  PRO: [
+    'dashboard',
+    'appointments',
+    'clients',
+    'cash-register',
+    'financial',
+    'professionals',
+    'services',
+    'whatsapp',
+    'subscription',
+    'manual',
+    'backup',
+  ],
+  PREMIER: [
+    'dashboard',
+    'appointments',
+    'clients',
+    'cash-register',
+    'financial',
+    'professionals',
+    'services',
+    'whatsapp',
+    'subscription',
+    'manual',
+    'backup',
+  ],
+  ELITE: [
+    'dashboard',
+    'appointments',
+    'clients',
+    'cash-register',
+    'financial',
+    'professionals',
+    'services',
+    'whatsapp',
+    'subscription',
+    'manual',
+    'backup',
+  ],
+};
+
+// Metadados sobre qual plano mínimo desbloqueia cada módulo restrito
+export const MODULE_PLAN_REQUIREMENTS = {
+  financial: { minPlan: 'STUDIO', minPlanName: 'Studio Pro', price: 'R$ 139,90/mês' },
+  professionals: { minPlan: 'STUDIO', minPlanName: 'Studio Pro', price: 'R$ 139,90/mês' },
+  whatsapp: { minPlan: 'STUDIO', minPlanName: 'Studio Pro', price: 'R$ 139,90/mês' },
+  backup: { minPlan: 'STUDIO', minPlanName: 'Studio Pro', price: 'R$ 139,90/mês' },
+};
+
 // Rota/Tela Inicial de Trabalho Padrão por Perfil
 export const ROLE_DEFAULT_TABS = {
   ADMIN: 'dashboard',
@@ -127,6 +209,17 @@ export function canAccessModule(accessLevel, moduleId) {
   if (!accessLevel) return false;
   const allowed = PERMISSIONS_MAP[accessLevel] || [];
   return allowed.includes(moduleId);
+}
+
+export function canPlanAccessModule(plan, moduleId, isMaster = false, isExempt = false) {
+  if (isMaster || isExempt) return true;
+  const normalizedPlan = (plan || 'SOLO').toUpperCase();
+  const allowed = PLAN_MODULES_MAP[normalizedPlan] || PLAN_MODULES_MAP.SOLO;
+  return allowed.includes(moduleId);
+}
+
+export function getRequiredPlanForModule(moduleId) {
+  return MODULE_PLAN_REQUIREMENTS[moduleId] || null;
 }
 
 export function getDefaultTabForRole(accessLevel) {

@@ -138,16 +138,16 @@ export default function Contact() {
           <div className="md:col-span-2 bg-white p-6 sm:p-8 rounded-3xl border border-slate-200 shadow-xl space-y-6">
             {success ? (
               <div className="text-center py-10 space-y-4 animate-scaleIn">
-                <div className="w-16 h-16 bg-emerald-100 text-emerald-600 rounded-full flex items-center justify-center mx-auto">
+                <div className="w-16 h-16 bg-emerald-100 text-emerald-600 rounded-full flex items-center justify-center mx-auto shadow-inner shadow-emerald-500/20">
                   <CheckCircle2 className="w-8 h-8" />
                 </div>
-                <h3 className="text-xl font-black text-slate-900">Mensagem Despachada com Sucesso!</h3>
-                <p className="text-xs sm:text-sm text-slate-600 max-w-md mx-auto">
-                  Agradecemos o contato! Nossa equipe já recebeu sua notificação via Brevo e retornará em breve.
+                <h3 className="text-xl font-black text-slate-900">Mensagem Enviada com Sucesso!</h3>
+                <p className="text-xs sm:text-sm text-slate-600 max-w-md mx-auto leading-relaxed">
+                  Agradecemos o seu contato! Nossa equipe já recebeu a sua mensagem e retornará o mais breve possível pelo seu e-mail ou WhatsApp informado.
                 </p>
                 <button
                   onClick={() => setSuccess(false)}
-                  className="px-6 py-3 rounded-2xl bg-slate-900 hover:bg-slate-800 text-white text-xs font-bold transition-all"
+                  className="px-6 py-3 rounded-2xl bg-slate-900 hover:bg-slate-800 text-white text-xs font-bold transition-all shadow-md hover:shadow-lg"
                 >
                   Enviar Nova Mensagem
                 </button>

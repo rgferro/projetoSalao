@@ -17,7 +17,10 @@ import {
   Plus,
   Minus,
   Scissors,
-  DollarSign
+  DollarSign,
+  RefreshCw,
+  Eye,
+  ExternalLink
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 
@@ -35,6 +38,12 @@ export default function Subscription() {
   const [simulatingApproval, setSimulatingApproval] = useState(false);
   const [approvalMessage, setApprovalMessage] = useState('');
 
+  // Histórico de Pagamentos & Validação em Tempo Real
+  const [payments, setPayments] = useState([]);
+  const [loadingHistory, setLoadingHistory] = useState(false);
+  const [validatingPaymentId, setValidatingPaymentId] = useState(null);
+  const [validationAlert, setValidationAlert] = useState(null);
+
   const loadSubscriptionStatus = async () => {
     try {
       const res = await fetch('/api/subscription/status', {
@@ -48,9 +57,66 @@ export default function Subscription() {
     }
   };
 
+  const loadPaymentHistory = async () => {
+    try {
+      setLoadingHistory(true);
+      const res = await fetch('/api/subscription/payments', {
+        headers: { Authorization: `Bearer ${localStorage.getItem('bella_token') || ''}` },
+      });
+      const data = await res.json();
+      if (data.success) {
+        setPayments(data.payments || []);
+      }
+    } catch (e) {
+      console.warn('Erro ao carregar histórico:', e);
+    } finally {
+      setLoadingHistory(false);
+    }
+  };
+
   useEffect(() => {
     loadSubscriptionStatus();
+    loadPaymentHistory();
   }, []);
+
+  const handleValidatePayment = async (paymentId) => {
+    try {
+      setValidatingPaymentId(paymentId);
+      const res = await fetch(`/api/subscription/check-payment/${paymentId}`, {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${localStorage.getItem('bella_token') || ''}` },
+      });
+      const data = await res.json();
+      setValidatingPaymentId(null);
+
+      if (data.success) {
+        if (data.status === 'approved') {
+          setValidationAlert({ type: 'success', message: data.message });
+          loadSubscriptionStatus();
+        } else {
+          setValidationAlert({ type: 'info', message: data.message });
+        }
+        loadPaymentHistory();
+        setTimeout(() => setValidationAlert(null), 5000);
+      } else {
+        alert(data.error || 'Erro ao validar status do pagamento no Mercado Pago.');
+      }
+    } catch (err) {
+      setValidatingPaymentId(null);
+      alert('Erro ao comunicar com o servidor.');
+    }
+  };
+
+  const handleOpenQrCodeModal = (payment) => {
+    setPixData({
+      paymentId: payment.payment_id,
+      amount: payment.amount,
+      plan: payment.plan,
+      qrCode: payment.qr_code,
+      qrCodeBase64: payment.qr_code_base64,
+    });
+    setShowPixModal(true);
+  };
 
   const handleGeneratePix = async (planKey) => {
     try {
@@ -426,6 +492,174 @@ export default function Subscription() {
           </button>
         </div>
 
+      </div>
+
+      {/* Histórico de Pagamentos & Comprovantes (Auditoria do SaaS) */}
+      <div className="bg-white dark:bg-slate-900 rounded-3xl border border-slate-200 dark:border-slate-800 p-6 sm:p-8 shadow-xs space-y-6">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <div className="space-y-1">
+            <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-blue-50 dark:bg-blue-950/50 border border-blue-200 dark:border-blue-800 text-blue-700 dark:text-blue-300 text-[11px] font-bold">
+              <ShieldCheck className="w-3.5 h-3.5 text-blue-600" />
+              <span>Auditoria Financeira do SaaS</span>
+            </div>
+            <h3 className="text-xl sm:text-2xl font-black text-slate-900 dark:text-white">
+              Histórico de Pagamentos & Comprovantes
+            </h3>
+            <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400">
+              Todas as transações PIX e Cartão ficam registradas no banco para auditoria, histórico contábil e validação imediata.
+            </p>
+          </div>
+
+          <button
+            onClick={loadPaymentHistory}
+            disabled={loadingHistory}
+            className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 text-xs font-bold transition-all shrink-0 self-start sm:self-auto disabled:opacity-50"
+          >
+            <RefreshCw className={`w-3.5 h-3.5 ${loadingHistory ? 'animate-spin' : ''}`} />
+            <span>Atualizar Histórico</span>
+          </button>
+        </div>
+
+        {validationAlert && (
+          <div
+            className={`p-3.5 rounded-2xl text-xs font-bold flex items-center gap-2 animate-fadeIn ${
+              validationAlert.type === 'success'
+                ? 'bg-emerald-50 text-emerald-800 border border-emerald-200 dark:bg-emerald-950/40 dark:text-emerald-300 dark:border-emerald-800'
+                : 'bg-amber-50 text-amber-800 border border-amber-200 dark:bg-amber-950/40 dark:text-amber-300 dark:border-amber-800'
+            }`}
+          >
+            <CheckCircle2 className="w-4 h-4 shrink-0" />
+            <span>{validationAlert.message}</span>
+          </div>
+        )}
+
+        <div className="overflow-x-auto">
+          <table className="w-full text-left text-xs">
+            <thead>
+              <tr className="border-b border-slate-200 dark:border-slate-800 text-[11px] font-black text-slate-400 uppercase tracking-wider">
+                <th className="pb-3 pr-4">DATA / HORA</th>
+                <th className="pb-3 px-4">DESCRIÇÃO / PLANO</th>
+                <th className="pb-3 px-4">ID MERCADO PAGO</th>
+                <th className="pb-3 px-4">MÉTODO</th>
+                <th className="pb-3 px-4">VALOR</th>
+                <th className="pb-3 px-4">STATUS</th>
+                <th className="pb-3 pl-4 text-right">AÇÃO / VALIDAÇÃO</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-slate-100 dark:divide-slate-800/60">
+              {payments.length === 0 ? (
+                <tr>
+                  <td colSpan={7} className="py-8 text-center text-slate-400 text-xs">
+                    Nenhum pagamento registrado ainda. Ao gerar um PIX ou assinar um plano, o comprovante aparecerá aqui.
+                  </td>
+                </tr>
+              ) : (
+                payments.map((p) => {
+                  const planLabels = {
+                    SOLO: 'Plano Solo / Autônoma',
+                    STARTER: 'Plano Starter',
+                    STUDIO: 'Plano Studio Pro',
+                    PREMIER: 'Plano Premier Express',
+                  };
+                  const planTitle = planLabels[p.plan] || p.plan || 'Plano Studio Pro';
+
+                  const dateFormatted = p.created_at
+                    ? new Date(p.created_at).toLocaleString('pt-BR', {
+                        day: '2-digit',
+                        month: '2-digit',
+                        year: 'numeric',
+                        hour: '2-digit',
+                        minute: '2-digit',
+                      })
+                    : '-';
+
+                  const paidDateFormatted = p.paid_at
+                    ? new Date(p.paid_at).toLocaleDateString('pt-BR')
+                    : p.created_at
+                    ? new Date(p.created_at).toLocaleDateString('pt-BR')
+                    : '-';
+
+                  const isApproved = p.status === 'approved';
+                  const isPending = p.status === 'pending';
+
+                  return (
+                    <tr key={p.id || p.payment_id} className="hover:bg-slate-50/50 dark:hover:bg-slate-800/30 transition-colors">
+                      <td className="py-4 pr-4 font-medium text-slate-700 dark:text-slate-300 whitespace-nowrap">
+                        {dateFormatted}
+                      </td>
+                      <td className="py-4 px-4 font-bold text-slate-900 dark:text-white whitespace-nowrap">
+                        {planTitle}
+                      </td>
+                      <td className="py-4 px-4 font-mono text-slate-500 dark:text-slate-400 whitespace-nowrap">
+                        {p.payment_id || '-'}
+                      </td>
+                      <td className="py-4 px-4 whitespace-nowrap">
+                        {p.method === 'card' ? (
+                          <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-md bg-purple-50 dark:bg-purple-950/40 text-purple-700 dark:text-purple-300 font-bold text-[11px]">
+                            <CreditCard className="w-3 h-3" />
+                            <span>Cartão</span>
+                          </span>
+                        ) : (
+                          <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-md bg-amber-50 dark:bg-amber-950/40 text-amber-700 dark:text-amber-300 font-bold text-[11px]">
+                            <Zap className="w-3 h-3" />
+                            <span>PIX</span>
+                          </span>
+                        )}
+                      </td>
+                      <td className="py-4 px-4 font-black text-slate-900 dark:text-white whitespace-nowrap">
+                        R$ {Number(p.amount || 0).toFixed(2).replace('.', ',')}
+                      </td>
+                      <td className="py-4 px-4 whitespace-nowrap">
+                        {isApproved ? (
+                          <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800 text-emerald-700 dark:text-emerald-300 font-bold text-xs">
+                            <CheckCircle2 className="w-3.5 h-3.5" />
+                            <span>Aprovado</span>
+                          </span>
+                        ) : isPending ? (
+                          <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-800 text-amber-700 dark:text-amber-300 font-bold text-xs">
+                            <Clock className="w-3.5 h-3.5" />
+                            <span>Pendente</span>
+                          </span>
+                        ) : (
+                          <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-rose-50 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-800 text-rose-700 dark:text-rose-300 font-bold text-xs">
+                            <AlertCircle className="w-3.5 h-3.5" />
+                            <span>{p.status}</span>
+                          </span>
+                        )}
+                      </td>
+                      <td className="py-4 pl-4 text-right whitespace-nowrap">
+                        {isApproved ? (
+                          <span className="text-xs text-slate-500 font-medium">
+                            Pago em {paidDateFormatted}
+                          </span>
+                        ) : (
+                          <div className="inline-flex items-center justify-end gap-2">
+                            {p.qr_code && (
+                              <button
+                                onClick={() => handleOpenQrCodeModal(p)}
+                                className="px-3 py-1.5 rounded-xl border border-blue-200 dark:border-blue-800 bg-blue-50 dark:bg-blue-950/50 hover:bg-blue-100 text-blue-700 dark:text-blue-300 font-bold text-xs transition-colors"
+                              >
+                                Ver QR Code
+                              </button>
+                            )}
+                            <button
+                              onClick={() => handleValidatePayment(p.payment_id)}
+                              disabled={validatingPaymentId === p.payment_id}
+                              className="px-3.5 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs shadow-xs transition-colors flex items-center gap-1.5 disabled:opacity-50"
+                            >
+                              <RefreshCw className={`w-3 h-3 ${validatingPaymentId === p.payment_id ? 'animate-spin' : ''}`} />
+                              <span>{validatingPaymentId === p.payment_id ? 'Validando...' : 'Validar Pagamento'}</span>
+                            </button>
+                          </div>
+                        )}
+                      </td>
+                    </tr>
+                  );
+                })
+              )}
+            </tbody>
+          </table>
+        </div>
       </div>
 
       {/* Os 3 Gatilhos de Ouro do Nicho */}

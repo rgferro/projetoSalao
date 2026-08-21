@@ -162,27 +162,69 @@ async function sendEmployeeInviteEmail(data) {
 }
 
 /**
- * Despacha mensagens recebidas do formulário de contato para o administrador
+ * Despacha mensagens recebidas do formulário de contato para o administrador e confirmação para o usuário
  */
 async function sendContactEmail(data) {
-  return sendBrevoEmail({
-    to: [{ email: process.env.ADMIN_NOTIFICATION_EMAIL || 'rafael.gielow@gmail.com', name: 'Suporte Rafael Gielow' }],
-    subject: `[BelaGestão Fale Conosco] ${data.subject} - De: ${data.name}`,
+  const adminEmail = process.env.ADMIN_NOTIFICATION_EMAIL || 'rafael.gielow@gmail.com';
+  
+  // 1. Notificação para a equipe/administrador
+  const adminPromise = sendBrevoEmail({
+    to: [{ email: adminEmail, name: 'Equipe BelaGestão Studio' }],
+    subject: `[Fale Conosco] ${data.subject} - De: ${data.name}`,
     htmlContent: `
-      <div style="font-family: Arial, sans-serif; padding: 25px; color: #1e293b; max-width: 600px; margin: 0 auto; border: 1px solid #fce7f3; border-radius: 16px; background: #ffffff;">
-        <h2 style="color: #ec4899; margin-top: 0;">✨ BelaGestão Studio - Nova Mensagem de Contato</h2>
-        <p><strong>Nome:</strong> ${data.name}</p>
-        <p><strong>E-mail:</strong> ${data.senderEmail}</p>
-        <p><strong>WhatsApp / Telefone:</strong> ${data.phone || 'Não informado'}</p>
-        <p><strong>Assunto:</strong> ${data.subject}</p>
-        <hr style="border: 0; border-top: 1px solid #e2e8f0; margin: 20px 0;">
-        <p><strong>Mensagem:</strong></p>
-        <div style="background: #fdf2f8; padding: 16px; border-radius: 12px; font-size: 14px; white-space: pre-wrap; line-height: 1.6; border: 1px solid #fbcfe8;">
+      <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; padding: 28px; color: #1e293b; max-width: 580px; margin: 0 auto; border: 1px solid #fce7f3; border-radius: 20px; background: #ffffff;">
+        <h2 style="color: #db2777; margin-top: 0; font-size: 20px;">✨ BelaGestão Studio - Nova Mensagem de Contato</h2>
+        <p style="font-size: 14px; margin: 6px 0;"><strong>Nome:</strong> ${data.name}</p>
+        <p style="font-size: 14px; margin: 6px 0;"><strong>E-mail:</strong> ${data.senderEmail}</p>
+        <p style="font-size: 14px; margin: 6px 0;"><strong>WhatsApp / Telefone:</strong> ${data.phone || 'Não informado'}</p>
+        <p style="font-size: 14px; margin: 6px 0;"><strong>Assunto:</strong> ${data.subject}</p>
+        <hr style="border: 0; border-top: 1px solid #f1f5f9; margin: 18px 0;">
+        <p style="font-size: 14px; margin-bottom: 8px;"><strong>Mensagem enviada:</strong></p>
+        <div style="background: #fdf2f8; padding: 16px; border-radius: 12px; font-size: 14px; white-space: pre-wrap; line-height: 1.6; border: 1px solid #fbcfe8; color: #334155;">
           ${data.message}
         </div>
       </div>
     `,
   });
+
+  // 2. Confirmação automática para o cliente/remetente
+  let autoReplyPromise = Promise.resolve();
+  if (data.senderEmail) {
+    autoReplyPromise = sendBrevoEmail({
+      to: [{ email: data.senderEmail, name: data.name }],
+      subject: `Recebemos sua mensagem! ✨ BelaGestão Studio`,
+      htmlContent: `
+        <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; padding: 32px; color: #1e293b; max-width: 540px; margin: 0 auto; border: 1px solid #fce7f3; border-radius: 24px; background: #ffffff; box-shadow: 0 4px 20px rgba(236, 72, 153, 0.08);">
+          <div style="text-align: center; margin-bottom: 24px;">
+            <div style="display: inline-block; width: 52px; height: 52px; line-height: 52px; background: linear-gradient(135deg, #ec4899, #8b5cf6); color: #ffffff; font-size: 26px; border-radius: 16px;">💬</div>
+            <h2 style="color: #0f172a; margin: 12px 0 0 0; font-size: 22px; font-weight: 900; letter-spacing: -0.5px;">BelaGestão Studio</h2>
+            <p style="color: #ec4899; font-size: 12px; margin-top: 4px; font-weight: 700; text-transform: uppercase; letter-spacing: 1px;">Atendimento ao Cliente</p>
+          </div>
+          
+          <h3 style="color: #1e293b; font-size: 16px; margin-bottom: 8px;">Olá, ${data.name}!</h3>
+          <p style="font-size: 14px; line-height: 1.6; color: #475569;">
+            Recebemos a sua mensagem com sucesso. Nossa equipe especializada já foi notificada e retornará o mais rápido possível através do seu e-mail ou WhatsApp.
+          </p>
+          
+          <div style="background: #f8fafc; padding: 18px; border-radius: 16px; margin: 20px 0; border: 1px solid #e2e8f0;">
+            <p style="font-size: 12px; font-weight: 700; color: #64748b; margin: 0 0 8px 0; text-transform: uppercase; letter-spacing: 0.5px;">Resumo da sua solicitação:</p>
+            <p style="font-size: 13px; color: #334155; margin: 4px 0;"><strong>Assunto:</strong> ${data.subject}</p>
+            <p style="font-size: 13px; color: #475569; margin: 8px 0 0 0; font-style: italic;">"${data.message}"</p>
+          </div>
+
+          <p style="font-size: 13px; line-height: 1.5; color: #64748b;">
+            Nosso horário de atendimento é de <strong>Segunda a Sábado, das 08h às 20h</strong>.
+          </p>
+          
+          <hr style="border: 0; border-top: 1px solid #f1f5f9; margin: 28px 0 20px 0;" />
+          <p style="font-size: 11px; color: #94a3b8; text-align: center; margin: 0;">BelaGestão Studio • Beleza e Alta Lucratividade</p>
+        </div>
+      `,
+    });
+  }
+
+  const [adminResult] = await Promise.allSettled([adminPromise, autoReplyPromise]);
+  return adminResult.status === 'fulfilled' ? adminResult.value : { success: false };
 }
 
 /**

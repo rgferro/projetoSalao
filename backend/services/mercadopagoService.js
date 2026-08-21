@@ -1,15 +1,22 @@
+const path = require('path');
+require('dotenv').config({ path: path.resolve(__dirname, '..', '.env') });
+require('dotenv').config({ path: path.resolve(__dirname, '..', '..', '.env') });
+require('dotenv').config();
 const https = require('https');
 const circuitBreakers = require('./circuitBreaker');
 const logger = require('./logger');
 
-const MP_ACCESS_TOKEN = process.env.MP_ACCESS_TOKEN || '';
-const APP_URL = process.env.APP_URL || 'https://belagestaostudio.com.br';
+const getMPAccessToken = () => process.env.MP_ACCESS_TOKEN || '';
+const getAppUrl = () => process.env.APP_URL || 'https://belagestaostudio.com.br';
 
 /**
  * Cria cobrança PIX mensal com QR Code Copia e Cola, Base64 e proteção de Circuit Breaker
  */
 async function createMercadoPagoPixPayment(tenant, amount, planName = 'Plano Pro Salão') {
-  if (!MP_ACCESS_TOKEN) {
+  const token = getMPAccessToken();
+  const appUrl = getAppUrl();
+
+  if (!token) {
     logger.info(`[Mercado Pago Simulado] Gerando PIX Mensal de R$ ${amount} para ${tenant.name}`);
     const simulatedId = `pix_sim_${Date.now()}`;
     const simulatedQrCode = `00020126580014br.gov.bcb.pix0136${tenant.id || 'bellagestao'}520400005303986540${amount}.005802BR5920BelaGestao Studio6009Sao Paulo62070503***6304E8A2`;
@@ -29,7 +36,7 @@ async function createMercadoPagoPixPayment(tenant, amount, planName = 'Plano Pro
 
   const makeRequest = () => {
     return new Promise((resolve, reject) => {
-      const postData = JSON.stringify({
+      const payload = {
         transaction_amount: Number(amount),
         description: `Mensalidade ${planName} - ${tenant.name || tenant.owner_name}`,
         payment_method_id: 'pix',
@@ -42,8 +49,13 @@ async function createMercadoPagoPixPayment(tenant, amount, planName = 'Plano Pro
             number: (tenant.document || '').replace(/\D/g, '') || '00000000000',
           },
         },
-        notification_url: `${APP_URL}/api/subscription/webhook`,
-      });
+      };
+
+      if (appUrl && !appUrl.includes('localhost') && !appUrl.includes('127.0.0.1')) {
+        payload.notification_url = `${appUrl}/api/subscription/webhook`;
+      }
+
+      const postData = JSON.stringify(payload);
 
       const req = https.request(
         {
@@ -52,7 +64,7 @@ async function createMercadoPagoPixPayment(tenant, amount, planName = 'Plano Pro
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
-            Authorization: `Bearer ${MP_ACCESS_TOKEN}`,
+            Authorization: `Bearer ${token}`,
             'X-Idempotency-Key': `pix_${tenant.id}_${Date.now()}`,
           },
         },
@@ -72,7 +84,7 @@ async function createMercadoPagoPixPayment(tenant, amount, planName = 'Plano Pro
                   ticket_url: poi?.ticket_url,
                 });
               } else {
-                reject(new Error(data.message || 'Erro ao gerar PIX no Mercado Pago'));
+                reject(new Error(data.message || (data.cause && data.cause[0] ? data.cause[0].description : 'Erro ao gerar PIX no Mercado Pago')));
               }
             } catch (e) {
               reject(e);
@@ -90,7 +102,7 @@ async function createMercadoPagoPixPayment(tenant, amount, planName = 'Plano Pro
 
   return await circuitBreakers.mercadopago.execute(makeRequest, (fallbackErr) => {
     logger.warn(`[Mercado Pago Fallback] Indisponibilidade de API: ${fallbackErr.message}`);
-    throw new Error('Serviço de pagamento temporariamente instável. Tente novamente em alguns instantes.');
+    throw new Error(fallbackErr.message || 'Serviço de pagamento temporariamente instável. Tente novamente em alguns instantes.');
   });
 }
 
@@ -98,20 +110,23 @@ async function createMercadoPagoPixPayment(tenant, amount, planName = 'Plano Pro
  * Cria assinatura recorrente no Cartão de Crédito via /preapproval com Circuit Breaker
  */
 async function createMercadoPagoPreapproval(tenant, amount, planName = 'Plano Pro BelaGestão') {
-  if (!MP_ACCESS_TOKEN) {
+  const token = getMPAccessToken();
+  const appUrl = getAppUrl();
+
+  if (!token) {
     logger.info(`[Mercado Pago Simulado] Gerando Assinatura Mensal de R$ ${amount}/mês para ${tenant.name}`);
     return {
       preapproval_id: `preapp_sim_${Date.now()}`,
-      init_point: `${APP_URL}/assinatura?simulated_checkout=true`,
+      init_point: `${appUrl}/assinatura?simulated_checkout=true`,
       simulated: true,
     };
   }
 
   const makeRequest = () => {
     return new Promise((resolve, reject) => {
-      const postData = JSON.stringify({
+      const payload = {
         payer_email: tenant.owner_email,
-        back_url: `${APP_URL}/assinatura?success=true`,
+        back_url: `${appUrl}/assinatura?success=true`,
         reason: `Mensalidade ${planName}`,
         auto_recurring: {
           frequency: 1,
@@ -120,8 +135,13 @@ async function createMercadoPagoPreapproval(tenant, amount, planName = 'Plano Pr
           currency_id: 'BRL',
         },
         external_reference: String(tenant.id),
-        notification_url: `${APP_URL}/api/subscription/webhook`,
-      });
+      };
+
+      if (appUrl && !appUrl.includes('localhost') && !appUrl.includes('127.0.0.1')) {
+        payload.notification_url = `${appUrl}/api/subscription/webhook`;
+      }
+
+      const postData = JSON.stringify(payload);
 
       const req = https.request(
         {
@@ -130,7 +150,7 @@ async function createMercadoPagoPreapproval(tenant, amount, planName = 'Plano Pr
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
-            Authorization: `Bearer ${MP_ACCESS_TOKEN}`,
+            Authorization: `Bearer ${token}`,
           },
         },
         (res) => {
@@ -168,7 +188,9 @@ async function createMercadoPagoPreapproval(tenant, amount, planName = 'Plano Pr
  * Consulta status de pagamento diretamente na API do Mercado Pago
  */
 async function getMercadoPagoPaymentStatus(paymentId) {
-  if (!MP_ACCESS_TOKEN || String(paymentId).startsWith('pix_sim_')) {
+  const token = getMPAccessToken();
+
+  if (!token || String(paymentId).startsWith('pix_sim_')) {
     return { id: paymentId, status: 'approved', transaction_amount: 69.9 };
   }
 
@@ -180,7 +202,7 @@ async function getMercadoPagoPaymentStatus(paymentId) {
           path: `/v1/payments/${paymentId}`,
           method: 'GET',
           headers: {
-            Authorization: `Bearer ${MP_ACCESS_TOKEN}`,
+            Authorization: `Bearer ${token}`,
           },
         },
         (res) => {
