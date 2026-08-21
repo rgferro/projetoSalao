@@ -130,6 +130,7 @@ export const PLAN_MODULES_MAP = {
     'appointments',
     'clients',
     'cash-register',
+    'professionals',
     'services',
     'subscription',
     'manual',
@@ -190,10 +191,10 @@ export const PLAN_MODULES_MAP = {
 
 // Metadados sobre qual plano mínimo desbloqueia cada módulo restrito
 export const MODULE_PLAN_REQUIREMENTS = {
-  financial: { minPlan: 'STUDIO', minPlanName: 'Studio Pro', price: 'R$ 139,90/mês' },
-  professionals: { minPlan: 'STUDIO', minPlanName: 'Studio Pro', price: 'R$ 139,90/mês' },
-  whatsapp: { minPlan: 'STUDIO', minPlanName: 'Studio Pro', price: 'R$ 139,90/mês' },
-  backup: { minPlan: 'STUDIO', minPlanName: 'Studio Pro', price: 'R$ 139,90/mês' },
+  professionals: { minPlan: 'STARTER', minPlanName: 'Starter', price: 'R$ 59,90/mês' },
+  financial: { minPlan: 'STUDIO', minPlanName: 'Studio Pro', price: 'R$ 119,90/mês' },
+  whatsapp: { minPlan: 'STUDIO', minPlanName: 'Studio Pro', price: 'R$ 119,90/mês' },
+  backup: { minPlan: 'STUDIO', minPlanName: 'Studio Pro', price: 'R$ 119,90/mês' },
 };
 
 // Rota/Tela Inicial de Trabalho Padrão por Perfil

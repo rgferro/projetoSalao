@@ -220,14 +220,14 @@ export default function Header({
                 </div>
                 
                 <div className="min-w-0">
-                  <div className="flex items-center gap-1.5 sm:gap-2">
-                    <h1 className="font-black text-sm sm:text-base lg:text-lg text-slate-800 dark:text-slate-100 tracking-tight leading-none truncate max-w-[120px] xs:max-w-[170px] sm:max-w-[220px]">
+                  <div className="flex items-center gap-1 sm:gap-2">
+                    <h1 className="font-black text-xs sm:text-base lg:text-lg text-slate-800 dark:text-slate-100 tracking-tight leading-none truncate max-w-[110px] xs:max-w-[150px] sm:max-w-[220px]">
                       {user?.salonName || 'BelaGestão'}
                     </h1>
-                    <span className="text-[10px] sm:text-[11px] px-1.5 sm:px-2 py-0.5 rounded-full font-bold bg-pink-50 text-pink-700 dark:bg-pink-950/60 dark:text-pink-300 border border-pink-200 dark:border-pink-800 shrink-0 flex items-center gap-1">
+                    <span className="hidden sm:inline-flex text-[10px] sm:text-[11px] px-1.5 sm:px-2 py-0.5 rounded-full font-bold bg-pink-50 text-pink-700 dark:bg-pink-950/60 dark:text-pink-300 border border-pink-200 dark:border-pink-800 shrink-0 items-center gap-1">
                       <span>{currentSegment.label.split(' ')[0]}</span>
                     </span>
-                    <ChevronDown className={`w-3.5 h-3.5 text-slate-400 group-hover:text-pink-600 transition-transform ${showTenantMenu ? 'rotate-180 text-pink-600' : ''}`} />
+                    <ChevronDown className={`w-3.5 h-3.5 text-slate-400 group-hover:text-pink-600 transition-transform shrink-0 ${showTenantMenu ? 'rotate-180 text-pink-600' : ''}`} />
                   </div>
                   <p className="text-[10px] sm:text-[11px] text-slate-500 dark:text-slate-400 capitalize mt-0.5 hidden xs:flex items-center gap-1">
                     <Clock className="w-3 h-3 text-slate-400 shrink-0" />
@@ -321,7 +321,7 @@ export default function Header({
           </div>
 
           {/* Center/Right: Badges & Quick Action Shortcuts */}
-          <div className="flex items-center gap-1.5 sm:gap-2">
+          <div className="flex items-center gap-1 sm:gap-2">
             
             {/* Status Caixa Diário */}
             <button
@@ -348,9 +348,9 @@ export default function Header({
               <span>{waStatus === 'connected' || waStatus === 'CONNECTED' ? 'WhatsApp Ativo' : 'WhatsApp'}</span>
             </div>
 
-            {/* Crachá do Usuário Logado */}
+            {/* Crachá do Usuário Logado (Visível em telas médias/grandes) */}
             <div
-              className="flex items-center gap-1.5 sm:gap-2 px-2.5 sm:px-3 py-1 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-left"
+              className="hidden md:flex items-center gap-1.5 sm:gap-2 px-2.5 sm:px-3 py-1 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-left"
             >
               <span className="text-sm sm:text-base">{currentRole.icon}</span>
               <div className="hidden lg:block">
@@ -364,7 +364,7 @@ export default function Header({
             </div>
 
             {/* Quick Action Buttons */}
-            <div className="flex items-center gap-1 sm:gap-1.5">
+            <div className="flex items-center gap-1 sm:gap-1.5 shrink-0">
               <button
                 onClick={onOpenPDV}
                 className="hidden sm:inline-flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 rounded-xl text-xs font-semibold text-emerald-700 dark:text-emerald-300 bg-emerald-100/70 dark:bg-emerald-900/40 hover:bg-emerald-200/80 dark:hover:bg-emerald-900/60 border border-emerald-300 dark:border-emerald-700 transition"
@@ -377,18 +377,18 @@ export default function Header({
               <button
                 id="tour-new-appointment-btn"
                 onClick={onOpenNewAppointment}
-                className={`inline-flex items-center gap-1 sm:gap-1.5 px-2.5 sm:px-3.5 py-1.5 rounded-xl text-xs font-bold transition active:scale-95 ${segTheme.buttonGradient}`}
+                className={`inline-flex items-center gap-1 sm:gap-1.5 px-2.5 sm:px-3.5 py-1.5 rounded-xl text-xs font-bold transition active:scale-95 whitespace-nowrap ${segTheme.buttonGradient}`}
                 title="Novo Agendamento (F2)"
               >
                 <CalendarPlus className="w-3.5 h-3.5" />
                 <span className="hidden sm:inline">Novo Agendamento <span className="opacity-80 text-[10px] ml-1 font-mono">F2</span></span>
-                <span className="sm:hidden">Novo</span>
+                <span className="sm:hidden text-[11px]">Novo</span>
               </button>
 
-              {/* Botão de Tour Guiado */}
+              {/* Botão de Tour Guiado (desktop/tablet) */}
               <button
                 onClick={onStartTour}
-                className="p-1.5 sm:p-2 rounded-xl text-slate-500 hover:text-slate-700 hover:bg-slate-100 dark:hover:bg-slate-800 transition"
+                className="hidden sm:inline-flex p-1.5 sm:p-2 rounded-xl text-slate-500 hover:text-slate-700 hover:bg-slate-100 dark:hover:bg-slate-800 transition"
                 title="Iniciar Tour Guiado Interativo"
               >
                 <HelpCircle className="w-4 h-4" />

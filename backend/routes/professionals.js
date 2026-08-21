@@ -130,14 +130,27 @@ router.post('/', requireRole(['ADMIN', 'GERENTE']), async (req, res) => {
       return res.status(400).json({ error: 'Nome do profissional é obrigatório.' });
     }
 
-    // Verificar limite de usuários do tenant (incluindo profissionais extras)
-    const tenant = await get(`SELECT plan, max_users, extra_users_count FROM tenants WHERE id = ?`, [tenantId]);
-    if (tenant) {
-      const allowedSeats = (tenant.max_users || 2) + (tenant.extra_users_count || 0);
+    // Verificar limite de colaboradores do tenant conforme o plano contratado
+    const tenant = await get(`SELECT plan, max_users, extra_users_count, is_master, is_exempt FROM tenants WHERE id = ?`, [tenantId]);
+    if (tenant && !tenant.is_master && !tenant.is_exempt) {
+      const plan = (tenant.plan || 'SOLO').toUpperCase();
+
+      // No Plano SOLO (autônoma/individual), não é permitido cadastrar profissionais extras
+      if (plan === 'SOLO') {
+        const currentCount = await get(`SELECT COUNT(*) as count FROM professionals WHERE tenant_id = ? AND active = 1`, [tenantId]);
+        if (currentCount && currentCount.count >= 1) {
+          return res.status(403).json({
+            error: 'O Plano Solo é exclusivo para profissionais autônomos (1 usuário). Para cadastrar e gerenciar novos membros na sua equipe, faça upgrade para o Plano Starter (até 2 profissionais) ou Studio Pro.'
+          });
+        }
+      }
+
+      const planBaseUsers = plan === 'PREMIER' ? 15 : plan === 'STUDIO' ? 5 : plan === 'STARTER' ? 2 : 1;
+      const allowedSeats = (tenant.max_users || planBaseUsers) + (tenant.extra_users_count || 0);
       const currentCount = await get(`SELECT COUNT(*) as count FROM professionals WHERE tenant_id = ? AND active = 1`, [tenantId]);
       if (currentCount && currentCount.count >= allowedSeats) {
         return res.status(403).json({
-          error: `Limite de colaboradores atingido (${allowedSeats} vagas no plano ${tenant.plan}). Adicione vagas extras por +R$ 15/mês ou faça upgrade de plano.`
+          error: `Limite de colaboradores atingido (${allowedSeats} vagas no plano ${plan}). Adicione vagas extras por +R$ 15/mês ou faça upgrade para o plano superior.`
         });
       }
     }
