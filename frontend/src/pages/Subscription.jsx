@@ -22,7 +22,268 @@ import {
   Eye,
   ExternalLink
 } from 'lucide-react';
-import { useAuth } from '../context/AuthContext';
+function getNichePlanDetails(segment) {
+  const seg = String(segment || 'salao').toLowerCase();
+  
+  if (seg === 'barbearia') {
+    return {
+      nicheTitle: 'Barbearia & Barber Club',
+      nicheIcon: '💈',
+      solo: {
+        title: 'Barbeiro Solo',
+        badge: '1 Barbeiro • até 40 cortes/mês',
+        bullets: [
+          '1 Barbeiro Ativo (Agenda na bancada)',
+          'Até 40 Agendamentos por mês',
+          'Ficha do Cliente & Histórico de Cortes',
+          'Frente de Caixa PDV & PIX Imediato',
+          'Comissão fixa 100% autônomo'
+        ]
+      },
+      starter: {
+        title: 'Starter Barber',
+        badge: 'Até 2 Barbeiros / Cadeiras',
+        bullets: [
+          'Até 2 Barbeiros Cadastrados',
+          'Agendamentos Ilimitados',
+          'Troca Rápida por PIN de 4 dígitos',
+          'Caixa Diário PDV & Baixa por Comanda',
+          'Lembretes Automáticos no WhatsApp'
+        ]
+      },
+      studio: {
+        title: 'Studio Barber Pro',
+        badge: 'Até 5 Barbeiros (+ R$ 15/extra)',
+        bullets: [
+          'Até 5 Cadeiras Inclusas (+ R$ 15/mês por vaga)',
+          'Comissões automáticas (Dedução de produtos/pomadas)',
+          'WhatsApp de Retorno aos 20 dias (Aviso de Degradê)',
+          'Comandas Multisserviços (Corte + Barba + Nevou)',
+          'DRE Financeiro e Lucratividade Real',
+          'Backup Automático em Nuvem'
+        ]
+      },
+      premier: {
+        title: 'Premier Barber Club',
+        badge: 'Até 15 Barbeiros / Redes',
+        bullets: [
+          'Até 15 Barbeiros Inclusos (+ R$ 15/extra)',
+          'Multi-unidades e Redes de Barbearia',
+          'CRM de Reativação de Clientes Sumidos',
+          'Relatório de Produtividade por Cadeira',
+          'Treinamento VIP e Suporte 24/7'
+        ]
+      }
+    };
+  }
+
+  if (seg === 'estetica') {
+    return {
+      nicheTitle: 'Clínica de Estética & Spa',
+      nicheIcon: '✨',
+      solo: {
+        title: 'Esteticista Solo',
+        badge: '1 Especialista • até 40 sessões/mês',
+        bullets: [
+          '1 Esteticista / Terapeuta Ativa',
+          'Até 40 Agendamentos/Sessões por mês',
+          'Ficha de Anamnese Facial/Corporal',
+          'Frente de Caixa PDV & Cobrança PIX',
+          'Comissão fixa 100% autônoma'
+        ]
+      },
+      starter: {
+        title: 'Starter Estética',
+        badge: 'Até 2 Especialistas / Salas',
+        bullets: [
+          'Até 2 Profissionais Cadastrados',
+          'Controle de Pacotes (ex: 10 sessões)',
+          'Agendamentos Ilimitados',
+          'Termos de Consentimento & Alergias',
+          'Lembretes Automáticos de Sessão'
+        ]
+      },
+      studio: {
+        title: 'Studio Estética Pro',
+        badge: 'Até 5 Especialistas (+ R$ 15/extra)',
+        bullets: [
+          'Até 5 Especialistas Inclusos (+ R$ 15/mês por vaga)',
+          'Histórico Clínico com Fotos de Evolução',
+          'Comissões com dedução de ampolas/insumos',
+          'WhatsApp pós-procedimento e retorno',
+          'DRE Financeiro e Lucro por Procedimento',
+          'Backup Automático em Nuvem'
+        ]
+      },
+      premier: {
+        title: 'Premier Clínicas & Spas',
+        badge: 'Até 15 Especialistas / Redes',
+        bullets: [
+          'Até 15 Especialistas Inclusos (+ R$ 15/extra)',
+          'Gestão de Múltiplas Unidades / Clínicas',
+          'Conformidade LGPD Avançada',
+          'Relatórios de Eficiência por Sala/Aparelho',
+          'Treinamento VIP e Suporte 24/7'
+        ]
+      }
+    };
+  }
+
+  if (seg === 'esmalteria') {
+    return {
+      nicheTitle: 'Esmalteria & Nail Design',
+      nicheIcon: '💅',
+      solo: {
+        title: 'Nail Designer Solo',
+        badge: '1 Mesa • até 40 atendimentos/mês',
+        bullets: [
+          '1 Nail Designer / Manicure Ativa',
+          'Até 40 Agendamentos por mês',
+          'Ficha de Alongamento (Gel/Fibra)',
+          'Frente de Caixa PDV & PIX',
+          'Comissão fixa 100% autônoma'
+        ]
+      },
+      starter: {
+        title: 'Starter Esmalteria',
+        badge: 'Até 2 Nail Designers / Mesas',
+        bullets: [
+          'Até 2 Mesas / Profissionais Cadastrados',
+          'Agendamentos Ilimitados',
+          'Alerta de Manutenção aos 17/20 dias',
+          'Caixa Diário PDV & Comanda de Unhas',
+          'Lembretes Automáticos no WhatsApp'
+        ]
+      },
+      studio: {
+        title: 'Studio Nails Pro',
+        badge: 'Até 5 Mesas (+ R$ 15/extra)',
+        bullets: [
+          'Até 5 Mesas Inclusas (+ R$ 15/mês por vaga)',
+          'Comissões com dedução de lixas/produtos',
+          'WhatsApp de Retorno Preventivo de Manutenção',
+          'Comanda Combinada (Mão + Pé + Spa)',
+          'DRE Financeiro e Controle de Estoque de Esmaltes',
+          'Backup Automático em Nuvem'
+        ]
+      },
+      premier: {
+        title: 'Premier Nail Club',
+        badge: 'Até 15 Mesas / Esmalterias Express',
+        bullets: [
+          'Até 15 Mesas Inclusas (+ R$ 15/extra)',
+          'Múltiplas Mesas em Paralelo e Redes',
+          'CRM de Clientes para Manutenção de Gel',
+          'Relatórios de Produtividade por Manicure',
+          'Treinamento VIP e Suporte 24/7'
+        ]
+      }
+    };
+  }
+
+  if (seg === 'lash') {
+    return {
+      nicheTitle: 'Lash Designer & Sobrancelhas',
+      nicheIcon: '👁️',
+      solo: {
+        title: 'Lash Designer Solo',
+        badge: '1 Maca • até 40 extensões/mês',
+        bullets: [
+          '1 Lash Designer / Extensionista Ativa',
+          'Até 40 Agendamentos por mês',
+          'Ficha de Mapping de Curvatura (C, D, L)',
+          'Frente de Caixa PDV & PIX',
+          'Comissão fixa 100% autônoma'
+        ]
+      },
+      starter: {
+        title: 'Starter Lash & Brow',
+        badge: 'Até 2 Macas / Especialistas',
+        bullets: [
+          'Até 2 Profissionais Cadastrados',
+          'Agendamentos Ilimitados',
+          'Histórico de Isolamento e Adesivos',
+          'Caixa Diário PDV & Atendimento Rápido',
+          'Lembretes Automáticos no WhatsApp'
+        ]
+      },
+      studio: {
+        title: 'Studio Lash Pro',
+        badge: 'Até 5 Macas (+ R$ 15/extra)',
+        bullets: [
+          'Até 5 Macas Inclusas (+ R$ 15/mês por vaga)',
+          'Comissões com dedução de fios/adesivo',
+          'WhatsApp de Lembrete de Retenção (15/21 dias)',
+          'Comanda Multisserviços (Lash + Brow + Labial)',
+          'DRE Financeiro e Margem de Lucro por Aplicação',
+          'Backup Automático em Nuvem'
+        ]
+      },
+      premier: {
+        title: 'Premier Lash Studio',
+        badge: 'Até 15 Macas / Studios de Olhar',
+        bullets: [
+          'Até 15 Macas Inclusas (+ R$ 15/extra)',
+          'Gestão de Alto Fluxo e Multi-unidades',
+          'CRM de Reativação de Clientes de Extensão',
+          'Relatórios de Produtividade por Lash Designer',
+          'Treinamento VIP e Suporte 24/7'
+        ]
+      }
+    };
+  }
+
+  // Fallback: Salão de Beleza & Química Capilar
+  return {
+    nicheTitle: 'Salão de Beleza & Química Capilar',
+    nicheIcon: '✂️',
+    solo: {
+      title: 'Cabeleireira Solo',
+      badge: '1 Cadeira • até 40 agendamentos/mês',
+      bullets: [
+        '1 Cabeleireira / Terapeuta Capilar Ativa',
+        'Até 40 Agendamentos por mês',
+        'Ficha de Anamnese & Fórmulas Químicas',
+        'Frente de Caixa PDV & PIX Imediato',
+        'Comissão fixa 100% autônoma'
+      ]
+    },
+    starter: {
+      title: 'Starter Salão',
+      badge: 'Até 2 Profissionais / Cadeiras',
+      bullets: [
+        'Até 2 Profissionais Cadastrados',
+        'Agendamentos Ilimitados',
+        'Comandas Multisserviços',
+        'Caixa Diário PDV & Baixa Integrada',
+        'Lembretes Automáticos no WhatsApp'
+      ]
+    },
+    studio: {
+      title: 'Studio Salão Pro',
+      badge: 'Até 5 Profissionais (+ R$ 15/extra)',
+      bullets: [
+        'Até 5 Profissionais Inclusos (+ R$ 15/mês por vaga)',
+        'Comissões Lei Salão Parceiro (Dedução de Tintura/Lavatório)',
+        'WhatsApp Automático (24h e 2h antes)',
+        'Agendas simultâneas por cadeira/bancada',
+        'DRE Financeiro e Lucratividade Real',
+        'Backup Automático em Nuvem (Google Drive)'
+      ]
+    },
+    premier: {
+      title: 'Premier Salões & Redes',
+      badge: 'Até 15 Profissionais / Redes',
+      bullets: [
+        'Até 15 Profissionais Inclusos (+ R$ 15/extra)',
+        'Múltiplas Filiais e Unidades Integradas',
+        'CRM de Reativação de Clientes Sumidas',
+        'Relatórios de Produtividade por Colaborador',
+        'Treinamento VIP com especialista e Suporte 24/7'
+      ]
+    }
+  };
+}
 
 export default function Subscription() {
   const { user } = useAuth();
@@ -357,142 +618,149 @@ export default function Subscription() {
         </div>
       </div>
 
-      {/* Grid com os 4 Planos do Nicho de Beleza */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 items-stretch pt-2">
-        
-        {/* 1. SOLO / AUTÔNOMA */}
-        <div className="bg-white dark:bg-slate-900 rounded-3xl p-6 border border-slate-200 dark:border-slate-800 space-y-6 flex flex-col justify-between shadow-xs">
-          <div className="space-y-4">
-            <div className="text-xs font-black uppercase tracking-wider text-slate-500">Solo / Autônoma</div>
-            <div>
-              <div className="text-3xl font-black text-slate-900 dark:text-white">
-                R$ 0,00 <span className="text-xs font-normal text-slate-500">/mês</span>
-              </div>
-              <div className="text-[11px] text-slate-500 mt-0.5">Degustação sem cartão</div>
-            </div>
-            <div className="text-xs text-slate-700 dark:text-slate-300 bg-slate-100 dark:bg-slate-800 p-2.5 rounded-xl font-bold">
-              ✓ 1 Profissional • até 40 agendamentos/mês
-            </div>
-            <ul className="space-y-2 text-xs text-slate-600 dark:text-slate-300">
-              <li className="flex items-center gap-2"><Check className="w-4 h-4 text-emerald-600 shrink-0" /> Manicure / Lash Solo</li>
-              <li className="flex items-center gap-2"><Check className="w-4 h-4 text-emerald-600 shrink-0" /> Agenda simples</li>
-              <li className="flex items-center gap-2"><Check className="w-4 h-4 text-emerald-600 shrink-0" /> Cadastro de Clientes CRM</li>
-              <li className="flex items-center gap-2"><Check className="w-4 h-4 text-emerald-600 shrink-0" /> Comissão fixa 100% autônoma</li>
-              <li className="flex items-center gap-2"><Check className="w-4 h-4 text-emerald-600 shrink-0" /> Frente de Caixa Balcão</li>
-            </ul>
-          </div>
-          <button
-            onClick={() => handleGeneratePix('SOLO')}
-            className="w-full py-3 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-800 dark:text-slate-200 font-bold text-xs"
-          >
-            {subStatus?.plan === 'SOLO' ? 'Plano Atual' : 'Ativar Solo Grátis'}
-          </button>
-        </div>
+      {/* Grid com os 4 Planos Especializados pelo Nicho do Negócio */}
+      {(() => {
+        const segDetails = getNichePlanDetails(user?.segment);
 
-        {/* 2. STARTER */}
-        <div className="bg-white dark:bg-slate-900 rounded-3xl p-6 border border-slate-200 dark:border-slate-800 space-y-6 flex flex-col justify-between shadow-xs">
-          <div className="space-y-4">
-            <div className="text-xs font-black uppercase tracking-wider text-indigo-600">Starter</div>
-            <div>
-              <div className="text-3xl font-black text-slate-900 dark:text-white">
-                R$ 69,90 <span className="text-xs font-normal text-slate-500">/mês</span>
-              </div>
-              <div className="text-[11px] text-emerald-600 font-bold mt-0.5">Agendamentos Ilimitados</div>
-            </div>
-            <div className="text-xs text-indigo-700 dark:text-indigo-300 bg-indigo-50 dark:bg-indigo-950/60 p-2.5 rounded-xl font-bold border border-indigo-200 dark:border-indigo-800">
-              ✓ Até 2 Profissionais Inclusos
-            </div>
-            <ul className="space-y-2 text-xs text-slate-600 dark:text-slate-300">
-              <li className="flex items-center gap-2"><Check className="w-4 h-4 text-emerald-600 shrink-0" /> 2 Profissionais / Cadeiras</li>
-              <li className="flex items-center gap-2"><Check className="w-4 h-4 text-emerald-600 shrink-0" /> Agendamentos Ilimitados</li>
-              <li className="flex items-center gap-2"><Check className="w-4 h-4 text-emerald-600 shrink-0" /> Caixa Diário & PDV Balcão</li>
-              <li className="flex items-center gap-2"><Check className="w-4 h-4 text-emerald-600 shrink-0" /> Histórico & Anamnese Técnica</li>
-              <li className="flex items-center gap-2"><Check className="w-4 h-4 text-emerald-600 shrink-0" /> Lembretes automáticos</li>
-            </ul>
-          </div>
-          <button
-            onClick={() => handleGeneratePix('STARTER')}
-            disabled={loading}
-            className="w-full py-3 rounded-xl bg-indigo-50 dark:bg-indigo-950/50 hover:bg-indigo-100 text-indigo-700 dark:text-indigo-300 font-black text-xs border border-indigo-200 dark:border-indigo-800"
-          >
-            Assinar Starter
-          </button>
-        </div>
-
-        {/* 3. STUDIO PRO (RECOMENDADO) */}
-        <div className="bg-white dark:bg-slate-900 rounded-3xl p-6 border-2 border-pink-500 shadow-xl space-y-6 flex flex-col justify-between relative transform lg:-translate-y-2">
-          <div className="absolute -top-3 left-1/2 -translate-x-1/2 bg-gradient-to-r from-pink-500 to-purple-600 text-white text-[10px] font-black uppercase px-3 py-0.5 rounded-full shadow-md whitespace-nowrap">
-            ⭐ Mais Escolhido por Salões
-          </div>
-          <div className="space-y-4 pt-1">
-            <div className="text-xs font-black uppercase tracking-wider text-pink-600">Studio Pro</div>
-            <div>
-              <div className="text-3xl font-black text-slate-900 dark:text-white">
-                R$ {139.9 + (extraSeats * 15)} <span className="text-xs font-normal text-slate-500">/mês</span>
-              </div>
-              {extraSeats > 0 && (
-                <div className="text-[10px] text-pink-600 font-bold">
-                  Inclui +{extraSeats} vagas extras (+R$ {extraSeats * 15}/mês)
+        return (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 items-stretch pt-2">
+            
+            {/* 1. SOLO / AUTÔNOMA */}
+            <div className="bg-white dark:bg-slate-900 rounded-3xl p-6 border border-slate-200 dark:border-slate-800 space-y-6 flex flex-col justify-between shadow-xs">
+              <div className="space-y-4">
+                <div className="text-xs font-black uppercase tracking-wider text-slate-500">{segDetails.solo.title}</div>
+                <div>
+                  <div className="text-3xl font-black text-slate-900 dark:text-white">
+                    R$ 0,00 <span className="text-xs font-normal text-slate-500">/mês</span>
+                  </div>
+                  <div className="text-[11px] text-slate-500 mt-0.5">Degustação sem cartão</div>
                 </div>
-              )}
-            </div>
-            <div className="text-xs text-pink-700 dark:text-pink-300 bg-pink-50 dark:bg-pink-950/60 p-2.5 rounded-xl font-bold border border-pink-200 dark:border-pink-800">
-              ✓ Até {5 + extraSeats} Profissionais (+ R$ 15/extra)
-            </div>
-            <ul className="space-y-2 text-xs text-slate-700 dark:text-slate-200">
-              <li className="flex items-center gap-2"><Check className="w-4 h-4 text-pink-600 shrink-0" /> <strong>Comissões Sem Planilha</strong> (Lei do Salão Parceiro)</li>
-              <li className="flex items-center gap-2"><Check className="w-4 h-4 text-pink-600 shrink-0" /> <strong>Comandas Multisserviços</strong> (Express)</li>
-              <li className="flex items-center gap-2"><Check className="w-4 h-4 text-pink-600 shrink-0" /> Agendas individuais por cadeira</li>
-              <li className="flex items-center gap-2"><Check className="w-4 h-4 text-pink-600 shrink-0" /> WhatsApp Automático (24h e 2h)</li>
-              <li className="flex items-center gap-2"><Check className="w-4 h-4 text-pink-600 shrink-0" /> Estoque de bancada vs revenda</li>
-              <li className="flex items-center gap-2"><Check className="w-4 h-4 text-pink-600 shrink-0" /> Backup Nuvem Google Drive</li>
-            </ul>
-          </div>
-
-          <button
-            onClick={() => handleGeneratePix('STUDIO')}
-            disabled={loading}
-            className="w-full py-3.5 rounded-xl bg-gradient-to-r from-pink-600 via-rose-600 to-purple-600 hover:from-pink-700 hover:to-purple-700 text-white font-black text-xs shadow-md shadow-pink-600/30 flex items-center justify-center gap-1.5"
-          >
-            <QrCode className="w-4 h-4" />
-            <span>Assinar Studio Pro via PIX</span>
-          </button>
-        </div>
-
-        {/* 4. PREMIER EXPRESS / REDES */}
-        <div className="bg-white dark:bg-slate-900 rounded-3xl p-6 border border-slate-200 dark:border-slate-800 space-y-6 flex flex-col justify-between shadow-xs">
-          <div className="space-y-4">
-            <div className="text-xs font-black uppercase tracking-wider text-purple-600">Premier Express</div>
-            <div>
-              <div className="text-3xl font-black text-slate-900 dark:text-white">
-                R$ {229.9 + (extraSeats * 15)} <span className="text-xs font-normal text-slate-500">/mês</span>
+                <div className="text-xs text-slate-700 dark:text-slate-300 bg-slate-100 dark:bg-slate-800 p-2.5 rounded-xl font-bold">
+                  ✓ {segDetails.solo.badge}
+                </div>
+                <ul className="space-y-2 text-xs text-slate-600 dark:text-slate-300">
+                  {segDetails.solo.bullets.map((b, i) => (
+                    <li key={i} className="flex items-center gap-2">
+                      <Check className="w-4 h-4 text-emerald-600 shrink-0" />
+                      <span>{b}</span>
+                    </li>
+                  ))}
+                </ul>
               </div>
-              <div className="text-[11px] text-purple-600 font-bold mt-0.5">Para Redes e Grandes Espaços</div>
+              <button
+                onClick={() => handleGeneratePix('SOLO')}
+                className="w-full py-3 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-800 dark:text-slate-200 font-bold text-xs"
+              >
+                {subStatus?.plan === 'SOLO' ? 'Plano Atual' : 'Ativar Solo Grátis'}
+              </button>
             </div>
-            <div className="text-xs text-purple-700 dark:text-purple-300 bg-purple-50 dark:bg-purple-950/60 p-2.5 rounded-xl font-bold border border-purple-200 dark:border-purple-800">
-              ✓ Até {15 + extraSeats} Profissionais (+ R$ 15/extra)
+
+            {/* 2. STARTER */}
+            <div className="bg-white dark:bg-slate-900 rounded-3xl p-6 border border-slate-200 dark:border-slate-800 space-y-6 flex flex-col justify-between shadow-xs">
+              <div className="space-y-4">
+                <div className="text-xs font-black uppercase tracking-wider text-indigo-600">{segDetails.starter.title}</div>
+                <div>
+                  <div className="text-3xl font-black text-slate-900 dark:text-white">
+                    R$ 69,90 <span className="text-xs font-normal text-slate-500">/mês</span>
+                  </div>
+                  <div className="text-[11px] text-emerald-600 font-bold mt-0.5">Agendamentos Ilimitados</div>
+                </div>
+                <div className="text-xs text-indigo-700 dark:text-indigo-300 bg-indigo-50 dark:bg-indigo-950/60 p-2.5 rounded-xl font-bold border border-indigo-200 dark:border-indigo-800">
+                  ✓ {segDetails.starter.badge}
+                </div>
+                <ul className="space-y-2 text-xs text-slate-600 dark:text-slate-300">
+                  {segDetails.starter.bullets.map((b, i) => (
+                    <li key={i} className="flex items-center gap-2">
+                      <Check className="w-4 h-4 text-emerald-600 shrink-0" />
+                      <span>{b}</span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+              <button
+                onClick={() => handleGeneratePix('STARTER')}
+                disabled={loading}
+                className="w-full py-3 rounded-xl bg-indigo-50 dark:bg-indigo-950/50 hover:bg-indigo-100 text-indigo-700 dark:text-indigo-300 font-black text-xs border border-indigo-200 dark:border-indigo-800"
+              >
+                Assinar {segDetails.starter.title}
+              </button>
             </div>
-            <ul className="space-y-2 text-xs text-slate-600 dark:text-slate-300">
-              <li className="flex items-center gap-2"><Check className="w-4 h-4 text-purple-600 shrink-0" /> <strong>CRM Reativação de Clientes</strong></li>
-              <li className="flex items-center gap-2"><Check className="w-4 h-4 text-purple-600 shrink-0" /> Multi-agenda de alto fluxo</li>
-              <li className="flex items-center gap-2"><Check className="w-4 h-4 text-purple-600 shrink-0" /> Relatórios de Produtividade DRE</li>
-              <li className="flex items-center gap-2"><Check className="w-4 h-4 text-purple-600 shrink-0" /> Múltiplas filiais e unidades</li>
-              <li className="flex items-center gap-2"><Check className="w-4 h-4 text-purple-600 shrink-0" /> Treinamento VIP com especialista</li>
-              <li className="flex items-center gap-2"><Check className="w-4 h-4 text-purple-600 shrink-0" /> Suporte Prioritário 24/7</li>
-            </ul>
+
+            {/* 3. STUDIO PRO (RECOMENDADO) */}
+            <div className="bg-white dark:bg-slate-900 rounded-3xl p-6 border-2 border-pink-500 shadow-xl space-y-6 flex flex-col justify-between relative transform lg:-translate-y-2">
+              <div className="absolute -top-3 left-1/2 -translate-x-1/2 bg-gradient-to-r from-pink-500 to-purple-600 text-white text-[10px] font-black uppercase px-3 py-0.5 rounded-full shadow-md whitespace-nowrap">
+                ⭐ Mais Escolhido pelo Nicho
+              </div>
+              <div className="space-y-4 pt-1">
+                <div className="text-xs font-black uppercase tracking-wider text-pink-600">{segDetails.studio.title}</div>
+                <div>
+                  <div className="text-3xl font-black text-slate-900 dark:text-white">
+                    R$ {139.9 + (extraSeats * 15)} <span className="text-xs font-normal text-slate-500">/mês</span>
+                  </div>
+                  {extraSeats > 0 && (
+                    <div className="text-[10px] text-pink-600 font-bold">
+                      Inclui +{extraSeats} vagas extras (+R$ {extraSeats * 15}/mês)
+                    </div>
+                  )}
+                </div>
+                <div className="text-xs text-pink-700 dark:text-pink-300 bg-pink-50 dark:bg-pink-950/60 p-2.5 rounded-xl font-bold border border-pink-200 dark:border-pink-800">
+                  ✓ Até {5 + extraSeats} Profissionais (+ R$ 15/extra)
+                </div>
+                <ul className="space-y-2 text-xs text-slate-700 dark:text-slate-200">
+                  {segDetails.studio.bullets.map((b, i) => (
+                    <li key={i} className="flex items-center gap-2">
+                      <Check className="w-4 h-4 text-pink-600 shrink-0" />
+                      <span>{b}</span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+
+              <button
+                onClick={() => handleGeneratePix('STUDIO')}
+                disabled={loading}
+                className="w-full py-3.5 rounded-xl bg-gradient-to-r from-pink-600 via-rose-600 to-purple-600 hover:from-pink-700 hover:to-purple-700 text-white font-black text-xs shadow-md shadow-pink-600/30 flex items-center justify-center gap-1.5"
+              >
+                <QrCode className="w-4 h-4" />
+                <span>Assinar {segDetails.studio.title} via PIX</span>
+              </button>
+            </div>
+
+            {/* 4. PREMIER EXPRESS / REDES */}
+            <div className="bg-white dark:bg-slate-900 rounded-3xl p-6 border border-slate-200 dark:border-slate-800 space-y-6 flex flex-col justify-between shadow-xs">
+              <div className="space-y-4">
+                <div className="text-xs font-black uppercase tracking-wider text-purple-600">{segDetails.premier.title}</div>
+                <div>
+                  <div className="text-3xl font-black text-slate-900 dark:text-white">
+                    R$ {229.9 + (extraSeats * 15)} <span className="text-xs font-normal text-slate-500">/mês</span>
+                  </div>
+                  <div className="text-[11px] text-purple-600 font-bold mt-0.5">Para Redes e Grandes Espaços</div>
+                </div>
+                <div className="text-xs text-purple-700 dark:text-purple-300 bg-purple-50 dark:bg-purple-950/60 p-2.5 rounded-xl font-bold border border-purple-200 dark:border-purple-800">
+                  ✓ Até {15 + extraSeats} Profissionais (+ R$ 15/extra)
+                </div>
+                <ul className="space-y-2 text-xs text-slate-600 dark:text-slate-300">
+                  {segDetails.premier.bullets.map((b, i) => (
+                    <li key={i} className="flex items-center gap-2">
+                      <Check className="w-4 h-4 text-purple-600 shrink-0" />
+                      <span>{b}</span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+
+              <button
+                onClick={() => handleGeneratePix('PREMIER')}
+                disabled={loading}
+                className="w-full py-3 rounded-xl bg-purple-50 dark:bg-purple-950/50 hover:bg-purple-100 text-purple-700 dark:text-purple-300 font-black text-xs border border-purple-200 dark:border-purple-800"
+              >
+                Assinar {segDetails.premier.title}
+              </button>
+            </div>
+
           </div>
-
-          <button
-            onClick={() => handleGeneratePix('PREMIER')}
-            disabled={loading}
-            className="w-full py-3.5 rounded-xl bg-purple-600 hover:bg-purple-700 text-white font-bold text-xs shadow-md flex items-center justify-center gap-1.5"
-          >
-            <QrCode className="w-4 h-4" />
-            <span>Assinar Premier</span>
-          </button>
-        </div>
-
-      </div>
+        );
+      })()}
 
       {/* Histórico de Pagamentos & Comprovantes (Auditoria do SaaS) */}
       <div className="bg-white dark:bg-slate-900 rounded-3xl border border-slate-200 dark:border-slate-800 p-6 sm:p-8 shadow-xs space-y-6">

@@ -1,4 +1,4 @@
-﻿import React from 'react';
+import React from 'react';
 import { Sparkles, CheckCircle2, ArrowRight, Scissors, Palette, MessageSquare, BarChart3, ShieldCheck, Heart, Crown, Check, ChevronRight } from 'lucide-react';
 import { Link } from '../components/Link';
 
@@ -64,7 +64,7 @@ export default function SistemaEsmalteria() {
               className="w-full sm:w-auto px-8 py-4 rounded-2xl bg-gradient-to-r from-purple-600 via-pink-600 to-rose-600 hover:opacity-95 text-white font-black text-sm shadow-xl shadow-purple-600/30 flex items-center justify-center gap-2 transition-all active:scale-95"
             >
               <Sparkles className="w-4 h-4 text-amber-300 fill-current" />
-              <span>Experimentar Grátis (2 Usuários)</span>
+              <span>Começar Agora Grátis</span>
               <ArrowRight className="w-4 h-4" />
             </Link>
 

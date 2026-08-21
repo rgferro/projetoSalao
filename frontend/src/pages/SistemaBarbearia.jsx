@@ -1,4 +1,4 @@
-﻿import React from 'react';
+import React from 'react';
 import { Sparkles, CheckCircle2, ArrowRight, Zap, Flame, DollarSign, MessageSquare } from 'lucide-react';
 import { Link } from '../components/Link';
 
@@ -64,7 +64,7 @@ export default function SistemaBarbearia() {
               className="w-full sm:w-auto px-8 py-4 rounded-2xl bg-gradient-to-r from-amber-400 via-amber-500 to-yellow-500 text-slate-950 font-black text-sm shadow-xl shadow-amber-400/30 flex items-center justify-center gap-2 transition-all active:scale-95"
             >
               <Sparkles className="w-4 h-4 fill-current" />
-              <span>Começar Grátis (2 Barbeiros)</span>
+              <span>Começar Agora Grátis</span>
               <ArrowRight className="w-4 h-4" />
             </Link>
 
