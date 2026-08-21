@@ -25,16 +25,18 @@ import { useAuth } from '../context/AuthContext';
 import { getSegmentConfig } from '../lib/segmentTheme';
 
 export default function WhatsAppModule() {
-  const { user } = useAuth();
+  const { user, isAdmin, isMaster } = useAuth();
+  const hasAdminAccess = isMaster || isAdmin || ['ADMIN', 'DONO'].includes(user?.accessLevel?.toUpperCase()) || ['ADMIN', 'DONO'].includes(user?.role?.toUpperCase());
   const segConfig = getSegmentConfig(user?.segment);
   const segTheme = segConfig.theme;
 
   const [waStatus, setWaStatus] = useState(null);
   const [templates, setTemplates] = useState([]);
   const [logs, setLogs] = useState([]);
-  const [activeTab, setActiveTab] = useState('connection'); // 'connection', 'templates', 'direct-send', 'logs'
+  const [activeTab, setActiveTab] = useState(hasAdminAccess ? 'connection' : 'templates'); // 'connection', 'templates', 'direct-send', 'logs'
   const [loading, setLoading] = useState(true);
   const [toastMsg, setToastMsg] = useState(null);
+  const [secondsRemaining, setSecondsRemaining] = useState(45);
 
   // Template Editing
   const [editingTemplate, setEditingTemplate] = useState(null);
@@ -52,6 +54,7 @@ export default function WhatsAppModule() {
   };
 
   const fetchStatus = async () => {
+    if (!hasAdminAccess) return;
     try {
       const st = await api.getWhatsAppStatus();
       setWaStatus(st);
@@ -63,14 +66,23 @@ export default function WhatsAppModule() {
   const loadData = async () => {
     try {
       setLoading(true);
-      const [st, tmps, lg] = await Promise.all([
-        api.getWhatsAppStatus(),
+      const promises = [
         api.getWhatsAppTemplates(),
         api.getWhatsAppLogs()
-      ]);
-      setWaStatus(st);
-      setTemplates(tmps);
-      setLogs(lg);
+      ];
+      if (hasAdminAccess) {
+        promises.unshift(api.getWhatsAppStatus());
+      }
+      
+      const results = await Promise.all(promises);
+      if (hasAdminAccess) {
+        setWaStatus(results[0]);
+        setTemplates(results[1]);
+        setLogs(results[2]);
+      } else {
+        setTemplates(results[0]);
+        setLogs(results[1]);
+      }
     } catch (err) {
       console.error('Erro ao carregar dados do WhatsApp:', err);
     } finally {
@@ -80,10 +92,28 @@ export default function WhatsAppModule() {
 
   useEffect(() => {
     loadData();
-    // Polling a cada 2.5s para monitorar QR Code e Conexão Multi-Device
-    const interval = setInterval(fetchStatus, 2500);
-    return () => clearInterval(interval);
-  }, [user?.tenantId]);
+    if (hasAdminAccess) {
+      // Polling a cada 2.5s para monitorar QR Code e Conexão Multi-Device
+      const interval = setInterval(fetchStatus, 2500);
+      return () => clearInterval(interval);
+    }
+  }, [user?.tenantId, hasAdminAccess]);
+
+  // Contagem regressiva local do TTL (45 segundos)
+  useEffect(() => {
+    if (!waStatus?.qrExpiresAt || waStatus?.status !== 'QR_READY') {
+      return;
+    }
+
+    const updateTimer = () => {
+      const remaining = Math.max(0, Math.ceil((waStatus.qrExpiresAt - Date.now()) / 1000));
+      setSecondsRemaining(remaining);
+    };
+
+    updateTimer();
+    const timer = setInterval(updateTimer, 1000);
+    return () => clearInterval(timer);
+  }, [waStatus?.qrExpiresAt, waStatus?.status]);
 
   const handleLogout = async () => {
     if (!window.confirm(`Deseja desconectar a sessão do WhatsApp de "${user?.salonName || 'seu salão'}" e gerar um novo QR Code?`)) return;
@@ -239,74 +269,110 @@ export default function WhatsAppModule() {
 
       {/* TAB 1: Conexão & QR Code Oficial */}
       {activeTab === 'connection' && (
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          {/* Card do QR Code */}
-          <div className="glass-panel p-6 flex flex-col items-center justify-center text-center space-y-4">
-            <h3 className="text-base font-extrabold text-slate-800 dark:text-slate-100 flex items-center gap-2">
-              <QrCode className="w-5 h-5 text-emerald-600" />
-              Pareamento Multi-Device WhatsApp
+        !hasAdminAccess ? (
+          <div className="glass-panel p-8 text-center space-y-4 max-w-lg mx-auto">
+            <div className="w-16 h-16 rounded-full bg-rose-100 dark:bg-rose-950/60 text-rose-600 dark:text-rose-400 mx-auto flex items-center justify-center">
+              <ShieldCheck className="w-8 h-8" />
+            </div>
+            <h3 className="text-base font-bold text-slate-800 dark:text-slate-100">
+              Acesso Restrito ao Administrador
             </h3>
-
-            {waStatus?.status === 'CONNECTED' ? (
-              <div className="p-8 rounded-3xl bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800 space-y-3 w-full max-w-sm">
-                <div className="w-16 h-16 rounded-full bg-emerald-100 dark:bg-emerald-900 text-emerald-600 mx-auto flex items-center justify-center">
-                  <CheckCircle2 className="w-10 h-10" />
-                </div>
-                <h4 className="font-extrabold text-base text-emerald-800 dark:text-emerald-200">
-                  Aparelho Conectado com Sucesso!
-                </h4>
-                <p className="text-xs font-mono text-emerald-700 dark:text-emerald-300 font-bold">
-                  {waStatus.user ? `+${waStatus.user}` : 'Multi-Device Ativo'}
-                </p>
-                <p className="text-[11px] text-slate-500 dark:text-slate-400">
-                  Todas as confirmações de agenda, lembretes e mensagens de aniversário agora são enviadas automaticamente em segundo plano.
-                </p>
-                <button
-                  onClick={handleLogout}
-                  className="w-full mt-3 py-2 rounded-xl text-xs font-bold text-rose-600 bg-white dark:bg-slate-800 hover:bg-rose-50 border border-rose-200 shadow-sm transition"
-                >
-                  Desconectar e Conectar Outro Número
-                </button>
-              </div>
-            ) : (waStatus?.qr || waStatus?.qrCode || waStatus?.qrCodeUrl) ? (
-              <div className="space-y-4">
-                <div className="p-3 bg-white rounded-3xl shadow-xl border-4 border-emerald-500 inline-block">
-                  <img
-                    src={waStatus.qr || waStatus.qrCode || waStatus.qrCodeUrl}
-                    alt="QR Code WhatsApp"
-                    className="w-64 h-64 rounded-2xl object-contain mx-auto"
-                  />
-                </div>
-                <div className="space-y-1">
-                  <p className="text-xs font-bold text-slate-700 dark:text-slate-200">
-                    Aponte a câmera do WhatsApp para o QR Code acima
-                  </p>
-                  <p className="text-[11px] text-slate-400">
-                    O código atualiza automaticamente a cada poucos segundos.
-                  </p>
-                </div>
-                <button
-                  onClick={fetchStatus}
-                  className="px-3 py-1.5 text-xs font-semibold rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 text-slate-600 dark:text-slate-300 flex items-center gap-1.5 mx-auto transition"
-                >
-                  <RefreshCw className="w-3.5 h-3.5" />
-                  <span>Atualizar QR Code</span>
-                </button>
-              </div>
-            ) : (
-              <div className="p-12 space-y-3">
-                <RefreshCw className="w-10 h-10 text-slate-400 animate-spin mx-auto" />
-                <p className="text-xs font-semibold text-slate-500">Iniciando daemon e gerando QR Code seguro...</p>
-                <button
-                  onClick={fetchStatus}
-                  className="mt-2 px-3 py-1.5 text-xs font-semibold rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 text-slate-600 dark:text-slate-300 inline-flex items-center gap-1.5 transition"
-                >
-                  <RefreshCw className="w-3.5 h-3.5" />
-                  <span>Verificar Novamente</span>
-                </button>
-              </div>
-            )}
+            <p className="text-xs text-slate-500 dark:text-slate-400">
+              A conexão, leitura do QR Code e gerenciamento do dispositivo WhatsApp são permitidos exclusivamente para administradores e donos do salão.
+            </p>
           </div>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            {/* Card do QR Code */}
+            <div className="glass-panel p-6 flex flex-col items-center justify-center text-center space-y-4">
+              <h3 className="text-base font-extrabold text-slate-800 dark:text-slate-100 flex items-center gap-2">
+                <QrCode className="w-5 h-5 text-emerald-600" />
+                Pareamento Multi-Device WhatsApp
+              </h3>
+
+              {waStatus?.status === 'CONNECTED' ? (
+                <div className="p-8 rounded-3xl bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800 space-y-3 w-full max-w-sm">
+                  <div className="w-16 h-16 rounded-full bg-emerald-100 dark:bg-emerald-900 text-emerald-600 mx-auto flex items-center justify-center">
+                    <CheckCircle2 className="w-10 h-10" />
+                  </div>
+                  <h4 className="font-extrabold text-base text-emerald-800 dark:text-emerald-200">
+                    Aparelho Conectado com Sucesso!
+                  </h4>
+                  <p className="text-xs font-mono text-emerald-700 dark:text-emerald-300 font-bold">
+                    {waStatus.user ? `+${waStatus.user}` : 'Multi-Device Ativo'}
+                  </p>
+                  <p className="text-[11px] text-slate-500 dark:text-slate-400">
+                    Todas as confirmações de agenda, lembretes e mensagens de aniversário agora são enviadas automaticamente em segundo plano.
+                  </p>
+                  <button
+                    onClick={handleLogout}
+                    className="w-full mt-3 py-2 rounded-xl text-xs font-bold text-rose-600 bg-white dark:bg-slate-800 hover:bg-rose-50 border border-rose-200 shadow-sm transition"
+                  >
+                    Desconectar e Conectar Outro Número
+                  </button>
+                </div>
+              ) : (waStatus?.qrExpired || waStatus?.status === 'QR_EXPIRED' || (secondsRemaining === 0 && !waStatus?.qr)) ? (
+                <div className="p-8 rounded-3xl bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-800 space-y-4 w-full max-w-sm">
+                  <div className="w-16 h-16 rounded-full bg-amber-100 dark:bg-amber-900 text-amber-600 mx-auto flex items-center justify-center">
+                    <Clock className="w-10 h-10" />
+                  </div>
+                  <h4 className="font-extrabold text-base text-amber-800 dark:text-amber-200">
+                    QR Code Expirado (45s)
+                  </h4>
+                  <p className="text-xs text-slate-600 dark:text-slate-300">
+                    Por segurança, o QR Code de pareamento expira a cada 45 segundos. Clique abaixo para gerar um novo código.
+                  </p>
+                  <button
+                    onClick={fetchStatus}
+                    className="w-full py-2.5 rounded-xl text-xs font-bold text-white bg-amber-600 hover:bg-amber-700 shadow-md flex items-center justify-center gap-2 transition"
+                  >
+                    <RefreshCw className="w-4 h-4" />
+                    <span>Gerar Novo QR Code</span>
+                  </button>
+                </div>
+              ) : (waStatus?.qr || waStatus?.qrCode || waStatus?.qrCodeUrl) ? (
+                <div className="space-y-4">
+                  <div className="relative p-3 bg-white rounded-3xl shadow-xl border-4 border-emerald-500 inline-block">
+                    <img
+                      src={waStatus.qr || waStatus.qrCode || waStatus.qrCodeUrl}
+                      alt="QR Code WhatsApp"
+                      className="w-64 h-64 rounded-2xl object-contain mx-auto"
+                    />
+                    <div className="absolute top-5 right-5 bg-slate-900/80 text-white text-[11px] font-mono px-2.5 py-1 rounded-full backdrop-blur-md flex items-center gap-1.5 shadow-md">
+                      <Clock className="w-3.5 h-3.5 text-amber-400 animate-spin" />
+                      <span>Expira em: <strong>{secondsRemaining}s</strong></span>
+                    </div>
+                  </div>
+                  <div className="space-y-1">
+                    <p className="text-xs font-bold text-slate-700 dark:text-slate-200">
+                      Aponte a câmera do WhatsApp para o QR Code acima
+                    </p>
+                    <p className="text-[11px] text-slate-400">
+                      Tempo limite de segurança: 45 segundos por código.
+                    </p>
+                  </div>
+                  <button
+                    onClick={fetchStatus}
+                    className="px-3 py-1.5 text-xs font-semibold rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 text-slate-600 dark:text-slate-300 flex items-center gap-1.5 mx-auto transition"
+                  >
+                    <RefreshCw className="w-3.5 h-3.5" />
+                    <span>Atualizar QR Code ({secondsRemaining}s)</span>
+                  </button>
+                </div>
+              ) : (
+                <div className="p-12 space-y-3">
+                  <RefreshCw className="w-10 h-10 text-slate-400 animate-spin mx-auto" />
+                  <p className="text-xs font-semibold text-slate-500">Iniciando daemon e gerando QR Code seguro...</p>
+                  <button
+                    onClick={fetchStatus}
+                    className="mt-2 px-3 py-1.5 text-xs font-semibold rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 text-slate-600 dark:text-slate-300 inline-flex items-center gap-1.5 transition"
+                  >
+                    <RefreshCw className="w-3.5 h-3.5" />
+                    <span>Verificar Novamente</span>
+                  </button>
+                </div>
+              )}
+            </div>
 
           {/* Instruções Passo a Passo */}
           <div className="glass-panel p-6 space-y-4">
@@ -367,6 +433,7 @@ export default function WhatsAppModule() {
             </div>
           </div>
         </div>
+        )
       )}
 
       {/* TAB 2: Modelos de Mensagens */}

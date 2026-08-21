@@ -5,8 +5,12 @@ const path = require('path');
 const fs = require('fs');
 const gdriveService = require('../services/gdriveService');
 const { DB_PATH } = require('../database/db');
+const { requireAuth, requireRole } = require('../middleware/authMiddleware');
 
 const upload = multer({ dest: path.join(__dirname, '..', 'backups', 'temp') });
+
+// Todas as rotas de backup exigem autenticação e perfil ADMIN / DONO
+router.use(requireAuth, requireRole(['ADMIN', 'DONO']));
 
 // Listar histórico de backups locais e status Google Drive
 router.get('/', async (req, res) => {

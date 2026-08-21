@@ -1,6 +1,10 @@
 const express = require('express');
 const router = express.Router();
 const { query, get, run } = require('../database/db');
+const { requireAuth, requireRole } = require('../middleware/authMiddleware');
+
+// Todas as rotas de serviços exigem autenticação válida
+router.use(requireAuth);
 
 // Listar todos os serviços por Tenant
 router.get('/', async (req, res) => {
@@ -40,8 +44,8 @@ router.get('/:id', async (req, res) => {
   }
 });
 
-// Criar serviço
-router.post('/', async (req, res) => {
+// Criar serviço (Exclusivo ADMIN/GERENTE)
+router.post('/', requireRole(['ADMIN', 'GERENTE']), async (req, res) => {
   try {
     const { name, category, description, price, cost_price, duration_min, default_commission_type, default_commission_value } = req.body;
     const tenantId = req.tenantId || 'tenant_default_salao';
@@ -72,8 +76,8 @@ router.post('/', async (req, res) => {
   }
 });
 
-// Atualizar serviço
-router.put('/:id', async (req, res) => {
+// Atualizar serviço (Exclusivo ADMIN/GERENTE)
+router.put('/:id', requireRole(['ADMIN', 'GERENTE']), async (req, res) => {
   try {
     const { id } = req.params;
     const { name, category, description, price, cost_price, duration_min, default_commission_type, default_commission_value, active } = req.body;
@@ -93,8 +97,8 @@ router.put('/:id', async (req, res) => {
   }
 });
 
-// Excluir serviço
-router.delete('/:id', async (req, res) => {
+// Excluir serviço (Exclusivo ADMIN/GERENTE)
+router.delete('/:id', requireRole(['ADMIN', 'GERENTE']), async (req, res) => {
   try {
     const tenantId = req.tenantId || 'tenant_default_salao';
     await run('DELETE FROM services WHERE id = ? AND tenant_id = ?', [req.params.id, tenantId]);

@@ -45,6 +45,15 @@ async function request(endpoint, options = {}) {
     const data = await response.json().catch(() => null);
 
     if (!response.ok) {
+      if (response.status === 401) {
+        if (typeof window !== 'undefined') {
+          localStorage.removeItem('bella_token');
+          localStorage.removeItem('bella_user');
+          if (!window.location.pathname.includes('/login') && !window.location.pathname.includes('/register')) {
+            window.location.href = '/login';
+          }
+        }
+      }
       throw new Error((data && data.error) || `Erro ${response.status}: ${response.statusText}`);
     }
 

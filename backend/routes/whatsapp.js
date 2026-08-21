@@ -3,11 +3,26 @@ const router = express.Router();
 const { query, get, run } = require('../database/db');
 const whatsappService = require('../services/whatsappService');
 
+const { requireAuth, requireRole } = require('../middleware/authMiddleware');
+const logger = require('../services/logger');
+
 // Obter status e QR Code de conexão em tempo real para o Salão / Tenant
-router.get('/status', async (req, res) => {
+// Exclusivo para perfis Administrador ('ADMIN' / 'DONO')
+router.get('/status', requireAuth, requireRole(['ADMIN', 'DONO']), async (req, res) => {
   try {
     const tenantId = req.tenantId || 'tenant_default_salao';
     const status = await whatsappService.getStatus(tenantId);
+
+    // Auditoria ao gerar/entregar o QR Code ativo
+    if (status && (status.qr || status.qrCode)) {
+      const clientIp = req.headers['x-forwarded-for']?.split(',')[0]?.trim() || req.socket?.remoteAddress || req.ip || 'desconhecido';
+      const userId = req.user?.id || req.user?.userId || 'admin';
+      const userEmail = req.user?.email || 'desconhecido';
+      const timestamp = new Date().toISOString();
+
+      logger.info(`[AUDITORIA-QR] QR Code acessado/gerado - User: ${userId} (${userEmail}) | IP: ${clientIp} | Tenant: ${tenantId} | Timestamp: ${timestamp}`);
+    }
+
     res.json(status);
   } catch (error) {
     res.status(500).json({ error: error.message });
@@ -15,7 +30,7 @@ router.get('/status', async (req, res) => {
 });
 
 // Desconectar sessão (Logout) exclusiva do Salão / Tenant para gerar novo QR Code
-router.post('/logout', async (req, res) => {
+router.post('/logout', requireAuth, requireRole(['ADMIN', 'DONO']), async (req, res) => {
   try {
     const tenantId = req.tenantId || 'tenant_default_salao';
     const result = await whatsappService.logout(tenantId);

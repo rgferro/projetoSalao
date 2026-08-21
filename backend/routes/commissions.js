@@ -1,12 +1,24 @@
 const express = require('express');
 const router = express.Router();
 const { query, get, run } = require('../database/db');
+const { requireAuth, requireRole } = require('../middleware/authMiddleware');
+
+// Todas as rotas de comissão exigem autenticação válida
+router.use(requireAuth);
 
 // Relatório de Repasse de Comissões por Profissional e Período isolado por Tenant
 router.get('/report', async (req, res) => {
   try {
-    const { professional_id, startDate, endDate } = req.query;
-    const tenantId = req.tenantId || 'tenant_default_salao';
+    let { professional_id, startDate, endDate } = req.query;
+    const tenantId = req.tenantId;
+    const userRole = (req.user?.accessLevel || 'PROFISSIONAL').toUpperCase();
+    const isMaster = Boolean(req.user?.isMaster);
+    const isAdminOrGerente = isMaster || ['ADMIN', 'GERENTE'].includes(userRole);
+
+    // Prevenção de IDOR: Se não for ADMIN/GERENTE, força o filtro para o ID do próprio profissional autenticado
+    if (!isAdminOrGerente) {
+      professional_id = req.user?.userId || req.user?.id;
+    }
 
     const sDate = startDate || new Date(new Date().getFullYear(), new Date().getMonth(), 1).toISOString().split('T')[0];
     const eDate = endDate || new Date().toISOString().split('T')[0];
@@ -71,11 +83,11 @@ router.get('/report', async (req, res) => {
   }
 });
 
-// Registrar Quitação / Pagamento de Repasse de Comissão com Tenant
-router.post('/settle', async (req, res) => {
+// Registrar Quitação / Pagamento de Repasse de Comissão com Tenant (Exclusivo ADMIN/GERENTE)
+router.post('/settle', requireRole(['ADMIN', 'GERENTE']), async (req, res) => {
   try {
     const { professional_id, period_start, period_end, total_services_amount, total_commission, deduction_amount = 0, payment_method = 'pix', notes } = req.body;
-    const tenantId = req.tenantId || 'tenant_default_salao';
+    const tenantId = req.tenantId;
 
     if (!professional_id || !period_start || !period_end || total_commission === undefined) {
       return res.status(400).json({ error: 'Profissional, período e total de comissão são obrigatórios.' });
@@ -137,8 +149,17 @@ router.post('/settle', async (req, res) => {
 // Histórico de Quitações
 router.get('/settlements', async (req, res) => {
   try {
-    const { professional_id } = req.query;
-    const tenantId = req.tenantId || 'tenant_default_salao';
+    let { professional_id } = req.query;
+    const tenantId = req.tenantId;
+    const userRole = (req.user?.accessLevel || 'PROFISSIONAL').toUpperCase();
+    const isMaster = Boolean(req.user?.isMaster);
+    const isAdminOrGerente = isMaster || ['ADMIN', 'GERENTE'].includes(userRole);
+
+    // Prevenção de IDOR: Se não for ADMIN/GERENTE, visualiza apenas o próprio histórico
+    if (!isAdminOrGerente) {
+      professional_id = req.user?.userId || req.user?.id;
+    }
+
     let sql = `
       SELECT cs.*, p.name as prof_name, p.nickname as prof_nickname
       FROM commission_settlements cs

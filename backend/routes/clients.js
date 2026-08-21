@@ -2,6 +2,10 @@ const express = require('express');
 const router = express.Router();
 const { query, get, run } = require('../database/db');
 const whatsappService = require('../services/whatsappService');
+const { requireAuth } = require('../middleware/authMiddleware');
+
+// Todas as rotas de clientes exigem autenticação válida
+router.use(requireAuth);
 
 // Listar todos os clientes com resumo de pontos e último atendimento (Isolado por Tenant)
 router.get('/', async (req, res) => {

@@ -144,9 +144,12 @@ async function getOrCreateTenantSession(rawTenantId) {
 
       if (qr) {
         try {
+          const now = Date.now();
           session.qr = await QRCode.toDataURL(qr, { margin: 2, scale: 8 });
+          session.qrCreatedAt = now;
+          session.qrExpiresAt = now + (45 * 1000); // 45 segundos de TTL
           session.status = 'QR_READY';
-          console.log(`📲 [WhatsApp Daemon - Salão ${tenantId}] Novo QR Code exclusivo gerado! Pronto para escanear.`);
+          console.log(`📲 [WhatsApp Daemon - Salão ${tenantId}] Novo QR Code gerado! Válido por 45s até ${new Date(session.qrExpiresAt).toISOString()}`);
         } catch (qrErr) {
           console.error(`Erro ao gerar QR Code para salão ${tenantId}:`, qrErr);
         }
@@ -155,6 +158,8 @@ async function getOrCreateTenantSession(rawTenantId) {
       if (connection === 'open') {
         session.status = 'CONNECTED';
         session.qr = null;
+        session.qrCreatedAt = null;
+        session.qrExpiresAt = null;
         session.reconnectAttempts = 0;
         const jid = sock.user?.id || '';
         session.user = jid.split(':')[0] || jid.split('@')[0] || 'Conectado';
@@ -253,13 +258,31 @@ const server = http.createServer(async (req, res) => {
     const tenantId = sanitizeTenantId(queryTenant);
     const session = await getOrCreateTenantSession(tenantId);
 
+    const now = Date.now();
+    let activeQr = session.qr;
+    let isExpired = false;
+    let ttlRemaining = 0;
+
+    if (session.status === 'QR_READY' && session.qr) {
+      if (session.qrExpiresAt && now > session.qrExpiresAt) {
+        isExpired = true;
+        activeQr = null; // QR expirou após 45 segundos
+      } else if (session.qrExpiresAt) {
+        ttlRemaining = Math.max(0, Math.ceil((session.qrExpiresAt - now) / 1000));
+      }
+    }
+
     res.writeHead(200, { 'Content-Type': 'application/json' });
     res.end(JSON.stringify({
       tenantId: session.tenantId,
-      status: session.status,
-      qr: session.qr,
-      qrCode: session.qr,
-      qrCodeUrl: session.qr,
+      status: isExpired ? 'QR_EXPIRED' : session.status,
+      qr: activeQr,
+      qrCode: activeQr,
+      qrCodeUrl: activeQr,
+      qrCreatedAt: session.qrCreatedAt || null,
+      qrExpiresAt: session.qrExpiresAt || null,
+      qrExpired: isExpired,
+      ttlRemaining: ttlRemaining,
       user: session.user,
       lastConnectedAt: session.lastConnectedAt,
       timestamp: new Date().toISOString()

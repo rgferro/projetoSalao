@@ -1,6 +1,10 @@
 const express = require('express');
 const router = express.Router();
 const { query, get } = require('../database/db');
+const { requireAuth } = require('../middleware/authMiddleware');
+
+// Todas as métricas do dashboard exigem autenticação válida
+router.use(requireAuth);
 
 // Dashboard com métricas consolidadas em tempo real por Tenant
 router.get('/metrics', async (req, res) => {

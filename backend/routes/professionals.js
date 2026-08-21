@@ -25,7 +25,7 @@ router.get('/specialties', async (req, res) => {
 });
 
 // 2. Cadastrar Nova Especialidade / Função Customizada
-router.post('/specialties', async (req, res) => {
+router.post('/specialties', requireRole(['ADMIN', 'GERENTE']), async (req, res) => {
   try {
     const { name, category = 'Geral', icon = 'Sparkles' } = req.body;
     const tenantId = req.tenantId;
@@ -103,8 +103,8 @@ router.get('/:id', async (req, res) => {
   }
 });
 
-// 5. Criar profissional com verificação de limite do plano
-router.post('/', async (req, res) => {
+// 5. Criar profissional com verificação de limite do plano (Exclusivo ADMIN/GERENTE)
+router.post('/', requireRole(['ADMIN', 'GERENTE']), async (req, res) => {
   try {
     const {
       name,
@@ -190,12 +190,21 @@ router.post('/', async (req, res) => {
   }
 });
 
-// 6. Atualizar profissional
+// 6. Atualizar profissional (Exclusivo ADMIN/GERENTE ou o próprio usuário editando seus dados básicos)
 router.put('/:id', async (req, res) => {
   try {
     const { id } = req.params;
     const tenantId = req.tenantId;
     if (!tenantId) return res.status(401).json({ error: 'Não autenticado.' });
+
+    const userRole = (req.user?.accessLevel || 'PROFISSIONAL').toUpperCase();
+    const isMaster = Boolean(req.user?.isMaster);
+    const isAdminOrGerente = isMaster || ['ADMIN', 'GERENTE'].includes(userRole);
+    const isSelf = String(req.user?.userId || req.user?.id) === String(id);
+
+    if (!isAdminOrGerente && !isSelf) {
+      return res.status(403).json({ error: 'Você não possui permissão para editar outros colaboradores.' });
+    }
 
     const {
       name,
@@ -216,20 +225,26 @@ router.put('/:id', async (req, res) => {
       custom_commissions
     } = req.body;
 
+    // Se for o próprio profissional não-admin, impede alteração de seu próprio access_level e comissão
+    const safeAccessLevel = isAdminOrGerente ? access_level : undefined;
+    const safeRole = isAdminOrGerente ? role : undefined;
+    const safeCommissionType = isAdminOrGerente ? default_commission_type : undefined;
+    const safeCommissionValue = isAdminOrGerente ? default_commission_value : undefined;
+
     let updatePasswordSql = '';
     const params = [
       name,
       nickname,
-      role,
-      access_level,
+      safeRole,
+      safeAccessLevel,
       JSON.stringify(subtypes || []),
       phone,
       email,
       pin_code,
       color_hex,
       JSON.stringify(specialties || []),
-      default_commission_type,
-      default_commission_value,
+      safeCommissionType,
+      safeCommissionValue,
       JSON.stringify(work_schedule || {}),
       active
     ];
@@ -245,14 +260,14 @@ router.put('/:id', async (req, res) => {
       `UPDATE professionals 
        SET name = ?, nickname = ?, role = COALESCE(?, role), access_level = COALESCE(?, access_level),
            subtypes = ?, phone = ?, email = ?, pin_code = COALESCE(?, pin_code), color_hex = ?, 
-           specialties = ?, default_commission_type = ?, default_commission_value = ?, 
+           specialties = ?, default_commission_type = COALESCE(?, default_commission_type), default_commission_value = COALESCE(?, default_commission_value), 
            work_schedule = ?, active = COALESCE(?, active) ${updatePasswordSql}
        WHERE id = ? AND tenant_id = ?`,
       params
     );
 
-    // Atualizar comissões customizadas
-    if (Array.isArray(custom_commissions)) {
+    // Atualizar comissões customizadas apenas se for ADMIN/GERENTE
+    if (isAdminOrGerente && Array.isArray(custom_commissions)) {
       await run('DELETE FROM professional_commissions WHERE professional_id = ? AND tenant_id = ?', [id, tenantId]);
       for (const cc of custom_commissions) {
         if (cc.service_id) {
@@ -271,8 +286,8 @@ router.put('/:id', async (req, res) => {
   }
 });
 
-// 7. Excluir profissional
-router.delete('/:id', async (req, res) => {
+// 7. Excluir profissional (Exclusivo ADMIN/GERENTE)
+router.delete('/:id', requireRole(['ADMIN', 'GERENTE']), async (req, res) => {
   try {
     const { id } = req.params;
     const tenantId = req.tenantId;

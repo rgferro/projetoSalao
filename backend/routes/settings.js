@@ -1,6 +1,10 @@
 const express = require('express');
 const router = express.Router();
 const { query, get, run } = require('../database/db');
+const { requireAuth, requireRole } = require('../middleware/authMiddleware');
+
+// Leitura exige autenticação; alteração exige ADMIN / GERENTE
+router.use(requireAuth);
 
 // Obter todas as configurações por Tenant
 router.get('/', async (req, res) => {
@@ -17,8 +21,8 @@ router.get('/', async (req, res) => {
   }
 });
 
-// Atualizar configurações em lote por Tenant
-router.post('/', async (req, res) => {
+// Atualizar configurações em lote por Tenant (Exclusivo ADMIN/GERENTE)
+router.post('/', requireRole(['ADMIN', 'GERENTE']), async (req, res) => {
   try {
     const tenantId = req.tenantId || 'tenant_default_salao';
     const settings = req.body;
