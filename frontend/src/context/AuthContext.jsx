@@ -203,7 +203,7 @@ export function AuthProvider({ children }) {
 
   const isPlanAllowed = (moduleId) => {
     if (!user) return false;
-    if (isMaster || isExempt) return true;
+    if (isMaster) return true;
     return canPlanAccessModule(user.plan, moduleId, isMaster, isExempt);
   };
 

@@ -153,7 +153,7 @@ router.post('/tenants/:id/toggle-exempt', async (req, res) => {
 
     const newExempt = tenant.is_exempt ? 0 : 1;
     const newStatus = newExempt ? 'exempt' : 'active';
-    const expiresAt = newExempt ? '2099-12-31 23:59:59' : new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString();
+    const expiresAt = newExempt ? null : new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString();
 
     await run(`
       UPDATE tenants 

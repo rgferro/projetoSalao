@@ -207,16 +207,16 @@ export default function Subscription() {
         </div>
       )}
 
-      {/* Alerta de Isenção Vitalícia / Cortesia Master */}
+      {/* Alerta de Isenção de Cobrança / Cortesia Master */}
       {(subStatus?.isExempt || subStatus?.status === 'EXEMPT') && (
         <div className="p-5 rounded-2xl bg-gradient-to-r from-amber-500/20 via-purple-500/20 to-pink-500/20 border-2 border-amber-400 dark:border-amber-500/60 flex items-center gap-4 text-amber-950 dark:text-amber-200">
           <div className="p-3 bg-amber-400 text-slate-950 rounded-2xl shrink-0 font-black shadow-md">
             ⭐ VIP
           </div>
           <div>
-            <div className="font-black text-sm">Salão com Isenção Vitalícia / Cortesia Master Ativa</div>
+            <div className="font-black text-sm">Salão com Isenção de Cobrança Ativa (Cortesia Financeira)</div>
             <p className="text-xs text-slate-700 dark:text-slate-300">
-              Seu espaço possui acesso completo e irrestrito a todos os módulos, agendamentos ilimitados e suporte sem cobranças de mensalidade.
+              Seu espaço está isento de cobranças de mensalidade no <strong>Plano {subStatus?.plan || 'Atual'}</strong>. Os limites de equipe e os módulos do sistema permanecem fiéis ao plano configurado.
             </p>
           </div>
         </div>

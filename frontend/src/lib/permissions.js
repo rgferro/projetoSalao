@@ -213,7 +213,9 @@ export function canAccessModule(accessLevel, moduleId) {
 }
 
 export function canPlanAccessModule(plan, moduleId, isMaster = false, isExempt = false) {
-  if (isMaster || isExempt) return true;
+  // Somente o Administrador Master da plataforma SaaS tem bypass irrestrito de módulos
+  // A isenção de pagamento (isExempt) apenas isenta o salão de cobranças financeiras, mantendo os recursos exatos do plano escolhido
+  if (isMaster) return true;
   const normalizedPlan = (plan || 'SOLO').toUpperCase();
   const allowed = PLAN_MODULES_MAP[normalizedPlan] || PLAN_MODULES_MAP.SOLO;
   return allowed.includes(moduleId);
