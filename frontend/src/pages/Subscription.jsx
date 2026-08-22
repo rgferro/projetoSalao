@@ -45,8 +45,9 @@ function safeFormatDateTime(dateStr) {
 function safeFormatDate(dateStr) {
   if (!dateStr) return '-';
   try {
-    const cleanStr = String(dateStr).trim().replace(' ', 'T');
-    const d = new Date(cleanStr);
+    const cleanStr = String(dateStr).trim();
+    if (cleanStr.startsWith('2099') || cleanStr.startsWith('2100')) return 'Vitalício';
+    const d = new Date(cleanStr.replace(' ', 'T'));
     if (isNaN(d.getTime())) return String(dateStr);
     return d.toLocaleDateString('pt-BR');
   } catch (e) {
@@ -728,7 +729,8 @@ export default function Subscription({ onStartTour }) {
 
           {/* Card de Status Resumido */}
           {(() => {
-            const isFreeQuotaPlan = subStatus?.plan === 'SOLO' || subStatus?.monthlyAppointmentLimit === 40;
+            const isExemptPlan = Boolean(subStatus?.isExempt || subStatus?.status === 'EXEMPT' || subStatus?.isMaster);
+            const isFreeQuotaPlan = !isExemptPlan && (subStatus?.plan === 'SOLO' || subStatus?.monthlyAppointmentLimit === 40);
             const usedAppointments = subStatus?.currentMonthAppointments || 0;
             const remainingAppointments = Math.max(0, (subStatus?.monthlyAppointmentLimit || 40) - usedAppointments);
 
@@ -762,8 +764,32 @@ export default function Subscription({ onStartTour }) {
                   </span>
                 </div>
 
-                {/* Se for o plano Gratuito com limite mensal de agendamentos */}
-                {isFreeQuotaPlan ? (
+                {/* 1. Se for plano com Isenção de Cobrança / Cortesia Master */}
+                {isExemptPlan ? (
+                  <>
+                    <div className="flex items-center justify-between text-xs">
+                      <span className="text-slate-500 dark:text-slate-400">Agendamentos no Mês:</span>
+                      <span className="font-bold text-emerald-600 dark:text-emerald-400">
+                        Ilimitados ({usedAppointments} feitos)
+                      </span>
+                    </div>
+
+                    <div className="flex items-center justify-between text-xs">
+                      <span className="text-slate-500 dark:text-slate-400">Validade do Plano:</span>
+                      <span className="font-black text-purple-600 dark:text-purple-400">
+                        Isenção Vitalícia (Sem expiração)
+                      </span>
+                    </div>
+
+                    <div className="flex items-center justify-between text-xs pt-1 border-t border-slate-200 dark:border-slate-700/60">
+                      <span className="text-slate-500 dark:text-slate-400">Cobrança:</span>
+                      <span className="font-bold text-emerald-600 dark:text-emerald-400">
+                        Cortesia VIP / Isento
+                      </span>
+                    </div>
+                  </>
+                ) : isFreeQuotaPlan ? (
+                  /* 2. Se for o plano Gratuito SOLO com limite mensal de 40 agendamentos */
                   <>
                     <div className="flex items-center justify-between text-xs">
                       <span className="text-slate-500 dark:text-slate-400">Agendamentos no Mês:</span>
@@ -791,7 +817,7 @@ export default function Subscription({ onStartTour }) {
                     </div>
                   </>
                 ) : (
-                  /* Planos com Assinatura Paga (Starter, Studio Pro, Premier) */
+                  /* 3. Planos com Assinatura Paga Normal (Starter, Studio Pro, Premier) */
                   <>
                     <div className="flex items-center justify-between text-xs">
                       <span className="text-slate-500 dark:text-slate-400">Agendamentos no Mês:</span>
@@ -803,7 +829,9 @@ export default function Subscription({ onStartTour }) {
                     <div className="flex items-center justify-between text-xs">
                       <span className="text-slate-500 dark:text-slate-400">Dias Restantes:</span>
                       <span className="font-black text-emerald-600 dark:text-emerald-400">
-                        Faltam {subStatus?.daysRemaining ?? 30} dias {subStatus?.expiresAt && `(até ${safeFormatDate(subStatus.expiresAt)})`}
+                        {subStatus?.daysRemaining !== undefined && subStatus?.daysRemaining !== null
+                          ? `Faltam ${subStatus.daysRemaining} dias ${subStatus?.expiresAt && !String(subStatus.expiresAt).startsWith('2099') && !String(subStatus.expiresAt).startsWith('2100') ? `(até ${safeFormatDate(subStatus.expiresAt)})` : ''}`
+                          : 'Plano Ativo'}
                       </span>
                     </div>
 
@@ -1464,7 +1492,7 @@ export default function Subscription({ onStartTour }) {
               </h3>
               <div className="p-4 rounded-2xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700 text-left text-xs text-slate-600 dark:text-slate-300 space-y-2">
                 <p>
-                  ✓ <strong>Seu plano continuará 100% ativo</strong> com todas as funcionalidades e profissionais liberados até <strong>{safeFormatDate(subStatus?.expiresAt)}</strong>.
+                  ✓ <strong>Seu plano continuará 100% ativo</strong> com todas as funcionalidades e profissionais liberados {subStatus?.expiresAt && !String(subStatus.expiresAt).startsWith('2099') && !String(subStatus.expiresAt).startsWith('2100') ? <>até <strong>{safeFormatDate(subStatus.expiresAt)}</strong></> : 'durante todo o período contratado'}.
                 </p>
                 <p>
                   ✓ <strong>Nenhuma nova cobrança</strong> será realizada no seu cartão ou gerada no PIX.

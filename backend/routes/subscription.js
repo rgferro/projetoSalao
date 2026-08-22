@@ -121,6 +121,10 @@ router.get('/status', async (req, res) => {
     );
     const currentMonthAppointments = appCount?.count || 0;
 
+    const isExemptTenant = Boolean(tenant?.is_exempt || tenant?.is_master || licenseEvaluation.isExempt || tenant?.subscription_status === 'exempt');
+    const isSoloPlan = licenseEvaluation.plan === 'SOLO';
+    const cleanExpiresAt = (isExemptTenant || isSoloPlan) ? null : (licenseEvaluation.expiresAt || null);
+
     res.json({
       success: true,
       tenantId: tenant?.id || tenantId,
@@ -130,15 +134,16 @@ router.get('/status', async (req, res) => {
       isDegraded: licenseEvaluation.isDegraded,
       gracePeriodActive: licenseEvaluation.gracePeriodActive,
       graceDaysRemaining: licenseEvaluation.graceDaysRemaining || 0,
-      daysRemaining: licenseEvaluation.daysRemaining,
+      daysRemaining: isExemptTenant ? null : licenseEvaluation.daysRemaining,
       maxUsers: totalAllowedUsers,
       baseMaxUsers: licenseEvaluation.maxUsers || 2,
       extraUsers,
       currentUsers,
       currentMonthAppointments,
-      monthlyAppointmentLimit: licenseEvaluation.plan === 'SOLO' ? 40 : null,
-      expiresAt: tenant?.subscription_expires_at || null,
-      autoRenew: tenant?.auto_renew !== 0,
+      monthlyAppointmentLimit: isSoloPlan ? 40 : null,
+      expiresAt: cleanExpiresAt,
+      isExempt: isExemptTenant,
+      autoRenew: (isExemptTenant || isSoloPlan) ? false : (tenant?.auto_renew !== 0),
       canceledAt: tenant?.subscription_canceled_at || null,
       paymentMethod: tenant?.payment_method || 'pix',
       preapprovalId: tenant?.preapproval_id || null,

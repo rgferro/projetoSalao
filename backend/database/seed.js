@@ -148,7 +148,7 @@ const seedData = async () => {
           is_master, is_exempt, active
         ) VALUES (
           'tenant_master_platform', 'BelaGestão Plataforma Master', '00.000.000/0001-00',
-          'PREMIER', 'exempt', '2099-12-31 23:59:59',
+          'PREMIER', 'exempt', NULL,
           999, ?, ?, 'Rafael Gielow', '(11) 99999-9999',
           1, 1, 1
         )
@@ -158,7 +158,7 @@ const seedData = async () => {
       await run(`
         UPDATE tenants 
         SET is_master = 1, is_exempt = 1, plan = 'PREMIER', subscription_status = 'exempt', 
-            subscription_expires_at = '2099-12-31 23:59:59', active = 1 
+            subscription_expires_at = NULL, active = 1 
         WHERE owner_email = ?
       `, [masterEmail]);
     }
