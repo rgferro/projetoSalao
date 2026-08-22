@@ -3,6 +3,7 @@ const router = express.Router();
 const { query, get, run } = require('../database/db');
 const { requireMaster } = require('../middleware/authMiddleware');
 const { createSessionToken } = require('../services/authService');
+const { licenseManager } = require('../services/licenseCache');
 
 // Todas as rotas deste router exigem Super Admin Master
 router.use(requireMaster);
@@ -138,6 +139,8 @@ router.post('/tenants/:id/plan', async (req, res) => {
       WHERE id = ?
     `, [plan, finalMaxUsers, subscriptionStatus, exemptVal, id]);
 
+    licenseManager.memoryCache.delete(id);
+
     res.json({ success: true, message: 'Plano do salão atualizado com sucesso!' });
   } catch (error) {
     res.status(500).json({ error: 'Erro ao atualizar plano do salão.' });
@@ -164,6 +167,8 @@ router.post('/tenants/:id/toggle-exempt', async (req, res) => {
           updated_at = CURRENT_TIMESTAMP
       WHERE id = ?
     `, [newExempt, newStatus, expiresAt, id]);
+
+    licenseManager.memoryCache.delete(id);
 
     res.json({
       success: true,

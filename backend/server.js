@@ -25,6 +25,7 @@ const authRoutes = require('./routes/auth');
 const subscriptionRoutes = require('./routes/subscription');
 const contactRoutes = require('./routes/contact');
 const masterAdminRoutes = require('./routes/masterAdmin');
+const aiChatRoutes = require('./routes/aiChat');
 
 const app = express();
 const PORT = process.env.PORT || 3001;
@@ -46,6 +47,7 @@ app.use('/api/auth', authRateLimit, requireCsrfToken, authRoutes);
 app.use('/api/subscription', subscriptionRoutes);
 app.use('/api/contact', contactRateLimit, requireCsrfToken, contactRoutes);
 app.use('/api/master-admin', masterAdminRoutes);
+app.use('/api/ai', aiChatRoutes);
 app.use('/api/clients', clientsRoutes);
 app.use('/api/professionals', professionalsRoutes);
 app.use('/api/services', servicesRoutes);

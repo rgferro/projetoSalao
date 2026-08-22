@@ -15,8 +15,9 @@ import {
   AlertCircle
 } from 'lucide-react';
 import { api } from '../services/api';
+import PageTourButton from '../components/PageTourButton';
 
-export default function Financial() {
+export default function Financial({ onStartTour }) {
   const [activeTab, setActiveTab] = useState('transactions'); // 'transactions', 'dre', 'categories', 'top-services'
   
   // Transactions
@@ -122,9 +123,13 @@ export default function Financial() {
         </div>
 
         <div className="flex items-center gap-2">
+          {onStartTour && (
+            <PageTourButton onClick={() => onStartTour('financial')} label="Tour do Financeiro" />
+          )}
+
           <button
             onClick={() => setShowNewTransModal(true)}
-            className="w-full sm:w-auto px-4 py-2 text-xs font-bold rounded-xl text-white bg-emerald-600 hover:bg-emerald-700 shadow-md shadow-emerald-600/20 flex items-center justify-center gap-1.5"
+            className="w-full sm:w-auto px-4 py-2 text-xs font-bold rounded-xl text-white bg-emerald-600 hover:bg-emerald-700 shadow-md shadow-emerald-600/20 flex items-center justify-center gap-1.5 shrink-0"
           >
             <Plus className="w-4 h-4" /> Novo Lançamento
           </button>

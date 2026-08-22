@@ -19,8 +19,9 @@ import {
   Scissors
 } from 'lucide-react';
 import { api } from '../services/api';
+import PageTourButton from '../components/PageTourButton';
 
-export default function Clients({ onOpenNewClient }) {
+export default function Clients({ onOpenNewClient, onStartTour }) {
   const [clients, setClients] = useState([]);
   const [search, setSearch] = useState('');
   const [selectedClient, setSelectedClient] = useState(null);
@@ -155,6 +156,10 @@ export default function Clients({ onOpenNewClient }) {
               className="w-full pl-9 pr-3 py-2 text-xs rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 focus:outline-none focus:ring-2 focus:ring-salon-500"
             />
           </div>
+
+          {onStartTour && (
+            <PageTourButton onClick={() => onStartTour('clients')} label="Tour de Clientes" />
+          )}
 
           <button
             onClick={onOpenNewClient}

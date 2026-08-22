@@ -13,10 +13,12 @@ import {
   BookOpen,
   Keyboard,
   ShieldCheck,
+  Compass,
+  HardDrive,
+  UserCheck
 } from 'lucide-react';
-import { startTour } from '../lib/pageTours';
 
-export default function Manual({ onNavigateTab }) {
+export default function Manual({ onNavigateTab, onStartTour }) {
   const [openFaq, setOpenFaq] = useState(null);
 
   const toggleFaq = (idx) => {
@@ -24,11 +26,88 @@ export default function Manual({ onNavigateTab }) {
   };
 
   const handleStartTourAndNavigate = (tourKey, tabName) => {
-    if (onNavigateTab) onNavigateTab(tabName);
+    if (onNavigateTab && tabName) onNavigateTab(tabName);
     setTimeout(() => {
-      startTour(tourKey);
-    }, 400);
+      if (onStartTour) {
+        onStartTour(tourKey);
+      }
+    }, 300);
   };
+
+  const TOURS_LIST = [
+    {
+      key: 'dashboard',
+      tab: 'dashboard',
+      icon: '📊',
+      bgIcon: 'bg-purple-100 dark:bg-purple-950 text-purple-600',
+      title: 'Dashboard & Indicadores',
+      desc: 'Aprenda a ler o faturamento do dia, taxa de ocupação das salas e atalhos rápidos.',
+    },
+    {
+      key: 'appointments',
+      tab: 'appointments',
+      icon: '📅',
+      bgIcon: 'bg-pink-100 dark:bg-pink-950 text-pink-600',
+      title: 'Agenda & Multisserviços',
+      desc: 'Como marcar horários, adicionar múltiplos profissionais na mesma comanda e bloquear folgas.',
+    },
+    {
+      key: 'cash-register',
+      tab: 'cash-register',
+      icon: '💰',
+      bgIcon: 'bg-emerald-100 dark:bg-emerald-950 text-emerald-600',
+      title: 'Frente de Caixa & PDV',
+      desc: 'Abertura de caixa, cobrança via PIX, sangria, reforço e fechamento diário sem furos.',
+    },
+    {
+      key: 'clients',
+      tab: 'clients',
+      icon: '👥',
+      bgIcon: 'bg-cyan-100 dark:bg-cyan-950 text-cyan-600',
+      title: 'Clientes & Ficha Técnica',
+      desc: 'Como preencher a ficha capilar, fórmulas de tintura, preferências de unhas e histórico.',
+    },
+    {
+      key: 'whatsapp',
+      tab: 'whatsapp',
+      icon: '📲',
+      bgIcon: 'bg-emerald-100 dark:bg-emerald-950 text-emerald-600',
+      title: 'WhatsApp & Automações',
+      desc: 'Como parear o QR Code e configurar os lembretes 24h e 2h antes com variáveis dinâmicas.',
+    },
+    {
+      key: 'financial',
+      tab: 'financial',
+      icon: '📈',
+      bgIcon: 'bg-blue-100 dark:bg-blue-950 text-blue-600',
+      title: 'Financeiro, DRE & Contas',
+      desc: 'Acompanhe lucratividade real, rateio de comissões e gestão de despesas fixas.',
+    },
+    {
+      key: 'professionals',
+      tab: 'professionals',
+      icon: '✂️',
+      bgIcon: 'bg-amber-100 dark:bg-amber-950 text-amber-600',
+      title: 'Equipe & Profissionais',
+      desc: 'Cadastre especialistas, defina níveis de acesso restrito e regras da Lei do Salão Parceiro.',
+    },
+    {
+      key: 'subscription',
+      tab: 'subscription',
+      icon: '⭐',
+      bgIcon: 'bg-pink-100 dark:bg-pink-950 text-pink-600',
+      title: 'Assinatura & Planos',
+      desc: 'Entenda os limites de vagas por plano, add-ons de profissionais e pagamento via PIX.',
+    },
+    {
+      key: 'backup',
+      tab: 'backup',
+      icon: '☁️',
+      bgIcon: 'bg-slate-100 dark:bg-slate-800 text-slate-600',
+      title: 'Backup & Nuvem',
+      desc: 'Auditoria de integridade SHA-256 e cópias de segurança em nuvem automáticas.',
+    },
+  ];
 
   return (
     <div className="space-y-8 animate-fadeIn">
@@ -49,116 +128,40 @@ export default function Manual({ onNavigateTab }) {
         </div>
       </div>
 
-      {/* 🚀 1. TOURS GUIADOS INTERATIVOS (DRIVER.JS) */}
+      {/* 🚀 1. TOURS GUIADOS INTERATIVOS */}
       <div className="space-y-4">
         <div className="flex items-center justify-between">
           <h2 className="text-lg font-black text-slate-900 dark:text-white flex items-center gap-2">
-            <Play className="w-5 h-5 text-pink-600" />
+            <Compass className="w-5 h-5 text-pink-600" />
             <span>Tours Interativos Passo a Passo</span>
           </h2>
-          <span className="text-xs text-slate-500 font-semibold">Clique para iniciar na tela correspondente</span>
+          <span className="text-xs text-slate-500 font-semibold hidden sm:inline">Clique para iniciar na tela correspondente</span>
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-          {/* Tour 1: Dashboard */}
-          <div className="bg-white dark:bg-slate-900 rounded-2xl p-5 border border-slate-200 dark:border-slate-800 space-y-3 flex flex-col justify-between shadow-xs hover:border-pink-300 transition-colors">
-            <div className="space-y-2">
-              <div className="w-10 h-10 rounded-xl bg-purple-100 dark:bg-purple-950 text-purple-600 flex items-center justify-center font-bold">
-                📊
-              </div>
-              <h3 className="font-black text-sm text-slate-900 dark:text-white">Dashboard & Indicadores</h3>
-              <p className="text-xs text-slate-500 dark:text-slate-400">
-                Aprenda a ler o faturamento do dia, taxa de ocupação das salas e atalhos rápidos.
-              </p>
-            </div>
-            <button
-              onClick={() => handleStartTourAndNavigate('dashboard', 'dashboard')}
-              className="w-full py-2.5 rounded-xl bg-pink-50 hover:bg-pink-100 text-pink-700 dark:bg-pink-950/60 dark:text-pink-300 text-xs font-black flex items-center justify-center gap-1.5 transition-colors"
+          {TOURS_LIST.map((tour) => (
+            <div
+              key={tour.key}
+              className="bg-white dark:bg-slate-900 rounded-2xl p-5 border border-slate-200 dark:border-slate-800 space-y-3 flex flex-col justify-between shadow-xs hover:border-pink-300 transition-colors"
             >
-              <Play className="w-3.5 h-3.5 fill-current" />
-              <span>Iniciar Tour no Dashboard</span>
-            </button>
-          </div>
-
-          {/* Tour 2: Agenda */}
-          <div className="bg-white dark:bg-slate-900 rounded-2xl p-5 border border-slate-200 dark:border-slate-800 space-y-3 flex flex-col justify-between shadow-xs hover:border-pink-300 transition-colors">
-            <div className="space-y-2">
-              <div className="w-10 h-10 rounded-xl bg-pink-100 dark:bg-pink-950 text-pink-600 flex items-center justify-center font-bold">
-                📅
+              <div className="space-y-2">
+                <div className={`w-10 h-10 rounded-xl ${tour.bgIcon} flex items-center justify-center font-bold text-lg`}>
+                  {tour.icon}
+                </div>
+                <h3 className="font-black text-sm text-slate-900 dark:text-white">{tour.title}</h3>
+                <p className="text-xs text-slate-500 dark:text-slate-400 leading-relaxed">
+                  {tour.desc}
+                </p>
               </div>
-              <h3 className="font-black text-sm text-slate-900 dark:text-white">Agenda & Multisserviços</h3>
-              <p className="text-xs text-slate-500 dark:text-slate-400">
-                Como marcar horários, adicionar múltiplos profissionais na mesma comanda e bloquear folgas.
-              </p>
+              <button
+                onClick={() => handleStartTourAndNavigate(tour.key, tour.tab)}
+                className="w-full py-2.5 rounded-xl bg-pink-50 hover:bg-pink-100 text-pink-700 dark:bg-pink-950/60 dark:text-pink-300 text-xs font-black flex items-center justify-center gap-1.5 transition-colors shadow-2xs"
+              >
+                <Play className="w-3.5 h-3.5 fill-current" />
+                <span>Iniciar Tour na Tela</span>
+              </button>
             </div>
-            <button
-              onClick={() => handleStartTourAndNavigate('appointments', 'appointments')}
-              className="w-full py-2.5 rounded-xl bg-pink-50 hover:bg-pink-100 text-pink-700 dark:bg-pink-950/60 dark:text-pink-300 text-xs font-black flex items-center justify-center gap-1.5 transition-colors"
-            >
-              <Play className="w-3.5 h-3.5 fill-current" />
-              <span>Iniciar Tour na Agenda</span>
-            </button>
-          </div>
-
-          {/* Tour 3: Caixa & PDV */}
-          <div className="bg-white dark:bg-slate-900 rounded-2xl p-5 border border-slate-200 dark:border-slate-800 space-y-3 flex flex-col justify-between shadow-xs hover:border-pink-300 transition-colors">
-            <div className="space-y-2">
-              <div className="w-10 h-10 rounded-xl bg-emerald-100 dark:bg-emerald-950 text-emerald-600 flex items-center justify-center font-bold">
-                💰
-              </div>
-              <h3 className="font-black text-sm text-slate-900 dark:text-white">Frente de Caixa & PDV</h3>
-              <p className="text-xs text-slate-500 dark:text-slate-400">
-                Abertura de caixa, cobrança via PIX, sangria, reforço e fechamento diário sem furos.
-              </p>
-            </div>
-            <button
-              onClick={() => handleStartTourAndNavigate('cash', 'cash-register')}
-              className="w-full py-2.5 rounded-xl bg-pink-50 hover:bg-pink-100 text-pink-700 dark:bg-pink-950/60 dark:text-pink-300 text-xs font-black flex items-center justify-center gap-1.5 transition-colors"
-            >
-              <Play className="w-3.5 h-3.5 fill-current" />
-              <span>Iniciar Tour no Caixa</span>
-            </button>
-          </div>
-
-          {/* Tour 4: Clientes & Anamnese */}
-          <div className="bg-white dark:bg-slate-900 rounded-2xl p-5 border border-slate-200 dark:border-slate-800 space-y-3 flex flex-col justify-between shadow-xs hover:border-pink-300 transition-colors">
-            <div className="space-y-2">
-              <div className="w-10 h-10 rounded-xl bg-cyan-100 dark:bg-cyan-950 text-cyan-600 flex items-center justify-center font-bold">
-                👥
-              </div>
-              <h3 className="font-black text-sm text-slate-900 dark:text-white">Clientes & Ficha Técnica</h3>
-              <p className="text-xs text-slate-500 dark:text-slate-400">
-                Como preencher a ficha capilar, fórmulas de tintura, preferências de unhas e histórico.
-              </p>
-            </div>
-            <button
-              onClick={() => handleStartTourAndNavigate('clients', 'clients')}
-              className="w-full py-2.5 rounded-xl bg-pink-50 hover:bg-pink-100 text-pink-700 dark:bg-pink-950/60 dark:text-pink-300 text-xs font-black flex items-center justify-center gap-1.5 transition-colors"
-            >
-              <Play className="w-3.5 h-3.5 fill-current" />
-              <span>Iniciar Tour nos Clientes</span>
-            </button>
-          </div>
-
-          {/* Tour 5: WhatsApp Automático */}
-          <div className="bg-white dark:bg-slate-900 rounded-2xl p-5 border border-slate-200 dark:border-slate-800 space-y-3 flex flex-col justify-between shadow-xs hover:border-pink-300 transition-colors">
-            <div className="space-y-2">
-              <div className="w-10 h-10 rounded-xl bg-emerald-100 dark:bg-emerald-950 text-emerald-600 flex items-center justify-center font-bold">
-                📲
-              </div>
-              <h3 className="font-black text-sm text-slate-900 dark:text-white">WhatsApp & Automações</h3>
-              <p className="text-xs text-slate-500 dark:text-slate-400">
-                Como parear o QR Code e configurar os lembretes 24h e 2h antes com variáveis dinâmicas.
-              </p>
-            </div>
-            <button
-              onClick={() => handleStartTourAndNavigate('whatsapp', 'whatsapp')}
-              className="w-full py-2.5 rounded-xl bg-pink-50 hover:bg-pink-100 text-pink-700 dark:bg-pink-950/60 dark:text-pink-300 text-xs font-black flex items-center justify-center gap-1.5 transition-colors"
-            >
-              <Play className="w-3.5 h-3.5 fill-current" />
-              <span>Iniciar Tour no WhatsApp</span>
-            </button>
-          </div>
+          ))}
         </div>
       </div>
 

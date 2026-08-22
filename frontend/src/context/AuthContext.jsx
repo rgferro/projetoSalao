@@ -116,6 +116,44 @@ export function AuthProvider({ children }) {
       .catch(() => {});
   }, [token]);
 
+  const updateUserPlan = (newPlan) => {
+    if (!newPlan) return;
+    setUser(prev => {
+      if (!prev) return null;
+      const updated = { ...prev, plan: newPlan };
+      localStorage.setItem('bella_user', JSON.stringify(updated));
+      return updated;
+    });
+  };
+
+  const refreshUser = async () => {
+    if (!token) return null;
+    try {
+      const res = await fetch('/api/auth/me', {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      if (res.ok) {
+        const data = await res.json();
+        if (data && data.success && data.user) {
+          const tenant = data.tenant;
+          const updated = {
+            ...data.user,
+            salonName: tenant?.name || data.user.salonName || user?.salonName,
+            segment: tenant?.segment || data.user.segment || user?.segment || 'salao',
+            plan: tenant?.plan || data.user.plan || user?.plan,
+            tenants: data.user.tenants || user?.tenants || []
+          };
+          setUser(updated);
+          localStorage.setItem('bella_user', JSON.stringify(updated));
+          return updated;
+        }
+      }
+    } catch (e) {
+      console.warn('[AuthContext] Erro ao sincronizar usuário:', e);
+    }
+    return null;
+  };
+
   const login = (userData, userToken) => {
     setUser(userData);
     setToken(userToken);
@@ -331,6 +369,8 @@ export function AuthProvider({ children }) {
         switchTenant,
         createProject,
         refreshTenants,
+        updateUserPlan,
+        refreshUser,
         exitImpersonation,
         checkPermission,
         checkRolePermission,

@@ -317,10 +317,13 @@ function getNichePlanDetails(segment) {
   };
 }
 
-export default function Subscription() {
-  const { user } = useAuth();
+import PageTourButton from '../components/PageTourButton';
+
+export default function Subscription({ onStartTour }) {
+  const { user, updateUserPlan, refreshUser } = useAuth();
   const [subStatus, setSubStatus] = useState(null);
   const [loading, setLoading] = useState(false);
+  const [refreshing, setRefreshing] = useState(false);
   const billingCycle = 'monthly';
   const [extraSeats, setExtraSeats] = useState(0);
 
@@ -339,14 +342,20 @@ export default function Subscription() {
 
   const loadSubscriptionStatus = async () => {
     try {
+      setRefreshing(true);
       const res = await fetch('/api/subscription/status', {
         headers: { Authorization: `Bearer ${localStorage.getItem('bella_token') || ''}` },
       });
       const data = await res.json();
       setSubStatus(data);
       if (data.extraUsers) setExtraSeats(data.extraUsers);
+      if (data.plan && updateUserPlan) {
+        updateUserPlan(data.plan);
+      }
     } catch (e) {
       console.warn('Erro ao carregar status:', e);
+    } finally {
+      setRefreshing(false);
     }
   };
 
@@ -385,6 +394,7 @@ export default function Subscription() {
       if (data.success) {
         if (data.status === 'approved') {
           setValidationAlert({ type: 'success', message: data.message });
+          if (data.plan && updateUserPlan) updateUserPlan(data.plan);
           loadSubscriptionStatus();
         } else {
           setValidationAlert({ type: 'info', message: data.message });
@@ -432,6 +442,7 @@ export default function Subscription() {
 
       if (data.success) {
         if (data.amount === 0) {
+          if (updateUserPlan) updateUserPlan('SOLO');
           alert('Plano Solo Gratuito ativado com sucesso!');
           loadSubscriptionStatus();
           return;
@@ -456,18 +467,23 @@ export default function Subscription() {
   const handleSimulateApproval = async () => {
     try {
       setSimulatingApproval(true);
+      const chosenPlan = pixData?.plan || 'STUDIO';
       const res = await fetch('/api/subscription/simulate-approval', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${localStorage.getItem('bella_token') || ''}`,
+        },
         body: JSON.stringify({
           paymentId: pixData?.paymentId,
-          plan: pixData?.plan || 'STUDIO',
+          plan: chosenPlan,
           extraUsers: pixData?.extraUsers || extraSeats,
         }),
       });
       const data = await res.json();
       setSimulatingApproval(false);
       setApprovalMessage(data.message || 'Plano ativado com sucesso!');
+      if (updateUserPlan) updateUserPlan(chosenPlan);
       loadSubscriptionStatus();
       setTimeout(() => {
         setShowPixModal(false);
@@ -519,9 +535,14 @@ export default function Subscription() {
       <div className="bg-white dark:bg-slate-900 rounded-3xl border border-slate-200 dark:border-slate-800 p-6 sm:p-8 shadow-xs">
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
           <div className="space-y-2">
-            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-pink-50 dark:bg-pink-950/60 border border-pink-200 dark:border-pink-800 text-pink-700 dark:text-pink-300 text-xs font-bold">
-              <Sparkles className="w-3.5 h-3.5" />
-              <span>Assinatura do Salão por Capacidade Operacional</span>
+            <div className="flex items-center gap-2 flex-wrap">
+              <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-pink-50 dark:bg-pink-950/60 border border-pink-200 dark:border-pink-800 text-pink-700 dark:text-pink-300 text-xs font-bold">
+                <Sparkles className="w-3.5 h-3.5" />
+                <span>Assinatura do Salão por Capacidade Operacional</span>
+              </div>
+              {onStartTour && (
+                <PageTourButton onClick={() => onStartTour('subscription')} label="Tour dos Planos" />
+              )}
             </div>
             <h1 className="text-2xl sm:text-3xl font-black text-slate-900 dark:text-white">
               Planos & Capacidade da Equipe
@@ -540,7 +561,17 @@ export default function Subscription() {
             return (
               <div className="bg-slate-50 dark:bg-slate-800/80 rounded-2xl p-4 border border-slate-200 dark:border-slate-700 space-y-2.5 min-w-[290px] shadow-2xs">
                 <div className="flex items-center justify-between text-xs font-bold">
-                  <span className="text-slate-500 dark:text-slate-400">Plano Atual:</span>
+                  <div className="flex items-center gap-1.5">
+                    <span className="text-slate-500 dark:text-slate-400">Plano Atual:</span>
+                    <button
+                      onClick={loadSubscriptionStatus}
+                      disabled={refreshing}
+                      className="p-1 text-slate-400 hover:text-slate-700 dark:hover:text-white rounded-md transition-colors"
+                      title="Sincronizar plano agora"
+                    >
+                      <RefreshCw className={`w-3.5 h-3.5 ${refreshing ? 'animate-spin text-pink-600' : ''}`} />
+                    </button>
+                  </div>
                   <span className={`px-2.5 py-0.5 rounded-full text-white font-black text-[11px] ${
                     subStatus?.plan === 'PREMIER' ? 'bg-purple-600' :
                     subStatus?.plan === 'STUDIO' ? 'bg-pink-600' :
@@ -653,12 +684,28 @@ export default function Subscription() {
       {/* Grid com os 4 Planos Especializados pelo Nicho do Negócio */}
       {(() => {
         const segDetails = getNichePlanDetails(user?.segment);
+        const currentActivePlan = String(subStatus?.plan || user?.plan || 'SOLO').toUpperCase();
+
+        const isSoloActive = currentActivePlan === 'SOLO';
+        const isStarterActive = currentActivePlan === 'STARTER';
+        const isStudioActive = currentActivePlan === 'STUDIO' || currentActivePlan === 'PRO';
+        const isPremierActive = currentActivePlan === 'PREMIER' || currentActivePlan === 'ELITE';
 
         return (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 items-stretch pt-2">
             
             {/* 1. SOLO / AUTÔNOMA */}
-            <div className="bg-white dark:bg-slate-900 rounded-3xl p-6 border border-slate-200 dark:border-slate-800 space-y-6 flex flex-col justify-between shadow-xs">
+            <div className={`bg-white dark:bg-slate-900 rounded-3xl p-6 space-y-6 flex flex-col justify-between transition-all ${
+              isSoloActive 
+                ? 'border-2 border-emerald-500 shadow-xl relative ring-2 ring-emerald-500/20' 
+                : 'border border-slate-200 dark:border-slate-800 shadow-xs hover:border-slate-300'
+            }`}>
+              {isSoloActive && (
+                <div className="absolute -top-3 left-1/2 -translate-x-1/2 bg-emerald-600 text-white text-[10px] font-black uppercase px-3 py-0.5 rounded-full shadow-md whitespace-nowrap flex items-center gap-1">
+                  <CheckCircle2 className="w-3 h-3" />
+                  <span>Plano Atual Ativo</span>
+                </div>
+              )}
               <div className="space-y-4">
                 <div className="text-xs font-black uppercase tracking-wider text-slate-500">{segDetails.solo.title}</div>
                 <div>
@@ -679,16 +726,37 @@ export default function Subscription() {
                   ))}
                 </ul>
               </div>
-              <button
-                onClick={() => handleGeneratePix('SOLO')}
-                className="w-full py-3 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-800 dark:text-slate-200 font-bold text-xs"
-              >
-                {subStatus?.plan === 'SOLO' ? 'Plano Atual' : 'Ativar Solo Grátis'}
-              </button>
+              {isSoloActive ? (
+                <button
+                  disabled
+                  className="w-full py-3.5 rounded-xl bg-emerald-50 dark:bg-emerald-950/50 text-emerald-700 dark:text-emerald-300 font-black text-xs border border-emerald-300 dark:border-emerald-700 flex items-center justify-center gap-1.5 cursor-default"
+                >
+                  <CheckCircle2 className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
+                  <span>Plano Atual</span>
+                </button>
+              ) : (
+                <button
+                  onClick={() => handleGeneratePix('SOLO')}
+                  disabled={loading}
+                  className="w-full py-3 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-800 dark:text-slate-200 font-bold text-xs"
+                >
+                  Ativar Solo Grátis
+                </button>
+              )}
             </div>
 
             {/* 2. STARTER */}
-            <div className="bg-white dark:bg-slate-900 rounded-3xl p-6 border border-slate-200 dark:border-slate-800 space-y-6 flex flex-col justify-between shadow-xs">
+            <div className={`bg-white dark:bg-slate-900 rounded-3xl p-6 space-y-6 flex flex-col justify-between transition-all ${
+              isStarterActive
+                ? 'border-2 border-emerald-500 shadow-xl relative ring-2 ring-emerald-500/20'
+                : 'border border-slate-200 dark:border-slate-800 shadow-xs hover:border-indigo-300'
+            }`}>
+              {isStarterActive && (
+                <div className="absolute -top-3 left-1/2 -translate-x-1/2 bg-emerald-600 text-white text-[10px] font-black uppercase px-3 py-0.5 rounded-full shadow-md whitespace-nowrap flex items-center gap-1">
+                  <CheckCircle2 className="w-3 h-3" />
+                  <span>Plano Atual Ativo</span>
+                </div>
+              )}
               <div className="space-y-4">
                 <div className="text-xs font-black uppercase tracking-wider text-indigo-600">{segDetails.starter.title}</div>
                 <div>
@@ -709,20 +777,42 @@ export default function Subscription() {
                   ))}
                 </ul>
               </div>
-              <button
-                onClick={() => handleGeneratePix('STARTER')}
-                disabled={loading}
-                className="w-full py-3 rounded-xl bg-indigo-50 dark:bg-indigo-950/50 hover:bg-indigo-100 text-indigo-700 dark:text-indigo-300 font-black text-xs border border-indigo-200 dark:border-indigo-800"
-              >
-                Assinar {segDetails.starter.title}
-              </button>
+              {isStarterActive ? (
+                <button
+                  disabled
+                  className="w-full py-3.5 rounded-xl bg-emerald-50 dark:bg-emerald-950/50 text-emerald-700 dark:text-emerald-300 font-black text-xs border border-emerald-300 dark:border-emerald-700 flex items-center justify-center gap-1.5 cursor-default"
+                >
+                  <CheckCircle2 className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
+                  <span>Plano Atual</span>
+                </button>
+              ) : (
+                <button
+                  onClick={() => handleGeneratePix('STARTER')}
+                  disabled={loading}
+                  className="w-full py-3.5 rounded-xl bg-indigo-50 dark:bg-indigo-950/50 hover:bg-indigo-100 dark:hover:bg-indigo-900/40 text-indigo-700 dark:text-indigo-300 font-black text-xs border border-indigo-200 dark:border-indigo-800 flex items-center justify-center gap-1.5 shadow-xs"
+                >
+                  <QrCode className="w-4 h-4" />
+                  <span>Assinar {segDetails.starter.title}</span>
+                </button>
+              )}
             </div>
 
             {/* 3. STUDIO PRO (RECOMENDADO) */}
-            <div className="bg-white dark:bg-slate-900 rounded-3xl p-6 border-2 border-pink-500 shadow-xl space-y-6 flex flex-col justify-between relative transform lg:-translate-y-2">
-              <div className="absolute -top-3 left-1/2 -translate-x-1/2 bg-gradient-to-r from-pink-500 to-purple-600 text-white text-[10px] font-black uppercase px-3 py-0.5 rounded-full shadow-md whitespace-nowrap">
-                ⭐ Mais Escolhido pelo Nicho
-              </div>
+            <div className={`bg-white dark:bg-slate-900 rounded-3xl p-6 space-y-6 flex flex-col justify-between relative transform lg:-translate-y-2 transition-all ${
+              isStudioActive
+                ? 'border-2 border-emerald-500 shadow-xl ring-2 ring-emerald-500/20'
+                : 'border-2 border-pink-500 shadow-xl'
+            }`}>
+              {isStudioActive ? (
+                <div className="absolute -top-3 left-1/2 -translate-x-1/2 bg-emerald-600 text-white text-[10px] font-black uppercase px-3 py-0.5 rounded-full shadow-md whitespace-nowrap flex items-center gap-1">
+                  <CheckCircle2 className="w-3 h-3" />
+                  <span>Plano Atual Ativo</span>
+                </div>
+              ) : (
+                <div className="absolute -top-3 left-1/2 -translate-x-1/2 bg-gradient-to-r from-pink-500 to-purple-600 text-white text-[10px] font-black uppercase px-3 py-0.5 rounded-full shadow-md whitespace-nowrap">
+                  ⭐ Mais Escolhido pelo Nicho
+                </div>
+              )}
               <div className="space-y-4 pt-1">
                 <div className="text-xs font-black uppercase tracking-wider text-pink-600">{segDetails.studio.title}</div>
                 <div>
@@ -748,18 +838,38 @@ export default function Subscription() {
                 </ul>
               </div>
 
-              <button
-                onClick={() => handleGeneratePix('STUDIO')}
-                disabled={loading}
-                className="w-full py-3.5 rounded-xl bg-gradient-to-r from-pink-600 via-rose-600 to-purple-600 hover:from-pink-700 hover:to-purple-700 text-white font-black text-xs shadow-md shadow-pink-600/30 flex items-center justify-center gap-1.5"
-              >
-                <QrCode className="w-4 h-4" />
-                <span>Assinar {segDetails.studio.title} via PIX</span>
-              </button>
+              {isStudioActive ? (
+                <button
+                  disabled
+                  className="w-full py-3.5 rounded-xl bg-emerald-50 dark:bg-emerald-950/50 text-emerald-700 dark:text-emerald-300 font-black text-xs border border-emerald-300 dark:border-emerald-700 flex items-center justify-center gap-1.5 cursor-default"
+                >
+                  <CheckCircle2 className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
+                  <span>Plano Atual</span>
+                </button>
+              ) : (
+                <button
+                  onClick={() => handleGeneratePix('STUDIO')}
+                  disabled={loading}
+                  className="w-full py-3.5 rounded-xl bg-gradient-to-r from-pink-600 via-rose-600 to-purple-600 hover:from-pink-700 hover:to-purple-700 text-white font-black text-xs shadow-md shadow-pink-600/30 flex items-center justify-center gap-1.5"
+                >
+                  <QrCode className="w-4 h-4" />
+                  <span>Assinar {segDetails.studio.title} via PIX</span>
+                </button>
+              )}
             </div>
 
             {/* 4. PREMIER EXPRESS / REDES */}
-            <div className="bg-white dark:bg-slate-900 rounded-3xl p-6 border border-slate-200 dark:border-slate-800 space-y-6 flex flex-col justify-between shadow-xs">
+            <div className={`bg-white dark:bg-slate-900 rounded-3xl p-6 space-y-6 flex flex-col justify-between transition-all ${
+              isPremierActive
+                ? 'border-2 border-emerald-500 shadow-xl relative ring-2 ring-emerald-500/20'
+                : 'border border-slate-200 dark:border-slate-800 shadow-xs hover:border-purple-300'
+            }`}>
+              {isPremierActive && (
+                <div className="absolute -top-3 left-1/2 -translate-x-1/2 bg-emerald-600 text-white text-[10px] font-black uppercase px-3 py-0.5 rounded-full shadow-md whitespace-nowrap flex items-center gap-1">
+                  <CheckCircle2 className="w-3 h-3" />
+                  <span>Plano Atual Ativo</span>
+                </div>
+              )}
               <div className="space-y-4">
                 <div className="text-xs font-black uppercase tracking-wider text-purple-600">{segDetails.premier.title}</div>
                 <div>
@@ -781,13 +891,24 @@ export default function Subscription() {
                 </ul>
               </div>
 
-              <button
-                onClick={() => handleGeneratePix('PREMIER')}
-                disabled={loading}
-                className="w-full py-3 rounded-xl bg-purple-50 dark:bg-purple-950/50 hover:bg-purple-100 text-purple-700 dark:text-purple-300 font-black text-xs border border-purple-200 dark:border-purple-800"
-              >
-                Assinar {segDetails.premier.title}
-              </button>
+              {isPremierActive ? (
+                <button
+                  disabled
+                  className="w-full py-3.5 rounded-xl bg-emerald-50 dark:bg-emerald-950/50 text-emerald-700 dark:text-emerald-300 font-black text-xs border border-emerald-300 dark:border-emerald-700 flex items-center justify-center gap-1.5 cursor-default"
+                >
+                  <CheckCircle2 className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
+                  <span>Plano Atual</span>
+                </button>
+              ) : (
+                <button
+                  onClick={() => handleGeneratePix('PREMIER')}
+                  disabled={loading}
+                  className="w-full py-3.5 rounded-xl bg-purple-50 dark:bg-purple-950/50 hover:bg-purple-100 dark:hover:bg-purple-900/40 text-purple-700 dark:text-purple-300 font-black text-xs border border-purple-200 dark:border-purple-800 flex items-center justify-center gap-1.5 shadow-xs"
+                >
+                  <QrCode className="w-4 h-4" />
+                  <span>Assinar {segDetails.premier.title}</span>
+                </button>
+              )}
             </div>
 
           </div>

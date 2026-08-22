@@ -22,6 +22,7 @@ import {
 import { api } from '../services/api';
 import { useAuth } from '../context/AuthContext';
 import { getSegmentConfig } from '../lib/segmentTheme';
+import PageTourButton from '../components/PageTourButton';
 
 const STATUS_CONFIG = {
   agendado: { label: 'Agendado', bg: 'bg-blue-100 text-blue-800 dark:bg-blue-950/60 dark:text-blue-300' },
@@ -32,7 +33,7 @@ const STATUS_CONFIG = {
   no_show: { label: 'No-show / Falta', bg: 'bg-rose-100 text-rose-800 dark:bg-rose-950/60 dark:text-rose-300' }
 };
 
-export default function Appointments({ onOpenNewAppointment, onOpenPDV }) {
+export default function Appointments({ onOpenNewAppointment, onOpenPDV, onStartTour }) {
   const { user } = useAuth();
   const segConfig = getSegmentConfig(user?.segment);
   const segTheme = segConfig.theme;
@@ -255,13 +256,18 @@ export default function Appointments({ onOpenNewAppointment, onOpenPDV }) {
             </button>
           </div>
 
+          {onStartTour && (
+            <PageTourButton onClick={() => onStartTour('appointments')} label="Tour da Agenda" />
+          )}
+
           <button
             onClick={() => setShowBlockModal(true)}
             className="px-3 py-1.5 text-xs font-bold rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 text-slate-700 dark:text-slate-200 flex items-center gap-1.5"
             title="Bloquear intervalo de almoço ou folga"
           >
             <Lock className="w-3.5 h-3.5" />
-            <span>Bloquear Horário</span>
+            <span className="hidden sm:inline">Bloquear Horário</span>
+            <span className="sm:hidden">Bloqueio</span>
           </button>
 
           <button

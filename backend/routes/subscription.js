@@ -188,7 +188,9 @@ router.post('/pix', async (req, res) => {
 
     if (amount <= 0) {
       // Plano Gratuito Solo
-      await run(`UPDATE tenants SET plan = 'SOLO', max_users = 1, extra_users_count = 0 WHERE id = ?`, [tenant.id]);
+      await run(`UPDATE tenants SET plan = 'SOLO', max_users = 1, extra_users_count = 0, subscription_expires_at = NULL WHERE id = ?`, [tenant.id]);
+      licenseManager.memoryCache.delete(tenant.id);
+      licenseManager.cacheLicense(tenant.id, 'SOLO', null, 1);
       return res.json({
         success: true,
         amount: 0,

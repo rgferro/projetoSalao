@@ -30,6 +30,7 @@ import SistemaLash from './pages/SistemaLash';
 import PageTourModal from './components/PageTourModal';
 import CookieBanner from './components/CookieBanner';
 import PlanRestrictedView from './components/PlanRestrictedView';
+import AIChatWidget from './components/AIChatWidget';
 import { 
   ShortcutsModal, 
   CashManagementModal, 
@@ -262,7 +263,7 @@ function MainApp() {
           logout();
           navigateTo('landing', '/');
         }}
-        onStartTour={() => setActiveTour(activeTab === 'dashboard' ? 'dashboard' : activeTab === 'appointments' ? 'agenda' : activeTab === 'clients' ? 'clients' : activeTab === 'cash-register' ? 'pdv' : activeTab === 'whatsapp' ? 'whatsapp' : 'dashboard')}
+        onStartTour={() => setActiveTour(activeTab)}
       />
 
       {/* Main Body */}
@@ -275,7 +276,7 @@ function MainApp() {
           isOpenMobile={isMobileMenuOpen}
           onCloseMobile={() => setIsMobileMenuOpen(false)}
           onOpenHelp={() => setShowShortcutsModal(true)}
-          onStartTour={() => setActiveTour(activeTab === 'dashboard' ? 'dashboard' : activeTab === 'appointments' ? 'agenda' : activeTab === 'clients' ? 'clients' : activeTab === 'cash-register' ? 'pdv' : activeTab === 'whatsapp' ? 'whatsapp' : 'dashboard')}
+          onStartTour={() => setActiveTour(activeTab)}
         />
 
         {/* Page Content View */}
@@ -291,6 +292,7 @@ function MainApp() {
               onOpenNewClient={() => setShowClientModal(true)}
               onOpenPDV={() => setActiveTab('cash-register')}
               onOpenCashModal={() => setShowCashModal(true)}
+              onStartTour={(key) => setActiveTour(key || activeTab)}
             />
           )}
 
@@ -298,49 +300,53 @@ function MainApp() {
             <Appointments
               onOpenNewAppointment={() => setShowAppointmentModal(true)}
               onOpenPDV={() => setActiveTab('cash-register')}
+              onStartTour={(key) => setActiveTour(key || activeTab)}
             />
           )}
 
           {activeTab === 'clients' && (
             <Clients
               onOpenNewClient={() => setShowClientModal(true)}
+              onStartTour={(key) => setActiveTour(key || activeTab)}
             />
           )}
 
           {activeTab === 'cash-register' && (
             <CashRegister
               onOpenCashModal={() => setShowCashModal(true)}
+              onStartTour={(key) => setActiveTour(key || activeTab)}
             />
           )}
 
           {activeTab === 'financial' && (
-            isPlanAllowed('financial') ? <Financial /> : <PlanRestrictedView moduleId="financial" onNavigateTab={setActiveTab} />
+            isPlanAllowed('financial') ? <Financial onStartTour={(key) => setActiveTour(key || activeTab)} /> : <PlanRestrictedView moduleId="financial" onNavigateTab={setActiveTab} />
           )}
 
           {activeTab === 'professionals' && (
-            isPlanAllowed('professionals') ? <Professionals /> : <PlanRestrictedView moduleId="professionals" onNavigateTab={setActiveTab} />
+            isPlanAllowed('professionals') ? <Professionals onStartTour={(key) => setActiveTour(key || activeTab)} /> : <PlanRestrictedView moduleId="professionals" onNavigateTab={setActiveTab} />
           )}
 
           {activeTab === 'services' && (
-            <Services />
+            <Services onStartTour={(key) => setActiveTour(key || activeTab)} />
           )}
 
           {activeTab === 'whatsapp' && (
-            isPlanAllowed('whatsapp') ? <WhatsAppModule /> : <PlanRestrictedView moduleId="whatsapp" onNavigateTab={setActiveTab} />
+            isPlanAllowed('whatsapp') ? <WhatsAppModule onStartTour={(key) => setActiveTour(key || activeTab)} /> : <PlanRestrictedView moduleId="whatsapp" onNavigateTab={setActiveTab} />
           )}
 
           {activeTab === 'subscription' && (
-            <Subscription />
+            <Subscription onStartTour={(key) => setActiveTour(key || activeTab)} />
           )}
 
           {activeTab === 'manual' && (
             <Manual
               onNavigateTab={setActiveTab}
+              onStartTour={(key) => setActiveTour(key || activeTab)}
             />
           )}
 
           {activeTab === 'backup' && (
-            isPlanAllowed('backup') ? <BackupSettings /> : <PlanRestrictedView moduleId="backup" onNavigateTab={setActiveTab} />
+            isPlanAllowed('backup') ? <BackupSettings onStartTour={(key) => setActiveTour(key || activeTab)} /> : <PlanRestrictedView moduleId="backup" onNavigateTab={setActiveTab} />
           )}
         </main>
 
@@ -432,6 +438,13 @@ function MainApp() {
         isOpen={showClientModal}
         onClose={() => setShowClientModal(false)}
         onCreated={refreshGlobalState}
+      />
+
+      {/* Assistente IA Inteligente Flutuante */}
+      <AIChatWidget
+        activeTab={activeTab}
+        onStartTour={(tourKey) => setActiveTour(tourKey || activeTab)}
+        onNavigateTab={setActiveTab}
       />
 
       {/* Modal de Tour Guiado Interativo */}

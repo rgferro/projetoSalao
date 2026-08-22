@@ -26,8 +26,9 @@ import {
   Unplug
 } from 'lucide-react';
 import { api } from '../services/api';
+import PageTourButton from '../components/PageTourButton';
 
-export default function BackupSettings() {
+export default function BackupSettings({ onStartTour }) {
   const [backups, setBackups] = useState(null);
   const [gdriveFiles, setGdriveFiles] = useState([]);
   const [gdriveStatus, setGdriveStatus] = useState({ isConnected: false, hasConfig: false, connectedEmail: '' });
@@ -342,7 +343,11 @@ export default function BackupSettings() {
           </div>
         </div>
 
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2">
+          {onStartTour && (
+            <PageTourButton onClick={() => onStartTour('backup')} label="Tour do Backup" />
+          )}
+
           {gdriveStatus.isConnected ? (
             <button
               onClick={handleCloudBackupNow}

@@ -41,8 +41,9 @@ import {
   getSegmentSpecialties, 
   getSegmentTeamConfig 
 } from '../lib/segmentTheme';
+import PageTourButton from '../components/PageTourButton';
 
-export default function Professionals() {
+export default function Professionals({ onStartTour }) {
   const { 
     user, 
     isAdmin, 
@@ -304,29 +305,35 @@ export default function Professionals() {
           </p>
         </div>
 
-        <button
-          onClick={() => {
-            setEditingProf(null);
-            setProfForm({
-              name: '',
-              nickname: '',
-              role: segTeam.defaultRole,
-              access_level: 'PROFISSIONAL',
-              subtypes: [segTeam.defaultRole],
-              phone: '',
-              email: '',
-              password: '',
-              color_hex: segTeam.defaultColor,
-              specialties: [segConfig.shortLabel || 'Geral'],
-              default_commission_type: 'percentage',
-              default_commission_value: 50.0
-            });
-            setShowProfModal(true);
-          }}
-          className={`w-full sm:w-auto px-4 py-2 text-xs font-bold rounded-xl flex items-center justify-center gap-1.5 transition-all shrink-0 ${segTheme.buttonGradient}`}
-        >
-          <Plus className="w-4 h-4" /> {segTeam.newMemberBtn}
-        </button>
+        <div className="flex flex-wrap items-center gap-2">
+          {onStartTour && (
+            <PageTourButton onClick={() => onStartTour('professionals')} label="Tour da Equipe" />
+          )}
+
+          <button
+            onClick={() => {
+              setEditingProf(null);
+              setProfForm({
+                name: '',
+                nickname: '',
+                role: segTeam.defaultRole,
+                access_level: 'PROFISSIONAL',
+                subtypes: [segTeam.defaultRole],
+                phone: '',
+                email: '',
+                password: '',
+                color_hex: segTeam.defaultColor,
+                specialties: [segConfig.shortLabel || 'Geral'],
+                default_commission_type: 'percentage',
+                default_commission_value: 50.0
+              });
+              setShowProfModal(true);
+            }}
+            className={`w-full sm:w-auto px-4 py-2 text-xs font-bold rounded-xl flex items-center justify-center gap-1.5 transition-all shrink-0 ${segTheme.buttonGradient}`}
+          >
+            <Plus className="w-4 h-4" /> {segTeam.newMemberBtn}
+          </button>
+        </div>
       </div>
 
       {inviteSuccessMsg && (

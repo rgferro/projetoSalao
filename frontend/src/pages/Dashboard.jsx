@@ -19,13 +19,15 @@ import {
 import { api } from '../services/api';
 import { useAuth } from '../context/AuthContext';
 import { getSegmentConfig } from '../lib/segmentTheme';
+import PageTourButton from '../components/PageTourButton';
 
 export default function Dashboard({ 
   onNavigate, 
   onOpenNewAppointment, 
   onOpenNewClient, 
   onOpenPDV,
-  onOpenCashModal 
+  onOpenCashModal,
+  onStartTour
 }) {
   const { user, canViewFinancial, canViewCashRegister } = useAuth();
   const segConfig = getSegmentConfig(user?.segment);
@@ -138,7 +140,10 @@ export default function Dashboard({
             </p>
           </div>
 
-          <div className="flex flex-col sm:flex-row gap-2.5 sm:gap-3 w-full sm:w-auto">
+          <div className="flex flex-col sm:flex-row gap-2.5 sm:gap-3 w-full sm:w-auto items-center">
+            {onStartTour && (
+              <PageTourButton onClick={() => onStartTour('dashboard')} label="Tour do Dashboard" />
+            )}
             <button
               onClick={onOpenNewAppointment}
               className="w-full sm:w-auto px-4 py-2.5 rounded-xl bg-white text-slate-900 hover:bg-slate-100 font-bold text-xs sm:text-sm shadow-md transition active:scale-95 flex items-center justify-center gap-2"

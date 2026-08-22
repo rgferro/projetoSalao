@@ -19,8 +19,9 @@ import {
   Ticket
 } from 'lucide-react';
 import { api } from '../services/api';
+import PageTourButton from '../components/PageTourButton';
 
-export default function CashRegister({ onOpenCashModal }) {
+export default function CashRegister({ onOpenCashModal, onStartTour }) {
   const [cashData, setCashData] = useState(null);
   const [clients, setClients] = useState([]);
   const [services, setServices] = useState([]);
@@ -178,9 +179,13 @@ export default function CashRegister({ onOpenCashModal }) {
             </div>
           </div>
 
+          {onStartTour && (
+            <PageTourButton onClick={() => onStartTour('cash-register')} label="Tour do Caixa" />
+          )}
+
           <button
             onClick={onOpenCashModal}
-            className="px-4 py-2 text-xs font-bold rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 text-slate-700 dark:text-slate-200 text-center"
+            className="px-4 py-2 text-xs font-bold rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 text-slate-700 dark:text-slate-200 text-center shrink-0"
           >
             {cashData?.isOpen ? 'Sangria / Fechamento' : 'Abrir Caixa'}
           </button>

@@ -13,8 +13,9 @@ import {
 import { api } from '../services/api';
 import { useAuth } from '../context/AuthContext';
 import { getSegmentConfig, getSegmentServiceCategories } from '../lib/segmentTheme';
+import PageTourButton from '../components/PageTourButton';
 
-export default function Services() {
+export default function Services({ onStartTour }) {
   const { user } = useAuth();
   const segConfig = getSegmentConfig(user?.segment);
   const segTheme = segConfig.theme;
@@ -111,25 +112,31 @@ export default function Services() {
           </p>
         </div>
 
-        <button
-          onClick={() => {
-            setEditingService(null);
-            setServiceForm({
-              name: '',
-              category: categories[1]?.id || 'Geral',
-              description: '',
-              price: '',
-              cost_price: '0.00',
-              duration_min: 60,
-              default_commission_type: 'percentage',
-              default_commission_value: 50.0
-            });
-            setShowModal(true);
-          }}
-          className={`w-full sm:w-auto px-4 py-2 text-xs font-bold rounded-xl flex items-center justify-center gap-1.5 shrink-0 transition-all ${segTheme.buttonGradient}`}
-        >
-          <Plus className="w-4 h-4" /> Novo Serviço
-        </button>
+        <div className="flex flex-wrap items-center gap-2">
+          {onStartTour && (
+            <PageTourButton onClick={() => onStartTour('services')} label="Tour de Serviços" />
+          )}
+
+          <button
+            onClick={() => {
+              setEditingService(null);
+              setServiceForm({
+                name: '',
+                category: categories[1]?.id || 'Geral',
+                description: '',
+                price: '',
+                cost_price: '0.00',
+                duration_min: 60,
+                default_commission_type: 'percentage',
+                default_commission_value: 50.0
+              });
+              setShowModal(true);
+            }}
+            className={`w-full sm:w-auto px-4 py-2 text-xs font-bold rounded-xl flex items-center justify-center gap-1.5 transition-all shrink-0 ${segTheme.buttonGradient}`}
+          >
+            <Plus className="w-4 h-4" /> Novo Serviço
+          </button>
+        </div>
       </div>
 
       {/* Categories Filter Tabs */}

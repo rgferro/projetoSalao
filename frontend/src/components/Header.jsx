@@ -21,7 +21,8 @@ import {
   MapPin,
   Phone,
   Layers,
-  Loader2
+  Loader2,
+  Compass
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { ROLE_CONFIG } from '../lib/permissions';
@@ -385,13 +386,14 @@ export default function Header({
                 <span className="sm:hidden text-[11px]">Novo</span>
               </button>
 
-              {/* Botão de Tour Guiado (desktop/tablet) */}
+              {/* Botão de Tour Guiado da Tela */}
               <button
                 onClick={onStartTour}
-                className="hidden sm:inline-flex p-1.5 sm:p-2 rounded-xl text-slate-500 hover:text-slate-700 hover:bg-slate-100 dark:hover:bg-slate-800 transition"
-                title="Iniciar Tour Guiado Interativo"
+                className="inline-flex items-center gap-1 p-1.5 sm:px-2.5 sm:py-1.5 rounded-xl text-slate-600 dark:text-slate-300 hover:text-pink-600 dark:hover:text-pink-400 bg-slate-100/80 dark:bg-slate-800/80 hover:bg-pink-50 dark:hover:bg-pink-950/40 border border-slate-200/60 dark:border-slate-700/60 transition shadow-2xs"
+                title="Iniciar Tour Guiado Interativo desta tela"
               >
-                <HelpCircle className="w-4 h-4" />
+                <Compass className="w-4 h-4 text-pink-600 dark:text-pink-400" />
+                <span className="hidden sm:inline text-xs font-bold">Tour</span>
               </button>
 
               {/* Dark / Light Toggle */}

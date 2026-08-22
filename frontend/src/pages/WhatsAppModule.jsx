@@ -23,8 +23,9 @@ import {
 import { api } from '../services/api';
 import { useAuth } from '../context/AuthContext';
 import { getSegmentConfig } from '../lib/segmentTheme';
+import PageTourButton from '../components/PageTourButton';
 
-export default function WhatsAppModule() {
+export default function WhatsAppModule({ onStartTour }) {
   const { user, isAdmin, isMaster } = useAuth();
   const hasAdminAccess = isMaster || isAdmin || ['ADMIN', 'DONO'].includes(user?.accessLevel?.toUpperCase()) || ['ADMIN', 'DONO'].includes(user?.role?.toUpperCase());
   const segConfig = getSegmentConfig(user?.segment);
@@ -189,7 +190,11 @@ export default function WhatsAppModule() {
           </p>
         </div>
 
-        <div className="flex items-center gap-3">
+        <div className="flex flex-wrap items-center gap-3">
+          {onStartTour && (
+            <PageTourButton onClick={() => onStartTour('whatsapp')} label="Tour do WhatsApp" />
+          )}
+
           <div className={`px-3.5 py-1.5 rounded-xl border flex items-center gap-2 text-xs font-bold ${
             waStatus?.status === 'CONNECTED'
               ? 'bg-emerald-50 text-emerald-700 border-emerald-300 dark:bg-emerald-950/50 dark:text-emerald-300'
