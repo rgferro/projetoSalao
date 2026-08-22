@@ -165,7 +165,7 @@ export default function Dashboard({
       </div>
 
       {/* KPI Cards Grid */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
+      <div id="tour-metricas-faturamento" className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
         
         {/* Faturamento do Salão (Apenas Dono / Gerente) */}
         {canViewFinancial && (
@@ -235,7 +235,7 @@ export default function Dashboard({
 
         {/* Caixa Diário (Dono, Gerente, Recepção) */}
         {canViewCashRegister && (
-          <div className="glass-panel p-5 space-y-3">
+          <div id="tour-status-caixa" className="glass-panel p-5 space-y-3">
             <div className="flex items-center justify-between">
               <span className="text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">
                 Caixa Diário
@@ -290,7 +290,7 @@ export default function Dashboard({
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         
         {/* Left (2 cols): Próximos Atendimentos Hoje */}
-        <div className="lg:col-span-2 glass-panel p-6 space-y-4">
+        <div id="tour-proximos-atendimentos" className="lg:col-span-2 glass-panel p-6 space-y-4">
           <div className="flex items-center justify-between">
             <div>
               <h3 className="font-bold text-lg text-slate-800 dark:text-slate-100 flex items-center gap-2">
@@ -399,7 +399,7 @@ export default function Dashboard({
         <div className="space-y-6">
           
           {/* Aniversariantes do Dia */}
-          <div className="glass-panel p-6 space-y-3">
+          <div id="tour-aniversariantes" className="glass-panel p-6 space-y-3">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
                 <Cake className="w-5 h-5 text-rose-500" />

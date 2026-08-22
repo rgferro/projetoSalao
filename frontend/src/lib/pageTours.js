@@ -10,24 +10,32 @@ export const PAGE_TOURS = {
     icon: 'LayoutDashboard',
     steps: [
       {
+        element: '#tour-metricas-faturamento',
         title: 'Métricas do Dia & Faturamento',
         content: 'Acompanhe instantaneamente o total faturado no dia, agendamentos confirmados e faturamento mensal acumulado.',
         badge: 'Financeiro Diário',
+        side: 'bottom',
       },
       {
+        element: '#tour-status-caixa',
         title: 'Status do Caixa da Recepção',
         content: 'Visualize se o caixa da recepção está Aberto ou Fechado e o saldo atual movimentado.',
         badge: 'Frente de Caixa',
+        side: 'bottom',
       },
       {
+        element: '#tour-aniversariantes',
         title: 'Aniversariantes do Dia',
         content: 'Identifique quais clientes fazem aniversário hoje para enviar parabéns e cupons de retorno no WhatsApp.',
         badge: 'Fidelização',
+        side: 'left',
       },
       {
+        element: '#tour-proximos-atendimentos',
         title: 'Contas a Vencer & Próximos Atendimentos',
         content: 'Alertas de contas pendentes e lista dos próximos horários agendados para a equipe.',
         badge: 'Gestão Ágil',
+        side: 'top',
       },
     ],
   },
