@@ -209,12 +209,88 @@ async function startTestSuite() {
     assert.strictEqual(cleaned.nested.scriptTag, '');
   });
 
-  // 7. Testes de Integridade de Backup com SHA-256
-  await runTest('7.1 - Geração de Backup com Checksum SHA-256', async () => {
-    const backup = await gdriveService.createLocalBackup();
+  // 7. Testes de Integridade de Backup com AES-256-GCM e Google Drive OAuth
+  await runTest('7.1 - Geração de Backup Criptografado com AES-256-GCM e SHA-256', async () => {
+    const testPassphrase = 'SenhaDeTesteForte@2026';
+    const backup = await gdriveService.createEncryptedBackup(testPassphrase, 'tenant_test');
     assert.ok(backup.sha256 && backup.sha256.length === 64, 'Backup deve gerar hash SHA-256 de 64 caracteres');
-    assert.ok(fs.existsSync(backup.path), 'Arquivo de backup físico deve existir');
+    assert.ok(fs.existsSync(backup.path), 'Arquivo de backup criptografado deve existir em disco');
+    assert.strictEqual(backup.filename.endsWith('.enc'), true, 'Extensão deve ser .enc');
+
+    // Verificar envelope binário: MAGIC "BELABACKUP_V1"
+    const fileBuf = fs.readFileSync(backup.path);
+    const magic = fileBuf.subarray(0, 13).toString('utf-8');
+    assert.strictEqual(magic, 'BELABACKUP_V1', 'Cabeçalho mágico deve ser BELABACKUP_V1');
   });
+
+  await runTest('7.2 - Descriptografia e Restauração com Sucesso usando Senha Correta', async () => {
+    const testPassphrase = 'MinhaSenhaDeBackup@123';
+    const backup = await gdriveService.createEncryptedBackup(testPassphrase, 'tenant_test');
+    
+    // Restaurar a partir do arquivo criptografado
+    const restoreResult = await gdriveService.restoreBackup(backup.path, testPassphrase);
+    assert.strictEqual(restoreResult.success, true);
+    assert.ok(restoreResult.sha256, 'Deve calcular sha256 do banco restaurado');
+    assert.ok(restoreResult.rollbackPoint, 'Deve gerar ponto de rollback antes da restauração');
+  });
+
+  await runTest('7.3 - Anti-Tampering: Rejeição de Arquivo Adulterado ou Senha Incorreta', async () => {
+    const correctPassphrase = 'SenhaOriginal@2026';
+    const wrongPassphrase = 'SenhaErrada@9999';
+    const backup = await gdriveService.createEncryptedBackup(correctPassphrase, 'tenant_test');
+
+    // Tentativa 1: Senha incorreta
+    let failedWrongPass = false;
+    try {
+      await gdriveService.restoreBackup(backup.path, wrongPassphrase);
+    } catch (e) {
+      failedWrongPass = true;
+      assert.ok(e.message.includes('autenticidade') || e.message.includes('senha') || e.message.includes('descriptografia'));
+    }
+    assert.strictEqual(failedWrongPass, true, 'Descriptografia com senha incorreta DEVE falhar');
+
+    // Tentativa 2: Adulteração de 1 bit no ciphertext (Payload Tampering)
+    const originalBuf = fs.readFileSync(backup.path);
+    const tamperedBuf = Buffer.from(originalBuf);
+    // Inverte o último byte
+    tamperedBuf[tamperedBuf.length - 1] ^= 0xFF;
+
+    let failedTampered = false;
+    try {
+      await gdriveService.restoreFromBuffer(tamperedBuf, correctPassphrase);
+    } catch (e) {
+      failedTampered = true;
+    }
+    assert.strictEqual(failedTampered, true, 'Arquivo adulterado DEVE ser rejeitado pela verificação de integridade Auth Tag');
+  });
+
+  await runTest('7.4 - Validação de Cabeçalho SQLite e Rejeição de Arquivo Não-Banco', async () => {
+    // Arquivo falso sem cabeçalho SQLite format 3
+    const fakeDbBuffer = Buffer.from('ARQUIVO_TEXTO_FALSO_SEM_CABECALHO_SQLITE_333333333333333333');
+    let rejected = false;
+    try {
+      await gdriveService.restoreFromBuffer(fakeDbBuffer);
+    } catch (e) {
+      rejected = true;
+      assert.ok(e.message.includes('SQLite') || e.message.includes('inválido'));
+    }
+    assert.strictEqual(rejected, true, 'Restauração de arquivo sem cabeçalho SQLite válido DEVE ser bloqueada');
+  });
+
+  await runTest('7.5 - Validação de Escopos Restritos Google OAuth 2.0 (Menor Privilégio)', async () => {
+    await gdriveService.saveOAuthConfig('tenant_test', {
+      clientId: '123456789-test.apps.googleusercontent.com',
+      clientSecret: 'GOCSPX-secret_test',
+      redirectUri: 'http://localhost:3001/api/backup/gdrive/callback'
+    });
+
+    const authUrl = await gdriveService.getAuthUrl('tenant_test');
+    assert.ok(authUrl.includes('accounts.google.com/o/oauth2/v2/auth'));
+    assert.ok(authUrl.includes('drive.file'), 'Escopo restrito drive.file deve estar presente');
+    assert.ok(authUrl.includes('drive.appdata'), 'Escopo restrito drive.appdata deve estar presente');
+    assert.ok(!authUrl.includes('auth/drive%20') && !authUrl.includes('auth/drive+'), 'NÃO deve solicitar escopo de acesso amplo auth/drive');
+  });
+
 
   // 8. Testes de Especialidades e Subtipos
   await runTest('8.1 - Especialidades Extensíveis de Salão (Cabelo, Manicure, Depilação)', async () => {

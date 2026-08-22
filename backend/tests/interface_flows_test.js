@@ -410,7 +410,7 @@ async function startInterfaceTests() {
   // ==========================================================================
   await runTest('8.1 - Fluxo de Backup: Criação de Snapshot Local com Hash SHA-256', async () => {
     const backupResult = await gdriveService.createLocalBackup();
-    assert.ok(backupResult.filename.endsWith('.zip') || backupResult.filename.endsWith('.db'));
+    assert.ok(backupResult.filename.endsWith('.enc') || backupResult.filename.endsWith('.zip') || backupResult.filename.endsWith('.db'));
     assert.ok(backupResult.sha256 && backupResult.sha256.length === 64);
     assert.strictEqual(fs.existsSync(backupResult.path), true);
   });

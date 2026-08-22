@@ -99,6 +99,21 @@ const migrateTenantColumns = async () => {
     }
   }
 
+  // Migração de colunas na tabela backup_logs
+  try {
+    const backupCols = await query('PRAGMA table_info(backup_logs)');
+    if (backupCols && backupCols.length > 0) {
+      if (!backupCols.some(c => c.name === 'sha256')) {
+        await run("ALTER TABLE backup_logs ADD COLUMN sha256 TEXT");
+      }
+    }
+  } catch (e) {}
+
+  // Migração de unicidade na tabela settings (key, tenant_id)
+  try {
+    await run("CREATE UNIQUE INDEX IF NOT EXISTS idx_settings_key_tenant ON settings(key, tenant_id)");
+  } catch (e) {}
+
   // Migração de colunas na tabela professionals
   try {
     const profCols = await query('PRAGMA table_info(professionals)');
@@ -143,6 +158,7 @@ const migrateTenantColumns = async () => {
       if (!tenantCols.some(c => c.name === 'extra_users_count')) {
         await run("ALTER TABLE tenants ADD COLUMN extra_users_count INTEGER DEFAULT 0");
       }
+
       if (!tenantCols.some(c => c.name === 'is_exempt')) {
         await run("ALTER TABLE tenants ADD COLUMN is_exempt INTEGER DEFAULT 0");
       }
@@ -237,7 +253,34 @@ const migrateTenantColumns = async () => {
   } catch (e) {
     console.error('Erro na migração da tabela whatsapp_templates:', e.message);
   }
+
+  // Verificar se a tabela settings tem chave primária simples em key
+  try {
+    const settingsTableDef = await get("SELECT sql FROM sqlite_master WHERE type='table' AND name='settings'");
+
+    if (settingsTableDef && settingsTableDef.sql && !settingsTableDef.sql.includes('PRIMARY KEY(key, tenant_id)') && !settingsTableDef.sql.includes('PRIMARY KEY (key, tenant_id)')) {
+      console.log('🔄 Migrando tabela settings para suportar configurações por tenant (key, tenant_id)...');
+      await exec(`
+        PRAGMA foreign_keys = OFF;
+        CREATE TABLE settings_new (
+          key TEXT NOT NULL,
+          value TEXT NOT NULL,
+          tenant_id TEXT DEFAULT 'tenant_default',
+          PRIMARY KEY(key, tenant_id)
+        );
+        INSERT OR IGNORE INTO settings_new (key, value, tenant_id)
+        SELECT key, value, COALESCE(tenant_id, 'tenant_default')
+        FROM settings;
+        DROP TABLE settings;
+        ALTER TABLE settings_new RENAME TO settings;
+        PRAGMA foreign_keys = ON;
+      `);
+    }
+  } catch (e) {
+    console.error('Erro na migração da tabela settings:', e.message);
+  }
 };
+
 
 // Inicialização automática das tabelas e migrações
 const initDb = async () => {

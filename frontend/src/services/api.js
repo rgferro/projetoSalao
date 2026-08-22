@@ -161,11 +161,20 @@ export const api = {
   sendCustomMsg: (data) => request('/whatsapp/send-custom', { method: 'POST', body: JSON.stringify(data) }),
   getWhatsAppLogs: () => request('/whatsapp/logs'),
 
-  // Backup & Google Drive
+  // Backup & Google Drive OAuth 2.0 & AES-256-GCM
   getBackups: () => request('/backup'),
-  createLocalBackup: () => request('/backup/create-local', { method: 'POST' }),
-  syncGDrive: () => request('/backup/sync-gdrive', { method: 'POST' }),
+  getGDriveAuthUrl: () => request('/backup/gdrive/auth-url'),
+  getGDriveStatus: () => request('/backup/gdrive/status'),
+  disconnectGDrive: () => request('/backup/gdrive/disconnect', { method: 'POST' }),
+  saveGDriveConfig: (data) => request('/backup/gdrive/config', { method: 'POST', body: JSON.stringify(data) }),
+  connectGDriveCode: (code) => request('/backup/gdrive/connect', { method: 'POST', body: JSON.stringify({ code }) }),
+  getGDriveFiles: () => request('/backup/gdrive/files'),
+  createEncryptedBackup: (passphrase) => request('/backup/create-encrypted', { method: 'POST', body: JSON.stringify({ passphrase }) }),
+  uploadBackupToGDrive: (passphrase) => request('/backup/gdrive/upload', { method: 'POST', body: JSON.stringify({ passphrase }) }),
+  restoreFromGDrive: (fileId, passphrase) => request(`/backup/gdrive/restore/${fileId}`, { method: 'POST', body: JSON.stringify({ passphrase }) }),
   restoreBackup: (formData) => request('/backup/restore', { method: 'POST', body: formData }),
+  createLocalBackup: (passphrase) => request('/backup/create-local', { method: 'POST', body: JSON.stringify({ passphrase }) }),
+  syncGDrive: (passphrase) => request('/backup/sync-gdrive', { method: 'POST', body: JSON.stringify({ passphrase }) }),
 
   // Configurações
   getSettings: () => request('/settings'),
@@ -173,3 +182,4 @@ export const api = {
 };
 
 export default api;
+
