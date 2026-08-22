@@ -357,6 +357,27 @@ CREATE TABLE IF NOT EXISTS backup_logs (
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP
 );
 
+-- Trilha de Auditoria de Impersonation (Suporte Técnico Master)
+CREATE TABLE IF NOT EXISTS impersonation_audit_logs (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    session_id TEXT NOT NULL,
+    admin_id TEXT NOT NULL,
+    admin_email TEXT NOT NULL,
+    target_tenant_id TEXT NOT NULL,
+    target_user_email TEXT,
+    action TEXT NOT NULL,
+    endpoint TEXT NOT NULL,
+    http_method TEXT NOT NULL,
+    ip_address TEXT,
+    user_agent TEXT,
+    changes_diff TEXT,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE INDEX IF NOT EXISTS idx_impersonation_logs_tenant ON impersonation_audit_logs(target_tenant_id, created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_impersonation_logs_admin ON impersonation_audit_logs(admin_email, created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_impersonation_logs_session ON impersonation_audit_logs(session_id);
+
 -- Índices para Máxima Performance e Multi-Tenancy
 CREATE INDEX IF NOT EXISTS idx_tenants_email ON tenants(owner_email);
 CREATE INDEX IF NOT EXISTS idx_appointments_date ON appointments(date);
@@ -370,3 +391,4 @@ CREATE INDEX IF NOT EXISTS idx_professionals_tenant ON professionals(tenant_id);
 CREATE INDEX IF NOT EXISTS idx_financial_due ON financial_transactions(due_date);
 CREATE INDEX IF NOT EXISTS idx_financial_tenant ON financial_transactions(tenant_id);
 CREATE INDEX IF NOT EXISTS idx_cash_registers_tenant ON cash_registers(tenant_id);
+

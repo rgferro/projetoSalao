@@ -10,7 +10,8 @@ const getClientIp = (req) => {
 };
 
 /**
- * Middleware que extrai a sessão e o tenantId de forma transparente
+ * Middleware que extrai a sessão e o tenantId de forma transparente,
+ * aplica guardrails de segurança e registra mutações em sessão de suporte (Audit Trail)
  */
 const extractAuth = async (req, res, next) => {
   try {
@@ -26,6 +27,58 @@ const extractAuth = async (req, res, next) => {
         }
         req.user = session;
         req.tenantId = session.tenantId || null;
+
+        // Guardrail de Segurança sob Impersonation: Bloqueia alterações de credenciais sensíveis
+        if (session.impersonated) {
+          const pathLower = (req.originalUrl || req.path).toLowerCase();
+          const isCredentialChange = (
+            (pathLower.includes('/password') || pathLower.includes('/reset') || pathLower.includes('/change-password')) &&
+            ['POST', 'PUT', 'PATCH', 'DELETE'].includes(req.method)
+          );
+
+          if (isCredentialChange) {
+            logger.security('Tentativa bloqueada de alteração de credenciais em modo impersonation (403)', {
+              adminEmail: session.impersonatorEmail || session.email,
+              targetTenantId: session.tenantId,
+              path: req.originalUrl || req.path,
+              method: req.method
+            });
+            return res.status(403).json({
+              error: 'Ação não permitida em modo de suporte. Credenciais sensíveis não podem ser modificadas.'
+            });
+          }
+
+          // Auditoria de mutações de suporte (POST, PUT, PATCH, DELETE)
+          if (['POST', 'PUT', 'PATCH', 'DELETE'].includes(req.method)) {
+            const { run } = require('../database/db');
+            const clientIp = getClientIp(req);
+            const userAgent = req.headers['user-agent'] || '';
+            const safeBody = { ...req.body };
+            delete safeBody.password;
+            delete safeBody.currentPassword;
+            delete safeBody.newPassword;
+
+            run(`
+              INSERT INTO impersonation_audit_logs (
+                session_id, admin_id, admin_email, target_tenant_id, target_user_email,
+                action, endpoint, http_method, ip_address, user_agent, changes_diff
+              ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            `, [
+              session.sessionId || 'session_legacy',
+              session.impersonatorId || 'admin_master',
+              session.impersonatorEmail || 'rafael.gielow@gmail.com',
+              session.tenantId || 'unknown',
+              session.email || 'unknown',
+              `API_MUTATION_${req.method}`,
+              req.originalUrl || req.path,
+              req.method,
+              clientIp,
+              userAgent,
+              JSON.stringify({ body: safeBody, params: req.params, query: req.query })
+            ]).catch(err => console.error('[IMPERSONATION_AUDIT_ERROR]', err.message));
+          }
+        }
+
         return next();
       }
     }
@@ -39,6 +92,7 @@ const extractAuth = async (req, res, next) => {
     next();
   }
 };
+
 
 /**
  * Exige autenticação válida (HTTP 401)

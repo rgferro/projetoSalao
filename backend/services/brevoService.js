@@ -262,10 +262,52 @@ async function sendPasswordResetEmail(targetEmail, code, userName = 'Usuário') 
   });
 }
 
+/**
+ * Envia notificação por e-mail quando o suporte técnico Master inicia uma sessão de impersonation
+ */
+async function sendImpersonationNotificationEmail({ targetEmail, ownerName, salonName, adminEmail, sessionId }) {
+  logger.info(`Despachando alerta de suporte/impersonation para [${targetEmail}] via Brevo...`);
+
+  return sendBrevoEmail({
+    to: [{ email: targetEmail, name: ownerName }],
+    subject: `⚠️ Aviso de Segurança: Acesso de Suporte Técnico Iniciado - ${salonName}`,
+    htmlContent: `
+      <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; padding: 32px; color: #1e293b; max-width: 540px; margin: 0 auto; border: 1px solid #fde68a; border-radius: 24px; background: #ffffff; box-shadow: 0 4px 20px rgba(245, 158, 11, 0.12);">
+        <div style="text-align: center; margin-bottom: 24px;">
+          <div style="display: inline-block; width: 52px; height: 52px; line-height: 52px; background: linear-gradient(135deg, #f59e0b, #d97706); color: #ffffff; font-size: 26px; border-radius: 16px;">🛡️</div>
+          <h2 style="color: #0f172a; margin: 12px 0 0 0; font-size: 22px; font-weight: 900; letter-spacing: -0.5px;">BelaGestão Studio</h2>
+          <p style="color: #d97706; font-size: 12px; margin-top: 4px; font-weight: 700; text-transform: uppercase; letter-spacing: 1px;">Transparência & Segurança</p>
+        </div>
+        
+        <h3 style="color: #1e293b; font-size: 16px; margin-bottom: 8px;">Olá, ${ownerName}!</h3>
+        <p style="font-size: 14px; line-height: 1.6; color: #475569;">
+          Informamos que a equipe de suporte técnico da plataforma iniciou uma sessão de acesso assistido à conta do seu salão (<strong>${salonName}</strong>) para fins de diagnóstico e manutenção.
+        </p>
+        
+        <div style="background: #fffbeb; padding: 18px; border-radius: 16px; margin: 20px 0; border: 1px solid #fef3c7;">
+          <p style="font-size: 12px; font-weight: 700; color: #92400e; margin: 0 0 8px 0; text-transform: uppercase; letter-spacing: 0.5px;">Detalhes do Acesso:</p>
+          <p style="font-size: 13px; color: #78350f; margin: 4px 0;"><strong>Operador Master:</strong> ${adminEmail}</p>
+          <p style="font-size: 13px; color: #78350f; margin: 4px 0;"><strong>Data / Hora:</strong> ${new Date().toLocaleString('pt-BR')}</p>
+          <p style="font-size: 13px; color: #78350f; margin: 4px 0;"><strong>ID da Sessão:</strong> <span style="font-family: monospace; font-size: 11px;">${sessionId}</span></p>
+        </div>
+
+        <p style="font-size: 12px; line-height: 1.5; color: #94a3b8; text-align: center;">
+          🔒 Todas as ações realizadas durante esta sessão são rigorosamente registradas em trilha de auditoria imutável. Alterações em senhas ou credenciais bancárias são bloqueadas por padrão.
+        </p>
+        
+        <hr style="border: 0; border-top: 1px solid #f1f5f9; margin: 28px 0 20px 0;" />
+        <p style="font-size: 11px; color: #94a3b8; text-align: center; margin: 0;">BelaGestão Studio • Segurança e Gestão de Alta Performance</p>
+      </div>
+    `,
+  });
+}
+
 module.exports = {
   sendBrevoEmail,
   sendVerificationEmail,
   sendEmployeeInviteEmail,
   sendContactEmail,
   sendPasswordResetEmail,
+  sendImpersonationNotificationEmail,
 };
+

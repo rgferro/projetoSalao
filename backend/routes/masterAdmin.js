@@ -232,13 +232,56 @@ router.post('/tenants/:id/toggle-status', async (req, res) => {
   }
 });
 
-// 6. Impersonar Salão (Suporte ao Cliente com Acesso Temporário)
+// 6. Impersonar Salão (Suporte ao Cliente com Acesso Temporário de 1 hora)
 router.post('/tenants/:id/impersonate', async (req, res) => {
   try {
     const { id } = req.params;
+    const { reason } = req.body || {};
     const tenant = await get(`SELECT * FROM tenants WHERE id = ?`, [id]);
     if (!tenant) return res.status(404).json({ error: 'Salão não localizado.' });
 
+    const crypto = require('crypto');
+    const sessionId = crypto.randomUUID();
+    const adminEmail = req.user?.email || 'rafael.gielow@gmail.com';
+    const adminId = String(req.user?.userId || req.user?.id || 'admin_master');
+    const clientIp = req.headers['x-forwarded-for']?.split(',')[0]?.trim() || req.socket?.remoteAddress || req.ip || '0.0.0.0';
+    const userAgent = req.headers['user-agent'] || '';
+
+    // 1. Grava log de auditoria de início de suporte
+    try {
+      await run(`
+        INSERT INTO impersonation_audit_logs (
+          session_id, admin_id, admin_email, target_tenant_id, target_user_email,
+          action, endpoint, http_method, ip_address, user_agent, changes_diff
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      `, [
+        sessionId,
+        adminId,
+        adminEmail,
+        tenant.id,
+        tenant.owner_email,
+        'IMPERSONATION_STARTED',
+        `/api/master-admin/tenants/${id}/impersonate`,
+        'POST',
+        clientIp,
+        userAgent,
+        JSON.stringify({ reason: reason || 'Suporte Técnico Master Solicitado' })
+      ]);
+    } catch (auditErr) {
+      console.error('Erro ao gravar log de auditoria de impersonation:', auditErr.message);
+    }
+
+    // 2. Dispara e-mail de notificação ao proprietário do salão
+    const { sendImpersonationNotificationEmail } = require('../services/brevoService');
+    sendImpersonationNotificationEmail({
+      targetEmail: tenant.owner_email,
+      ownerName: tenant.owner_name,
+      salonName: tenant.name,
+      adminEmail,
+      sessionId
+    }).catch(err => console.error('Erro ao despachar e-mail de suporte:', err.message));
+
+    // 3. Gera token de suporte com validade restrita de 1 hora (3600 segundos)
     const token = createSessionToken({
       userId: tenant.id,
       name: `[Suporte] ${tenant.owner_name}`,
@@ -247,12 +290,16 @@ router.post('/tenants/:id/impersonate', async (req, res) => {
       accessLevel: 'ADMIN',
       tenantId: tenant.id,
       isMaster: true,
-      impersonated: true
-    });
+      impersonated: true,
+      impersonatorEmail: adminEmail,
+      impersonatorId: adminId,
+      sessionId: sessionId
+    }, 3600); // 1 hora
 
     res.json({
       success: true,
       token,
+      sessionId,
       user: {
         id: tenant.id,
         name: `[Suporte] ${tenant.owner_name}`,
@@ -262,13 +309,17 @@ router.post('/tenants/:id/impersonate', async (req, res) => {
         tenantId: tenant.id,
         plan: tenant.plan,
         isMaster: true,
-        impersonated: true
+        impersonated: true,
+        impersonatorEmail: adminEmail,
+        sessionId: sessionId
       }
     });
   } catch (error) {
+    console.error('Erro ao gerar acesso de suporte:', error);
     res.status(500).json({ error: 'Erro ao gerar acesso de suporte.' });
   }
 });
+
 
 // 7. Relatório Global de Pagamentos e Transações do SaaS
 router.get('/payments', async (req, res) => {
