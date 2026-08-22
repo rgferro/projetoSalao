@@ -438,7 +438,7 @@ async function startInterfaceTests() {
     assert.strictEqual(validPublicViews.length, 13, 'Todas as 13 rotas públicas devem estar registradas');
   });
 
-  // Limpeza
+  // Limpeza Completa de Todos os Tenants de Teste
   try {
     await run('DELETE FROM appointment_items WHERE tenant_id = ?', [testTenant]);
     await run('DELETE FROM appointments WHERE tenant_id = ?', [testTenant]);
@@ -449,7 +449,17 @@ async function startInterfaceTests() {
     await run('DELETE FROM services WHERE tenant_id = ?', [testTenant]);
     await run('DELETE FROM cash_movements WHERE tenant_id = ?', [testTenant]);
     await run('DELETE FROM cash_registers WHERE tenant_id = ?', [testTenant]);
-    await run('DELETE FROM tenants WHERE id = ?', [testTenant]);
+    await run(`
+      DELETE FROM tenants 
+      WHERE id = ? 
+         OR id LIKE 'tenant_salao_%' 
+         OR id LIKE 'tenant_barbearia_%' 
+         OR id LIKE 'tenant_estetica_%' 
+         OR id LIKE 'tenant_esmalteria_%' 
+         OR id LIKE 'tenant_lash_%' 
+         OR id LIKE 'tenant_stress_%' 
+         OR id LIKE 'tenant_ui_%'
+    `, [testTenant]);
   } catch (cleanErr) {}
 
   console.log('\n================================================================');
