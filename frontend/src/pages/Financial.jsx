@@ -110,11 +110,11 @@ export default function Financial({ onStartTour }) {
 
   return (
     <div className="space-y-6 animate-fadeIn pb-12">
-            {/* Header Info */}
-      <div className="glass-panel p-4 sm:p-5 flex flex-col md:flex-row md:items-center justify-between gap-4">
+      {/* Header & Date Range */}
+      <div id="tour-dre-lucro" className="glass-panel p-4 sm:p-5 flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
           <h2 className="text-lg sm:text-xl font-bold text-slate-800 dark:text-slate-100 flex items-center gap-2">
-            <BadgeDollarSign className="w-5 h-5 text-emerald-600 shrink-0" />
+            <DollarSign className="w-5 h-5 text-emerald-600 shrink-0" />
             Gestão Financeira & DRE
           </h2>
           <p className="text-xs text-slate-500 dark:text-slate-400">
@@ -137,7 +137,7 @@ export default function Financial({ onStartTour }) {
       </div>
 
       {/* Tabs */}
-      <div className="flex gap-1.5 sm:gap-2 p-1 bg-slate-100 dark:bg-slate-800 rounded-2xl overflow-x-auto no-scrollbar">
+      <div id="tour-comissoes-equipe" className="flex gap-1.5 sm:gap-2 p-1 bg-slate-100 dark:bg-slate-800 rounded-2xl overflow-x-auto no-scrollbar">
         {[
           { id: 'transactions', label: 'Contas a Pagar & Receber' },
           { id: 'dre', label: 'DRE Simplificado' },
@@ -158,7 +158,7 @@ export default function Financial({ onStartTour }) {
 
       {/* TAB 1: Contas a Pagar e Receber */}
       {activeTab === 'transactions' && (
-        <div className="glass-panel p-6 space-y-4">
+        <div id="tour-contas-pagar" className="glass-panel p-6 space-y-4">
           
           {/* Filters */}
           <div className="flex flex-wrap items-center justify-between gap-3 pb-3 border-b border-slate-100 dark:border-slate-800">

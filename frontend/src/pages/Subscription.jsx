@@ -334,6 +334,21 @@ export default function Subscription({ onStartTour }) {
   const [simulatingApproval, setSimulatingApproval] = useState(false);
   const [approvalMessage, setApprovalMessage] = useState('');
 
+  // Método de Pagamento Selecionado (Cartão Recorrente vs PIX)
+  const [paymentMethodChoice, setPaymentMethodChoice] = useState('card'); // 'card' | 'pix'
+
+  // Modal e Ações de Cancelamento e Reativação
+  const [showCancelModal, setShowCancelModal] = useState(false);
+  const [canceling, setCanceling] = useState(false);
+  const [reactivating, setReactivating] = useState(false);
+
+  // Modal e Cálculo de Upgrade Proporcional (Pró-Rata mantendo vencimento)
+  const [showUpgradeModal, setShowUpgradeModal] = useState(false);
+  const [upgradeTargetPlan, setUpgradeTargetPlan] = useState('STUDIO');
+  const [upgradeCalculation, setUpgradeCalculation] = useState(null);
+  const [calculatingUpgrade, setCalculatingUpgrade] = useState(false);
+  const [upgrading, setUpgrading] = useState(false);
+
   // Histórico de Pagamentos & Validação em Tempo Real
   const [payments, setPayments] = useState([]);
   const [loadingHistory, setLoadingHistory] = useState(false);
@@ -456,6 +471,163 @@ export default function Subscription({ onStartTour }) {
     }
   };
 
+  const handleGenerateCard = async (planKey) => {
+    try {
+      setLoading(true);
+      const res = await fetch('/api/subscription/card', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${localStorage.getItem('bella_token') || ''}`,
+        },
+        body: JSON.stringify({
+          plan: planKey,
+          extraUsers: planKey === 'STUDIO' || planKey === 'PREMIER' ? extraSeats : 0,
+        }),
+      });
+      const data = await res.json();
+      setLoading(false);
+
+      if (data.success && data.initPoint) {
+        window.open(data.initPoint, '_blank');
+      } else {
+        alert(data.error || 'Erro ao gerar checkout de cartão.');
+      }
+    } catch (err) {
+      setLoading(false);
+      alert('Erro ao conectar com Mercado Pago.');
+    }
+  };
+
+  const handlePlanSubscribe = (planKey) => {
+    if (paymentMethodChoice === 'card' && planKey !== 'SOLO') {
+      handleGenerateCard(planKey);
+    } else {
+      handleGeneratePix(planKey);
+    }
+  };
+
+  const handleCancelSubscription = async () => {
+    try {
+      setCanceling(true);
+      const res = await fetch('/api/subscription/cancel', {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${localStorage.getItem('bella_token') || ''}` },
+      });
+      const data = await res.json();
+      setCanceling(false);
+      setShowCancelModal(false);
+      if (data.success) {
+        alert(data.message);
+        loadSubscriptionStatus();
+      } else {
+        alert(data.error || 'Erro ao cancelar renovação.');
+      }
+    } catch (err) {
+      setCanceling(false);
+      alert('Erro de conexão ao cancelar renovação.');
+    }
+  };
+
+  const handleReactivateSubscription = async () => {
+    try {
+      setReactivating(true);
+      const res = await fetch('/api/subscription/reactivate', {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${localStorage.getItem('bella_token') || ''}` },
+      });
+      const data = await res.json();
+      setReactivating(false);
+      if (data.success) {
+        alert(data.message);
+        loadSubscriptionStatus();
+      } else {
+        alert(data.error || 'Erro ao reativar assinatura.');
+      }
+    } catch (err) {
+      setReactivating(false);
+      alert('Erro de conexão ao reativar assinatura.');
+    }
+  };
+
+  const handleOpenUpgradeModal = async (targetPlan) => {
+    setUpgradeTargetPlan(targetPlan);
+    setShowUpgradeModal(true);
+    setCalculatingUpgrade(true);
+    try {
+      const res = await fetch('/api/subscription/calculate-upgrade', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${localStorage.getItem('bella_token') || ''}`,
+        },
+        body: JSON.stringify({
+          targetPlan,
+          targetExtraUsers: extraSeats,
+        }),
+      });
+      const data = await res.json();
+      setUpgradeCalculation(data);
+    } catch (err) {
+      console.warn('Erro ao calcular upgrade:', err);
+    } finally {
+      setCalculatingUpgrade(false);
+    }
+  };
+
+  const handleExecuteUpgrade = async (method = 'pix') => {
+    try {
+      setUpgrading(true);
+      const res = await fetch('/api/subscription/upgrade', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${localStorage.getItem('bella_token') || ''}`,
+        },
+        body: JSON.stringify({
+          targetPlan: upgradeTargetPlan,
+          targetExtraUsers: extraSeats,
+          method,
+        }),
+      });
+      const data = await res.json();
+      setUpgrading(false);
+
+      if (data.success) {
+        if (data.proportionalPrice === 0) {
+          setShowUpgradeModal(false);
+          alert(data.message || 'Upgrade concluído!');
+          if (updateUserPlan) updateUserPlan(upgradeTargetPlan);
+          loadSubscriptionStatus();
+          return;
+        }
+
+        if (data.method === 'card' && data.initPoint) {
+          window.open(data.initPoint, '_blank');
+          setShowUpgradeModal(false);
+          return;
+        }
+
+        // PIX
+        setShowUpgradeModal(false);
+        setPixData({
+          paymentId: data.paymentId,
+          amount: data.proportionalPrice,
+          plan: data.targetPlan,
+          qrCode: data.qrCode,
+          qrCodeBase64: data.qrCodeBase64,
+          isUpgrade: true,
+        });
+        setShowPixModal(true);
+      } else {
+        alert(data.error || 'Erro ao processar upgrade.');
+      }
+    } catch (err) {
+      setUpgrading(false);
+      alert('Erro ao executar upgrade.');
+    }
+  };
+
   const handleCopyPix = () => {
     if (pixData?.qrCode) {
       navigator.clipboard.writeText(pixData.qrCode);
@@ -468,6 +640,7 @@ export default function Subscription({ onStartTour }) {
     try {
       setSimulatingApproval(true);
       const chosenPlan = pixData?.plan || 'STUDIO';
+      const isUpgrade = Boolean(pixData?.isUpgrade);
       const res = await fetch('/api/subscription/simulate-approval', {
         method: 'POST',
         headers: {
@@ -478,6 +651,7 @@ export default function Subscription({ onStartTour }) {
           paymentId: pixData?.paymentId,
           plan: chosenPlan,
           extraUsers: pixData?.extraUsers || extraSeats,
+          isUpgrade,
         }),
       });
       const data = await res.json();
@@ -629,16 +803,39 @@ export default function Subscription({ onStartTour }) {
                     <div className="flex items-center justify-between text-xs">
                       <span className="text-slate-500 dark:text-slate-400">Dias Restantes:</span>
                       <span className="font-black text-emerald-600 dark:text-emerald-400">
-                        Faltam {subStatus?.daysRemaining ?? 30} dias
+                        Faltam {subStatus?.daysRemaining ?? 30} dias {subStatus?.expiresAt && `(até ${safeFormatDate(subStatus.expiresAt)})`}
                       </span>
                     </div>
 
                     <div className="flex items-center justify-between text-xs pt-1 border-t border-slate-200 dark:border-slate-700/60">
-                      <span className="text-slate-500 dark:text-slate-400">Status da Assinatura:</span>
-                      <span className="font-bold text-emerald-600 dark:text-emerald-400 flex items-center gap-1.5">
-                        <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
-                        Assinatura Ativa
-                      </span>
+                      <span className="text-slate-500 dark:text-slate-400">Renovação Automática:</span>
+                      {subStatus?.autoRenew ? (
+                        <div className="flex items-center gap-2">
+                          <span className="font-bold text-emerald-600 dark:text-emerald-400 flex items-center gap-1">
+                            <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+                            Ativa
+                          </span>
+                          <button
+                            onClick={() => setShowCancelModal(true)}
+                            className="text-[10px] text-slate-400 hover:text-rose-500 underline ml-1"
+                          >
+                            Cancelar
+                          </button>
+                        </div>
+                      ) : (
+                        <div className="flex items-center gap-2">
+                          <span className="font-bold text-amber-600 dark:text-amber-400 flex items-center gap-1">
+                            <span>⏸️</span> Desativada
+                          </span>
+                          <button
+                            onClick={handleReactivateSubscription}
+                            disabled={reactivating}
+                            className="text-[10px] text-pink-600 hover:text-pink-700 font-bold underline ml-1"
+                          >
+                            {reactivating ? 'Reativando...' : 'Reativar'}
+                          </button>
+                        </div>
+                      )}
                     </div>
                   </>
                 )}
@@ -648,34 +845,62 @@ export default function Subscription({ onStartTour }) {
         </div>
       </div>
 
-      {/* Add-on de Profissionais Extras */}
-      <div className="flex flex-col items-center justify-center space-y-3 pt-2">
-        <div className="bg-pink-50 dark:bg-pink-950/40 border border-pink-200 dark:border-pink-800/80 rounded-2xl p-4 flex flex-col sm:flex-row items-center justify-between gap-4 max-w-xl w-full">
-          <div className="flex items-center gap-3 text-left">
-            <div className="w-9 h-9 rounded-xl bg-pink-600 text-white flex items-center justify-center font-bold shrink-0">
-              <Users className="w-5 h-5" />
+      {/* Seletor de Forma de Pagamento e Vagas Extras */}
+      <div className="flex flex-col lg:flex-row items-center justify-between gap-4 pt-2">
+        {/* Seletor Cartão Recorrente vs PIX */}
+        <div id="tour-metodos-pagamento" className="bg-slate-100 dark:bg-slate-800/90 p-1.5 rounded-2xl flex flex-wrap items-center gap-1 border border-slate-200 dark:border-slate-700 w-full lg:w-auto">
+          <button
+            onClick={() => setPaymentMethodChoice('card')}
+            className={`flex-1 sm:flex-none px-4 py-2.5 rounded-xl text-xs font-black transition-all flex items-center justify-center gap-2 ${
+              paymentMethodChoice === 'card'
+                ? 'bg-white dark:bg-slate-900 text-pink-600 dark:text-pink-400 shadow-sm border border-slate-200 dark:border-slate-700'
+                : 'text-slate-500 hover:text-slate-700 dark:hover:text-slate-300'
+            }`}
+          >
+            <CreditCard className="w-4 h-4" />
+            <span>Cartão de Crédito Recorrente (Débito Mensal Automático)</span>
+            <span className="hidden sm:inline px-2 py-0.5 rounded-md text-[10px] bg-pink-100 dark:bg-pink-950 text-pink-700 dark:text-pink-300 font-extrabold uppercase">Recomendado</span>
+          </button>
+          
+          <button
+            onClick={() => setPaymentMethodChoice('pix')}
+            className={`flex-1 sm:flex-none px-4 py-2.5 rounded-xl text-xs font-black transition-all flex items-center justify-center gap-2 ${
+              paymentMethodChoice === 'pix'
+                ? 'bg-white dark:bg-slate-900 text-pink-600 dark:text-pink-400 shadow-sm border border-slate-200 dark:border-slate-700'
+                : 'text-slate-500 hover:text-slate-700 dark:hover:text-slate-300'
+            }`}
+          >
+            <QrCode className="w-4 h-4" />
+            <span>PIX Instantâneo</span>
+          </button>
+        </div>
+
+        {/* Add-on de Profissionais Extras */}
+        <div id="tour-vagas-extras" className="bg-pink-50 dark:bg-pink-950/40 border border-pink-200 dark:border-pink-800/80 rounded-2xl px-4 py-2.5 flex items-center justify-between sm:justify-start gap-3 w-full lg:w-auto">
+          <div className="flex items-center gap-3">
+            <div className="w-8 h-8 rounded-xl bg-pink-600 text-white flex items-center justify-center font-bold shrink-0">
+              <Users className="w-4 h-4" />
             </div>
             <div>
-              <div className="text-xs font-black text-slate-900 dark:text-white">Add-on: Vagas Extras de Profissionais</div>
-              <div className="text-[11px] text-slate-600 dark:text-slate-400">+ R$ 15,00/mês por profissional além da cota do plano</div>
+              <div className="text-xs font-black text-slate-900 dark:text-white">Vagas Extras de Profissionais</div>
+              <div className="text-[10px] text-slate-600 dark:text-slate-400">+ R$ 15,00/mês por vaga além do plano</div>
             </div>
           </div>
-
-          <div className="flex items-center gap-2 bg-white dark:bg-slate-900 px-3 py-1.5 rounded-xl border border-pink-300 dark:border-pink-700 shadow-xs">
+          <div className="flex items-center gap-1.5 bg-white dark:bg-slate-900 px-2 py-1 rounded-xl border border-pink-300 dark:border-pink-700 shadow-xs ml-2">
             <button
               onClick={() => setExtraSeats(Math.max(0, extraSeats - 1))}
               className="p-1 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-600 dark:text-slate-300"
             >
-              <Minus className="w-3.5 h-3.5" />
+              <Minus className="w-3 h-3" />
             </button>
-            <span className="text-xs font-black px-2 min-w-[20px] text-center text-pink-600">
+            <span className="text-xs font-black px-1.5 min-w-[16px] text-center text-pink-600">
               +{extraSeats}
             </span>
             <button
               onClick={() => setExtraSeats(extraSeats + 1)}
               className="p-1 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-600 dark:text-slate-300"
             >
-              <Plus className="w-3.5 h-3.5" />
+              <Plus className="w-3 h-3" />
             </button>
           </div>
         </div>
@@ -686,13 +911,16 @@ export default function Subscription({ onStartTour }) {
         const segDetails = getNichePlanDetails(user?.segment);
         const currentActivePlan = String(subStatus?.plan || user?.plan || 'SOLO').toUpperCase();
 
+        const PLAN_LEVELS = { SOLO: 0, STARTER: 1, STUDIO: 2, PRO: 2, PREMIER: 3, ELITE: 3 };
+        const currentLevel = PLAN_LEVELS[currentActivePlan] ?? 0;
+
         const isSoloActive = currentActivePlan === 'SOLO';
         const isStarterActive = currentActivePlan === 'STARTER';
         const isStudioActive = currentActivePlan === 'STUDIO' || currentActivePlan === 'PRO';
         const isPremierActive = currentActivePlan === 'PREMIER' || currentActivePlan === 'ELITE';
 
         return (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 items-stretch pt-2">
+          <div id="tour-grade-planos" className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 items-stretch pt-2">
             
             {/* 1. SOLO / AUTÔNOMA */}
             <div className={`bg-white dark:bg-slate-900 rounded-3xl p-6 space-y-6 flex flex-col justify-between transition-all ${
@@ -785,14 +1013,23 @@ export default function Subscription({ onStartTour }) {
                   <CheckCircle2 className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
                   <span>Plano Atual</span>
                 </button>
+              ) : currentLevel < 1 ? (
+                <button
+                  onClick={() => handleOpenUpgradeModal('STARTER')}
+                  disabled={loading}
+                  className="w-full py-3.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-black text-xs shadow-md flex items-center justify-center gap-1.5"
+                >
+                  <Zap className="w-4 h-4" />
+                  <span>Fazer Upgrade (Pró-Rata)</span>
+                </button>
               ) : (
                 <button
-                  onClick={() => handleGeneratePix('STARTER')}
+                  onClick={() => handlePlanSubscribe('STARTER')}
                   disabled={loading}
                   className="w-full py-3.5 rounded-xl bg-indigo-50 dark:bg-indigo-950/50 hover:bg-indigo-100 dark:hover:bg-indigo-900/40 text-indigo-700 dark:text-indigo-300 font-black text-xs border border-indigo-200 dark:border-indigo-800 flex items-center justify-center gap-1.5 shadow-xs"
                 >
-                  <QrCode className="w-4 h-4" />
-                  <span>Assinar {segDetails.starter.title}</span>
+                  {paymentMethodChoice === 'card' ? <CreditCard className="w-4 h-4" /> : <QrCode className="w-4 h-4" />}
+                  <span>Assinar no {paymentMethodChoice === 'card' ? 'Cartão' : 'PIX'}</span>
                 </button>
               )}
             </div>
@@ -846,14 +1083,23 @@ export default function Subscription({ onStartTour }) {
                   <CheckCircle2 className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
                   <span>Plano Atual</span>
                 </button>
-              ) : (
+              ) : currentLevel < 2 ? (
                 <button
-                  onClick={() => handleGeneratePix('STUDIO')}
+                  onClick={() => handleOpenUpgradeModal('STUDIO')}
                   disabled={loading}
                   className="w-full py-3.5 rounded-xl bg-gradient-to-r from-pink-600 via-rose-600 to-purple-600 hover:from-pink-700 hover:to-purple-700 text-white font-black text-xs shadow-md shadow-pink-600/30 flex items-center justify-center gap-1.5"
                 >
-                  <QrCode className="w-4 h-4" />
-                  <span>Assinar {segDetails.studio.title} via PIX</span>
+                  <Zap className="w-4 h-4" />
+                  <span>Fazer Upgrade (Pró-Rata)</span>
+                </button>
+              ) : (
+                <button
+                  onClick={() => handlePlanSubscribe('STUDIO')}
+                  disabled={loading}
+                  className="w-full py-3.5 rounded-xl bg-gradient-to-r from-pink-600 via-rose-600 to-purple-600 hover:from-pink-700 hover:to-purple-700 text-white font-black text-xs shadow-md shadow-pink-600/30 flex items-center justify-center gap-1.5"
+                >
+                  {paymentMethodChoice === 'card' ? <CreditCard className="w-4 h-4" /> : <QrCode className="w-4 h-4" />}
+                  <span>Assinar no {paymentMethodChoice === 'card' ? 'Cartão' : 'PIX'}</span>
                 </button>
               )}
             </div>
@@ -899,14 +1145,23 @@ export default function Subscription({ onStartTour }) {
                   <CheckCircle2 className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
                   <span>Plano Atual</span>
                 </button>
+              ) : currentLevel < 3 ? (
+                <button
+                  onClick={() => handleOpenUpgradeModal('PREMIER')}
+                  disabled={loading}
+                  className="w-full py-3.5 rounded-xl bg-purple-600 hover:bg-purple-700 text-white font-black text-xs shadow-md shadow-purple-600/30 flex items-center justify-center gap-1.5"
+                >
+                  <Zap className="w-4 h-4" />
+                  <span>Fazer Upgrade (Pró-Rata)</span>
+                </button>
               ) : (
                 <button
-                  onClick={() => handleGeneratePix('PREMIER')}
+                  onClick={() => handlePlanSubscribe('PREMIER')}
                   disabled={loading}
                   className="w-full py-3.5 rounded-xl bg-purple-50 dark:bg-purple-950/50 hover:bg-purple-100 dark:hover:bg-purple-900/40 text-purple-700 dark:text-purple-300 font-black text-xs border border-purple-200 dark:border-purple-800 flex items-center justify-center gap-1.5 shadow-xs"
                 >
-                  <QrCode className="w-4 h-4" />
-                  <span>Assinar {segDetails.premier.title}</span>
+                  {paymentMethodChoice === 'card' ? <CreditCard className="w-4 h-4" /> : <QrCode className="w-4 h-4" />}
+                  <span>Assinar no {paymentMethodChoice === 'card' ? 'Cartão' : 'PIX'}</span>
                 </button>
               )}
             </div>
@@ -1192,6 +1447,137 @@ export default function Subscription({ onStartTour }) {
               </button>
             </div>
 
+          </div>
+        </div>
+      )}
+
+      {/* Modal: Cancelamento de Renovação Automática */}
+      {showCancelModal && (
+        <div className="fixed inset-0 z-50 bg-slate-950/75 backdrop-blur-xs flex items-center justify-center p-4 animate-fadeIn">
+          <div className="bg-white dark:bg-slate-900 rounded-3xl max-w-md w-full p-6 sm:p-8 shadow-2xl border border-slate-200 dark:border-slate-800 space-y-6">
+            <div className="text-center space-y-3">
+              <div className="w-12 h-12 rounded-2xl bg-amber-100 dark:bg-amber-950/60 text-amber-600 flex items-center justify-center mx-auto text-xl font-bold">
+                ⚠️
+              </div>
+              <h3 className="text-xl font-black text-slate-900 dark:text-white">
+                Cancelar Renovação Automática?
+              </h3>
+              <div className="p-4 rounded-2xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700 text-left text-xs text-slate-600 dark:text-slate-300 space-y-2">
+                <p>
+                  ✓ <strong>Seu plano continuará 100% ativo</strong> com todas as funcionalidades e profissionais liberados até <strong>{safeFormatDate(subStatus?.expiresAt)}</strong>.
+                </p>
+                <p>
+                  ✓ <strong>Nenhuma nova cobrança</strong> será realizada no seu cartão ou gerada no PIX.
+                </p>
+                <p>
+                  ✓ Você poderá <strong>reativar a qualquer momento</strong> em 1 clique antes ou depois do vencimento.
+                </p>
+              </div>
+            </div>
+
+            <div className="space-y-2 pt-2">
+              <button
+                type="button"
+                onClick={() => setShowCancelModal(false)}
+                className="w-full py-3 bg-pink-600 hover:bg-pink-700 text-white font-black text-xs rounded-xl shadow-md transition-colors"
+              >
+                Continuar com Assinatura Ativa
+              </button>
+
+              <button
+                type="button"
+                onClick={handleCancelSubscription}
+                disabled={canceling}
+                className="w-full py-2.5 text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/40 border border-rose-200 dark:border-rose-800 rounded-xl text-xs font-bold transition-colors disabled:opacity-50"
+              >
+                {canceling ? 'Cancelando Renovação...' : 'Confirmar Cancelamento da Renovação'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal: Upgrade Proporcional Pró-Rata (Mantendo Data de Vencimento) */}
+      {showUpgradeModal && (
+        <div className="fixed inset-0 z-50 bg-slate-950/75 backdrop-blur-xs flex items-center justify-center p-4 animate-fadeIn">
+          <div className="bg-white dark:bg-slate-900 rounded-3xl max-w-lg w-full p-6 sm:p-8 shadow-2xl border border-slate-200 dark:border-slate-800 space-y-6">
+            <div className="text-center space-y-2">
+              <div className="w-12 h-12 rounded-2xl bg-gradient-to-r from-pink-500 to-purple-600 text-white flex items-center justify-center mx-auto text-xl font-bold">
+                <Zap className="w-6 h-6" />
+              </div>
+              <h3 className="text-xl font-black text-slate-900 dark:text-white">
+                Upgrade Proporcional de Plano
+              </h3>
+              <p className="text-xs text-slate-500 dark:text-slate-400">
+                Pague apenas a diferença dos dias restantes e mantenha sua data de vencimento intacta!
+              </p>
+            </div>
+
+            {calculatingUpgrade ? (
+              <div className="p-8 text-center space-y-3">
+                <RefreshCw className="w-8 h-8 text-pink-600 animate-spin mx-auto" />
+                <p className="text-xs text-slate-500 font-bold">Calculando valor proporcional pró-rata...</p>
+              </div>
+            ) : upgradeCalculation && (
+              <div className="space-y-4">
+                <div className="p-4 rounded-2xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700 space-y-2.5 text-xs">
+                  <div className="flex justify-between">
+                    <span className="text-slate-500">Plano Atual:</span>
+                    <span className="font-bold text-slate-800 dark:text-slate-200">{subStatus?.plan || 'SOLO'}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-slate-500">Plano de Destino:</span>
+                    <span className="font-bold text-pink-600 dark:text-pink-400">{upgradeTargetPlan}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-slate-500">Dias Restantes no Período:</span>
+                    <span className="font-bold text-slate-800 dark:text-slate-200">{upgradeCalculation.daysRemaining} dias</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-slate-500">Data de Vencimento:</span>
+                    <span className="font-bold text-emerald-600 dark:text-emerald-400">
+                      {safeFormatDate(upgradeCalculation.expiresAt)} (Mantida)
+                    </span>
+                  </div>
+                  <div className="pt-2 border-t border-slate-200 dark:border-slate-700 flex justify-between items-center text-sm">
+                    <span className="font-black text-slate-900 dark:text-white">Valor Pró-Rata a Pagar:</span>
+                    <span className="text-2xl font-black text-pink-600 dark:text-pink-400">
+                      R$ {Number(upgradeCalculation.proportionalPrice || 0).toFixed(2).replace('.', ',')}
+                    </span>
+                  </div>
+                </div>
+
+                <div className="space-y-2 pt-2">
+                  <button
+                    type="button"
+                    onClick={() => handleExecuteUpgrade('card')}
+                    disabled={upgrading}
+                    className="w-full py-3 bg-pink-600 hover:bg-pink-700 text-white font-black text-xs rounded-xl shadow-md transition-colors flex items-center justify-center gap-2 disabled:opacity-50"
+                  >
+                    <CreditCard className="w-4 h-4" />
+                    <span>{upgrading ? 'Processando...' : 'Pagar Upgrade no Cartão de Crédito'}</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => handleExecuteUpgrade('pix')}
+                    disabled={upgrading}
+                    className="w-full py-3 bg-emerald-600 hover:bg-emerald-700 text-white font-black text-xs rounded-xl shadow-md transition-colors flex items-center justify-center gap-2 disabled:opacity-50"
+                  >
+                    <QrCode className="w-4 h-4" />
+                    <span>{upgrading ? 'Processando...' : 'Pagar Upgrade via PIX Instantâneo'}</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => setShowUpgradeModal(false)}
+                    className="w-full py-2 text-slate-500 hover:text-slate-800 dark:hover:text-slate-200 text-xs font-bold"
+                  >
+                    Cancelar
+                  </button>
+                </div>
+              </div>
+            )}
           </div>
         </div>
       )}

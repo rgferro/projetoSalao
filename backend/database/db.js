@@ -162,6 +162,28 @@ const migrateTenantColumns = async () => {
       if (!tenantCols.some(c => c.name === 'is_exempt')) {
         await run("ALTER TABLE tenants ADD COLUMN is_exempt INTEGER DEFAULT 0");
       }
+      if (!tenantCols.some(c => c.name === 'auto_renew')) {
+        await run("ALTER TABLE tenants ADD COLUMN auto_renew INTEGER DEFAULT 1");
+      }
+      if (!tenantCols.some(c => c.name === 'subscription_canceled_at')) {
+        await run("ALTER TABLE tenants ADD COLUMN subscription_canceled_at DATETIME");
+      }
+      if (!tenantCols.some(c => c.name === 'preapproval_id')) {
+        await run("ALTER TABLE tenants ADD COLUMN preapproval_id TEXT");
+      }
+      if (!tenantCols.some(c => c.name === 'payment_method')) {
+        await run("ALTER TABLE tenants ADD COLUMN payment_method TEXT DEFAULT 'pix'");
+      }
+
+      // Migração de colunas na tabela subscription_payments
+      try {
+        const subCols = await query('PRAGMA table_info(subscription_payments)');
+        if (subCols && subCols.length > 0) {
+          if (!subCols.some(c => c.name === 'preapproval_id')) {
+            await run("ALTER TABLE subscription_payments ADD COLUMN preapproval_id TEXT");
+          }
+        }
+      } catch (e) {}
 
       // Verificar se a tabela tenants ainda tem restrição UNIQUE em owner_email
       const tableDef = await get("SELECT sql FROM sqlite_master WHERE type='table' AND name='tenants'");

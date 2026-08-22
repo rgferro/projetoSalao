@@ -261,6 +261,7 @@ export default function Appointments({ onOpenNewAppointment, onOpenPDV, onStartT
           )}
 
           <button
+            id="tour-bloqueio-horarios"
             onClick={() => setShowBlockModal(true)}
             className="px-3 py-1.5 text-xs font-bold rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 text-slate-700 dark:text-slate-200 flex items-center gap-1.5"
             title="Bloquear intervalo de almoço ou folga"
@@ -271,6 +272,7 @@ export default function Appointments({ onOpenNewAppointment, onOpenPDV, onStartT
           </button>
 
           <button
+            id="tour-novo-agendamento"
             onClick={onOpenNewAppointment}
             className={`px-3.5 py-1.5 text-xs font-bold rounded-xl flex items-center gap-1.5 transition-all ${segTheme.buttonGradient}`}
           >
@@ -283,7 +285,7 @@ export default function Appointments({ onOpenNewAppointment, onOpenPDV, onStartT
       </div>
 
       {/* 🏷️ Barra de Abas de Funções / Especialidades (Para profissionais com múltiplas funções) */}
-      <div className="flex items-center gap-2 overflow-x-auto pb-1">
+      <div id="tour-filtros-agenda" className="flex items-center gap-2 overflow-x-auto pb-1">
         <span className="text-xs font-bold text-slate-500 flex items-center gap-1 shrink-0 pl-1">
           <Tag className={`w-3.5 h-3.5 ${segTheme.textAccent}`} />
           <span>Visão por Função:</span>
@@ -316,6 +318,7 @@ export default function Appointments({ onOpenNewAppointment, onOpenPDV, onStartT
       </div>
 
       {/* Main Schedule Container */}
+      <div id="tour-grade-agenda">
       {viewMode === 'columns' ? (
         /* Visual Column Grid by Professional */
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 items-start">
@@ -531,6 +534,7 @@ export default function Appointments({ onOpenNewAppointment, onOpenPDV, onStartT
           )}
         </div>
       )}
+      </div>
 
       {/* Modal: Bloqueio de Horário */}
       {showBlockModal && (

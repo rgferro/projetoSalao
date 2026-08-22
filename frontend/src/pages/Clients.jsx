@@ -160,8 +160,8 @@ export default function Clients({ onOpenNewClient, onStartTour }) {
           {onStartTour && (
             <PageTourButton onClick={() => onStartTour('clients')} label="Tour de Clientes" />
           )}
-
           <button
+            id="tour-novo-cliente"
             onClick={onOpenNewClient}
             className="px-4 py-2 text-xs font-bold rounded-xl text-white bg-salon-600 hover:bg-salon-700 shadow-md shadow-salon-600/20 flex items-center justify-center gap-1.5 shrink-0"
           >
@@ -174,7 +174,7 @@ export default function Clients({ onOpenNewClient, onStartTour }) {
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 sm:gap-6">
         
         {/* Left: Client List (5 cols) */}
-        <div className="lg:col-span-5 glass-panel p-4 space-y-3">
+        <div id="tour-lista-clientes" className="lg:col-span-5 glass-panel p-4 space-y-3">
           <div className="flex items-center justify-between px-2">
             <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">
               Clientes ({filteredClients.length})
@@ -291,7 +291,7 @@ export default function Clients({ onOpenNewClient, onStartTour }) {
               </div>
 
               {/* Sub-Tabs: Anamnese / Histórico / Fidelidade */}
-              <div className="flex gap-2 p-1 bg-slate-100 dark:bg-slate-800 rounded-xl">
+              <div id="tour-anamnese-cliente" className="flex gap-2 p-1 bg-slate-100 dark:bg-slate-800 rounded-xl">
                 <button
                   onClick={() => setActiveTab('anamnese')}
                   className={`flex-1 py-1.5 text-xs font-bold rounded-lg transition ${activeTab === 'anamnese' ? 'bg-white dark:bg-slate-900 text-salon-600 shadow-sm' : 'text-slate-500'}`}
@@ -305,6 +305,7 @@ export default function Clients({ onOpenNewClient, onStartTour }) {
                   Histórico de Atendimentos ({selectedClient.history?.length || 0})
                 </button>
                 <button
+                  id="tour-fidelidade-cliente"
                   onClick={() => setActiveTab('fidelity')}
                   className={`flex-1 py-1.5 text-xs font-bold rounded-lg transition ${activeTab === 'fidelity' ? 'bg-white dark:bg-slate-900 text-salon-600 shadow-sm' : 'text-slate-500'}`}
                 >

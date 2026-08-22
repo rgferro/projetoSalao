@@ -138,6 +138,10 @@ router.get('/status', async (req, res) => {
       currentMonthAppointments,
       monthlyAppointmentLimit: licenseEvaluation.plan === 'SOLO' ? 40 : null,
       expiresAt: tenant?.subscription_expires_at || null,
+      autoRenew: tenant?.auto_renew !== 0,
+      canceledAt: tenant?.subscription_canceled_at || null,
+      paymentMethod: tenant?.payment_method || 'pix',
+      preapprovalId: tenant?.preapproval_id || null,
       message: licenseEvaluation.message,
       ownerEmail: tenant?.owner_email || '',
       isMaster: Boolean(tenant?.is_master),
@@ -153,6 +157,7 @@ router.get('/status', async (req, res) => {
       maxUsers: 2,
       currentUsers: 1,
       daysRemaining: 1,
+      autoRenew: true,
       message: 'Modo offline seguro ativo.',
     });
   }
@@ -225,7 +230,7 @@ router.post('/pix', async (req, res) => {
   }
 });
 
-// 4. Gerar Assinatura Recorrente no Cartão de Crédito
+// 4. Gerar Assinatura Recorrente no Cartão de Crédito (Débito Mensal Automático)
 router.post('/card', async (req, res) => {
   try {
     const { plan = 'STUDIO', extraUsers = 0 } = req.body;
@@ -250,7 +255,15 @@ router.post('/card', async (req, res) => {
       }
     }
 
-    const cardData = await createMercadoPagoPreapproval(tenant, amount.toFixed(2), planConfig.name);
+    const cardData = await createMercadoPagoPreapproval(tenant, amount.toFixed(2), `${planConfig.name} (${extraUsers} extras)`);
+
+    // Atualizar tenant com preapproval_id e método cartão
+    if (cardData.preapproval_id) {
+      await run(
+        `UPDATE tenants SET preapproval_id = ?, payment_method = 'card', auto_renew = 1, subscription_canceled_at = NULL WHERE id = ?`,
+        [cardData.preapproval_id, tenant.id]
+      );
+    }
 
     res.json({
       success: true,
@@ -259,14 +272,264 @@ router.post('/card', async (req, res) => {
       simulated: cardData.simulated || false,
     });
   } catch (error) {
+    logger.error('Erro ao gerar checkout de cartão:', { error: error.message });
     res.status(500).json({ error: error.message || 'Erro ao gerar checkout de cartão.' });
   }
 });
 
-// 5. Webhook Oficial do Mercado Pago
+// 5. Cancelar Renovação Automática (O plano CONTINUA ATIVO até a data de vencimento)
+router.post('/cancel', async (req, res) => {
+  try {
+    const authHeader = req.headers.authorization;
+    let tenantId = 'tenant_default_salao';
+
+    if (authHeader) {
+      const token = authHeader.replace('Bearer ', '');
+      const session = verifySessionToken(token);
+      if (session && session.tenantId) tenantId = session.tenantId;
+    }
+
+    const tenant = await get(`SELECT * FROM tenants WHERE id = ?`, [tenantId]);
+    if (!tenant) {
+      return res.status(404).json({ error: 'Salão não encontrado.' });
+    }
+
+    // Se houver preapproval no Mercado Pago, cancela na API do MP
+    if (tenant.preapproval_id) {
+      try {
+        const { cancelMercadoPagoPreapproval } = require('../services/mercadopagoService');
+        await cancelMercadoPagoPreapproval(tenant.preapproval_id);
+      } catch (err) {
+        logger.warn(`Erro ao cancelar preapproval no MP (${tenant.preapproval_id}): ${err.message}`);
+      }
+    }
+
+    // Desativa renovação automática MAS MANTÉM PLANO ATIVO ATÉ O VENCIMENTO
+    await run(
+      `UPDATE tenants 
+       SET auto_renew = 0, subscription_canceled_at = datetime('now'), updated_at = datetime('now')
+       WHERE id = ?`,
+      [tenantId]
+    );
+
+    res.json({
+      success: true,
+      message: 'Renovação automática cancelada com sucesso. Seu plano continuará 100% ativo com todas as funcionalidades até o vencimento contratado.',
+      expiresAt: tenant.subscription_expires_at,
+    });
+  } catch (error) {
+    logger.error('Erro ao cancelar assinatura:', { error: error.message });
+    res.status(500).json({ error: 'Erro ao cancelar assinatura.' });
+  }
+});
+
+// 6. Reativar Assinatura Recorrente
+router.post('/reactivate', async (req, res) => {
+  try {
+    const authHeader = req.headers.authorization;
+    let tenantId = 'tenant_default_salao';
+
+    if (authHeader) {
+      const token = authHeader.replace('Bearer ', '');
+      const session = verifySessionToken(token);
+      if (session && session.tenantId) tenantId = session.tenantId;
+    }
+
+    await run(
+      `UPDATE tenants 
+       SET auto_renew = 1, subscription_canceled_at = NULL, updated_at = datetime('now')
+       WHERE id = ?`,
+      [tenantId]
+    );
+
+    res.json({
+      success: true,
+      message: 'Assinatura reativada com sucesso! A renovação automática foi restabelecida.',
+    });
+  } catch (error) {
+    logger.error('Erro ao reativar assinatura:', { error: error.message });
+    res.status(500).json({ error: 'Erro ao reativar assinatura.' });
+  }
+});
+
+// 7. Calcular Upgrade Proporcional Pró-Rata Mantendo a Data de Vencimento
+router.post('/calculate-upgrade', async (req, res) => {
+  try {
+    const { targetPlan = 'STUDIO', targetExtraUsers = 0 } = req.body;
+    const authHeader = req.headers.authorization;
+    let tenantId = 'tenant_default_salao';
+
+    if (authHeader) {
+      const token = authHeader.replace('Bearer ', '');
+      const session = verifySessionToken(token);
+      if (session && session.tenantId) tenantId = session.tenantId;
+    }
+
+    const tenant = await get(`SELECT * FROM tenants WHERE id = ?`, [tenantId]);
+    const currentPlanId = tenant?.plan || 'SOLO';
+    const currentExtra = tenant?.extra_users_count || 0;
+
+    const currentPlanConfig = SAAS_PLANS[currentPlanId] || SAAS_PLANS.SOLO;
+    const targetPlanConfig = SAAS_PLANS[targetPlan] || SAAS_PLANS.STUDIO;
+
+    const currentMonthly = Number(currentPlanConfig.priceMonthly + (currentExtra * 15.0));
+    const targetMonthly = Number(targetPlanConfig.priceMonthly + (Number(targetExtraUsers || 0) * 15.0));
+
+    // Calcular dias restantes da assinatura atual
+    let daysRemaining = 0;
+    if (tenant?.subscription_expires_at) {
+      const expDate = new Date(tenant.subscription_expires_at);
+      const diffMs = expDate.getTime() - Date.now();
+      daysRemaining = Math.max(0, Math.ceil(diffMs / (1000 * 60 * 60 * 24)));
+    }
+
+    // Se o plano atual for gratuito (SOLO) ou estiver vencido, cobra o valor cheio de 30 dias
+    if (currentMonthly <= 0 || daysRemaining <= 0) {
+      return res.json({
+        success: true,
+        isProportional: false,
+        daysRemaining: 0,
+        currentPlan: currentPlanId,
+        targetPlan,
+        currentMonthly,
+        targetMonthly,
+        proportionalPrice: targetMonthly,
+        expiresAt: tenant?.subscription_expires_at || null,
+        message: 'Upgrade sem saldo proporcional residual.',
+      });
+    }
+
+    // Pró-rata: diferença diária pelos dias restantes
+    const dailyDiff = (targetMonthly - currentMonthly) / 30;
+    const proportionalDiff = Math.max(0, Number((dailyDiff * daysRemaining).toFixed(2)));
+
+    res.json({
+      success: true,
+      isProportional: true,
+      daysRemaining,
+      currentPlan: currentPlanId,
+      targetPlan,
+      currentMonthly,
+      targetMonthly,
+      proportionalPrice: proportionalDiff,
+      expiresAt: tenant.subscription_expires_at,
+      message: `Upgrade proporcional para os ${daysRemaining} dias restantes mantendo a data de vencimento.`,
+    });
+  } catch (error) {
+    logger.error('Erro ao calcular upgrade:', { error: error.message });
+    res.status(500).json({ error: 'Erro ao calcular upgrade.' });
+  }
+});
+
+// 8. Executar Upgrade Proporcional Mantendo a Data de Vencimento
+router.post('/upgrade', async (req, res) => {
+  try {
+    const { targetPlan = 'STUDIO', targetExtraUsers = 0, method = 'pix' } = req.body;
+    const authHeader = req.headers.authorization;
+    let tenantId = 'tenant_default_salao';
+
+    if (authHeader) {
+      const token = authHeader.replace('Bearer ', '');
+      const session = verifySessionToken(token);
+      if (session && session.tenantId) tenantId = session.tenantId;
+    }
+
+    const tenant = await get(`SELECT * FROM tenants WHERE id = ?`, [tenantId]);
+    if (!tenant) return res.status(404).json({ error: 'Salão não encontrado.' });
+
+    const currentPlanId = tenant.plan || 'SOLO';
+    const currentExtra = tenant.extra_users_count || 0;
+    const currentPlanConfig = SAAS_PLANS[currentPlanId] || SAAS_PLANS.SOLO;
+    const targetPlanConfig = SAAS_PLANS[targetPlan] || SAAS_PLANS.STUDIO;
+
+    const currentMonthly = Number(currentPlanConfig.priceMonthly + (currentExtra * 15.0));
+    const targetMonthly = Number(targetPlanConfig.priceMonthly + (Number(targetExtraUsers || 0) * 15.0));
+
+    let daysRemaining = 0;
+    if (tenant.subscription_expires_at) {
+      const expDate = new Date(tenant.subscription_expires_at);
+      const diffMs = expDate.getTime() - Date.now();
+      daysRemaining = Math.max(0, Math.ceil(diffMs / (1000 * 60 * 60 * 24)));
+    }
+
+    const dailyDiff = (targetMonthly - currentMonthly) / 30;
+    const proportionalPrice = (currentMonthly > 0 && daysRemaining > 0)
+      ? Math.max(0, Number((dailyDiff * daysRemaining).toFixed(2)))
+      : targetMonthly;
+
+    const targetMaxUsers = targetPlan === 'PREMIER' ? 15 : targetPlan === 'STUDIO' ? 5 : targetPlan === 'STARTER' ? 2 : 1;
+
+    // Se o valor proporcional for 0 (ex: upgrade imediato ou sem custo extra)
+    if (proportionalPrice <= 0) {
+      await run(
+        `UPDATE tenants 
+         SET plan = ?, max_users = ?, extra_users_count = ?, updated_at = datetime('now')
+         WHERE id = ?`,
+        [targetPlan, targetMaxUsers, Number(targetExtraUsers || 0), tenantId]
+      );
+      licenseManager.cacheLicense(
+        tenantId,
+        targetPlan,
+        tenant.subscription_expires_at,
+        targetMaxUsers + Number(targetExtraUsers || 0)
+      );
+      return res.json({
+        success: true,
+        proportionalPrice: 0,
+        message: `Plano atualizado para ${targetPlanConfig.name} com sucesso! Data de vencimento mantida.`,
+      });
+    }
+
+    if (method === 'card') {
+      const cardData = await createMercadoPagoPreapproval(
+        tenant,
+        targetMonthly.toFixed(2),
+        `${targetPlanConfig.name} (Upgrade Pró-Rata R$ ${proportionalPrice})`
+      );
+      return res.json({
+        success: true,
+        method: 'card',
+        proportionalPrice,
+        initPoint: cardData.init_point,
+        preapprovalId: cardData.preapproval_id,
+      });
+    }
+
+    // PIX Pró-Rata
+    const pixData = await createMercadoPagoPixPayment(
+      tenant,
+      proportionalPrice.toFixed(2),
+      `Upgrade Pró-Rata ${targetPlanConfig.name} (${daysRemaining}d)`
+    );
+
+    const paymentDbId = `pay_${Date.now()}`;
+    await run(
+      `INSERT INTO subscription_payments (
+        id, tenant_id, payment_id, amount, status, method, plan, qr_code, qr_code_base64
+      ) VALUES (?, ?, ?, ?, 'pending', 'pix_upgrade', ?, ?, ?)`,
+      [paymentDbId, tenant.id, pixData.payment_id, proportionalPrice, targetPlan, pixData.qr_code, pixData.qr_code_base64]
+    );
+
+    res.json({
+      success: true,
+      method: 'pix',
+      paymentId: pixData.payment_id,
+      proportionalPrice,
+      targetPlan,
+      qrCode: pixData.qr_code,
+      qrCodeBase64: pixData.qr_code_base64,
+      expiresAt: tenant.subscription_expires_at,
+    });
+  } catch (error) {
+    logger.error('Erro ao executar upgrade:', { error: error.message });
+    res.status(500).json({ error: error.message || 'Erro ao gerar pagamento de upgrade.' });
+  }
+});
+
+// 9. Webhook Oficial do Mercado Pago (Suporta Pagamentos e Assinaturas Recorrentes)
 router.post('/webhook', async (req, res) => {
   try {
-    const { data } = req.body;
+    const { data, type, action } = req.body;
     const paymentId = data?.id || req.query?.['data.id'] || req.query?.id;
 
     if (paymentId) {
@@ -282,6 +545,7 @@ router.post('/webhook', async (req, res) => {
           const tenantId = subPayment?.tenant_id || 'tenant_default_salao';
           const plan = subPayment?.plan || 'STUDIO';
           const maxUsers = plan === 'PREMIER' ? 15 : plan === 'STUDIO' ? 5 : plan === 'STARTER' ? 2 : 1;
+          const isUpgrade = subPayment?.method === 'pix_upgrade';
 
           const currentTenant = await tGet(`SELECT subscription_expires_at FROM tenants WHERE id = ?`, [tenantId]);
           const now = new Date();
@@ -292,8 +556,12 @@ router.post('/webhook', async (req, res) => {
               currentExp = new Date(raw.includes('T') ? (raw.endsWith('Z') ? raw : raw + 'Z') : raw.replace(' ', 'T') + 'Z');
             }
           }
+
           let newExpiresAt;
-          if (!currentExp || isNaN(currentExp.getTime()) || currentExp < now) {
+          if (isUpgrade && currentExp && currentExp > now) {
+            // Upgrade mantém a data de vencimento original intacta
+            newExpiresAt = currentExp;
+          } else if (!currentExp || isNaN(currentExp.getTime()) || currentExp < now) {
             newExpiresAt = new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000);
           } else {
             newExpiresAt = new Date(currentExp.getTime() + 30 * 24 * 60 * 60 * 1000);
@@ -310,6 +578,8 @@ router.post('/webhook', async (req, res) => {
             `UPDATE tenants
              SET plan = ?, subscription_status = 'active', max_users = ?,
                  subscription_expires_at = ?,
+                 auto_renew = 1,
+                 subscription_canceled_at = NULL,
                  updated_at = datetime('now')
              WHERE id = ?`,
             [plan, maxUsers, newExpiresAt.toISOString(), tenantId]
@@ -323,7 +593,7 @@ router.post('/webhook', async (req, res) => {
           );
         });
 
-        logger.info(`[Mercado Pago] Assinatura mensal estendida para plano ${paymentId}`);
+        logger.info(`[Mercado Pago] Assinatura/Upgrade aprovado: ${paymentId}`);
       }
     }
 
@@ -334,7 +604,7 @@ router.post('/webhook', async (req, res) => {
   }
 });
 
-// 6. Listar Histórico de Pagamentos do Salão (Auditoria do SaaS)
+// 10. Listar Histórico de Pagamentos do Salão (Auditoria do SaaS)
 router.get('/payments', async (req, res) => {
   try {
     const authHeader = req.headers.authorization;
@@ -358,7 +628,7 @@ router.get('/payments', async (req, res) => {
   }
 });
 
-// 7. Validar Status do Pagamento Diretamente no Mercado Pago
+// 11. Validar Status do Pagamento Diretamente no Mercado Pago
 router.post('/check-payment/:paymentId', async (req, res) => {
   try {
     const { paymentId } = req.params;
@@ -383,6 +653,7 @@ router.post('/check-payment/:paymentId', async (req, res) => {
         const activeTenantId = subPayment?.tenant_id || tenantId;
         const plan = subPayment?.plan || 'STUDIO';
         const maxUsers = plan === 'PREMIER' ? 15 : plan === 'STUDIO' ? 5 : plan === 'STARTER' ? 2 : 1;
+        const isUpgrade = subPayment?.method === 'pix_upgrade';
 
         const currentTenant = await tGet(`SELECT subscription_expires_at FROM tenants WHERE id = ?`, [activeTenantId]);
         const now = new Date();
@@ -393,8 +664,12 @@ router.post('/check-payment/:paymentId', async (req, res) => {
             currentExp = new Date(raw.includes('T') ? (raw.endsWith('Z') ? raw : raw + 'Z') : raw.replace(' ', 'T') + 'Z');
           }
         }
+
         let newExpiresAt;
-        if (!currentExp || isNaN(currentExp.getTime()) || currentExp < now) {
+        if (isUpgrade && currentExp && currentExp > now) {
+          // Upgrade mantém a data de vencimento original intacta
+          newExpiresAt = currentExp;
+        } else if (!currentExp || isNaN(currentExp.getTime()) || currentExp < now) {
           newExpiresAt = new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000);
         } else {
           newExpiresAt = new Date(currentExp.getTime() + 30 * 24 * 60 * 60 * 1000);
@@ -411,6 +686,8 @@ router.post('/check-payment/:paymentId', async (req, res) => {
           `UPDATE tenants
            SET plan = ?, subscription_status = 'active', max_users = ?,
                subscription_expires_at = ?,
+               auto_renew = 1,
+               subscription_canceled_at = NULL,
                updated_at = datetime('now')
            WHERE id = ?`,
           [plan, maxUsers, newExpiresAt.toISOString(), activeTenantId]
@@ -427,7 +704,7 @@ router.post('/check-payment/:paymentId', async (req, res) => {
       return res.json({
         success: true,
         status: 'approved',
-        message: 'Pagamento confirmado com sucesso! Assinatura ativada por mais 30 dias.',
+        message: 'Pagamento confirmado com sucesso! Assinatura ativada.',
       });
     }
 
@@ -444,10 +721,10 @@ router.post('/check-payment/:paymentId', async (req, res) => {
   }
 });
 
-// 8. Simulação Instantânea de Teste com Suporte a Vagas Extras
+// 12. Simulação Instantânea de Teste com Suporte a Vagas Extras e Upgrade
 router.post('/simulate-approval', async (req, res) => {
   try {
-    const { paymentId, plan = 'STUDIO', extraUsers = 0 } = req.body;
+    const { paymentId, plan = 'STUDIO', extraUsers = 0, isUpgrade = false } = req.body;
     const authHeader = req.headers.authorization;
     let tenantId = 'tenant_default_salao';
 
@@ -459,7 +736,7 @@ router.post('/simulate-approval', async (req, res) => {
 
     const maxUsers = plan === 'PREMIER' ? 15 : plan === 'STUDIO' ? 5 : plan === 'STARTER' ? 2 : 1;
 
-    await transaction(async ({ run: tRun }) => {
+    await transaction(async ({ get: tGet, run: tRun }) => {
       if (paymentId) {
         await tRun(
           `UPDATE subscription_payments
@@ -469,24 +746,32 @@ router.post('/simulate-approval', async (req, res) => {
         );
       }
 
+      const currentTenant = await tGet(`SELECT subscription_expires_at FROM tenants WHERE id = ?`, [tenantId]);
+      let targetExpires = currentTenant?.subscription_expires_at;
+      if (!isUpgrade || !targetExpires) {
+        targetExpires = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString();
+      }
+
       await tRun(
         `UPDATE tenants
          SET plan = ?, subscription_status = 'active', max_users = ?, extra_users_count = ?,
-             subscription_expires_at = datetime('now', '+30 days'),
+             subscription_expires_at = ?,
+             auto_renew = 1,
+             subscription_canceled_at = NULL,
              updated_at = datetime('now')
          WHERE id = ?`,
-        [plan, maxUsers, Number(extraUsers || 0), tenantId]
+        [plan, maxUsers, Number(extraUsers || 0), targetExpires, tenantId]
       );
 
       licenseManager.cacheLicense(
         tenantId,
         plan,
-        new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
+        targetExpires,
         maxUsers + Number(extraUsers || 0)
       );
     });
 
-    res.json({ success: true, message: `Mensalidade do Plano ${plan} ativada com sucesso por 30 dias!` });
+    res.json({ success: true, message: `Mensalidade do Plano ${plan} ativada com sucesso!` });
   } catch (error) {
     res.status(500).json({ error: 'Erro ao simular aprovação.' });
   }
@@ -494,3 +779,4 @@ router.post('/simulate-approval', async (req, res) => {
 
 module.exports = router;
 module.exports.SAAS_PLANS = SAAS_PLANS;
+

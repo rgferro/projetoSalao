@@ -165,7 +165,7 @@ export default function CashRegister({ onOpenCashModal, onStartTour }) {
         </div>
 
         <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2.5 sm:gap-3">
-          <div className={`px-4 py-2 rounded-xl border flex items-center gap-3 ${
+          <div id="tour-status-caixa-detalhe" className={`px-4 py-2 rounded-xl border flex items-center gap-3 ${
             cashData?.isOpen 
               ? 'bg-emerald-50 text-emerald-800 border-emerald-200 dark:bg-emerald-950/40 dark:text-emerald-300' 
               : 'bg-rose-50 text-rose-800 border-rose-200 dark:bg-rose-950/40 dark:text-rose-300'
@@ -184,6 +184,7 @@ export default function CashRegister({ onOpenCashModal, onStartTour }) {
           )}
 
           <button
+            id="tour-fechamento-caixa"
             onClick={onOpenCashModal}
             className="px-4 py-2 text-xs font-bold rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 text-slate-700 dark:text-slate-200 text-center shrink-0"
           >
@@ -196,7 +197,7 @@ export default function CashRegister({ onOpenCashModal, onStartTour }) {
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
         
         {/* PDV Left: Order & Checkout Terminal (7 cols) */}
-        <div className="lg:col-span-7 glass-panel p-6 space-y-5">
+        <div id="tour-checkout-pix" className="lg:col-span-7 glass-panel p-6 space-y-5">
           <div className="flex items-center justify-between pb-3 border-b border-slate-100 dark:border-slate-800">
             <h3 className="font-bold text-base text-slate-800 dark:text-slate-100 flex items-center gap-2">
               <Receipt className="w-5 h-5 text-salon-500" />
@@ -383,7 +384,7 @@ export default function CashRegister({ onOpenCashModal, onStartTour }) {
         </div>
 
         {/* PDV Right: Caixa Movements & Receipt Preview (5 cols) */}
-        <div className="lg:col-span-5 space-y-6">
+        <div id="tour-sangrias-reforcos" className="lg:col-span-5 space-y-6">
           
           {/* Receipt Modal / Alert on Success */}
           {checkoutSuccess && (

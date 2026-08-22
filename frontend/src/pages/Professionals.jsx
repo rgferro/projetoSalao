@@ -311,6 +311,7 @@ export default function Professionals({ onStartTour }) {
           )}
 
           <button
+            id="tour-novo-colaborador"
             onClick={() => {
               setEditingProf(null);
               setProfForm({
@@ -344,7 +345,7 @@ export default function Professionals({ onStartTour }) {
       )}
 
       {/* Tabs */}
-      <div className="flex gap-1.5 sm:gap-2 p-1 bg-slate-100 dark:bg-slate-800 rounded-2xl overflow-x-auto no-scrollbar">
+      <div id="tour-permissoes-equipe" className="flex gap-1.5 sm:gap-2 p-1 bg-slate-100 dark:bg-slate-800 rounded-2xl overflow-x-auto no-scrollbar">
         <button
           onClick={() => setActiveTab('list')}
           className={`flex-1 min-w-fit px-3 py-2 text-xs font-bold rounded-xl whitespace-nowrap transition ${
@@ -354,6 +355,7 @@ export default function Professionals({ onStartTour }) {
           Membros & Acessos
         </button>
         <button
+          id="tour-regras-comissao"
           onClick={() => setActiveTab('commissions-report')}
           className={`flex-1 min-w-fit px-3 py-2 text-xs font-bold rounded-xl whitespace-nowrap transition ${
             activeTab === 'commissions-report' ? `${segTheme.activeTab}` : 'text-slate-500 hover:text-slate-800 dark:hover:text-slate-200'

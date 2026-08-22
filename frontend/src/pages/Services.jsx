@@ -118,6 +118,7 @@ export default function Services({ onStartTour }) {
           )}
 
           <button
+            id="tour-novo-servico"
             onClick={() => {
               setEditingService(null);
               setServiceForm({
@@ -140,7 +141,7 @@ export default function Services({ onStartTour }) {
       </div>
 
       {/* Categories Filter Tabs */}
-      <div className="flex gap-1.5 sm:gap-2 p-1 bg-slate-100 dark:bg-slate-800 rounded-2xl overflow-x-auto no-scrollbar">
+      <div id="tour-categorias-servicos" className="flex gap-1.5 sm:gap-2 p-1 bg-slate-100 dark:bg-slate-800 rounded-2xl overflow-x-auto no-scrollbar">
         {categories.map(cat => (
           <button
             key={cat.id}

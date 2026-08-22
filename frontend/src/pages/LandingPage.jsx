@@ -344,9 +344,13 @@ export default function LandingPage({ onNavigateLogin, onNavigateRegister, onEnt
       {/* 💰 4. TABELA DE PREÇOS */}
       <section id="planos" className="max-w-7xl mx-auto px-4 sm:px-6 py-16 space-y-12">
         <div className="text-center space-y-3 max-w-2xl mx-auto">
-          <span className="text-xs font-black uppercase tracking-widest text-pink-600">Planos Transparentes</span>
+          <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-pink-50 border border-pink-200 text-pink-700 text-xs font-bold">
+            <span>💳 Cartão de Crédito Recorrente</span>
+            <span className="text-slate-300">•</span>
+            <span>⚡ PIX Instantâneo</span>
+          </div>
           <h2 className="text-3xl sm:text-4xl font-black text-slate-950">Planos Feitos para o Seu Tamanho</h2>
-          <p className="text-xs sm:text-sm text-slate-600">Comece 100% grátis e faça upgrade apenas quando sua equipe crescer.</p>
+          <p className="text-xs sm:text-sm text-slate-600">Assine com Débito Mensal Automático sem comprometer o limite total do cartão ou pague via PIX. Cancele ou mude de plano a qualquer momento.</p>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 items-stretch">

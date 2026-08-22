@@ -230,8 +230,103 @@ async function getMercadoPagoPaymentStatus(paymentId) {
   });
 }
 
+/**
+ * Cancela assinatura recorrente no Mercado Pago (/preapproval/{id})
+ */
+async function cancelMercadoPagoPreapproval(preapprovalId) {
+  const token = getMPAccessToken();
+
+  if (!token || String(preapprovalId).startsWith('preapp_sim_')) {
+    logger.info(`[Mercado Pago Simulado] Cancelando assinatura ${preapprovalId}`);
+    return { id: preapprovalId, status: 'cancelled' };
+  }
+
+  const makeRequest = () => {
+    return new Promise((resolve, reject) => {
+      const payload = JSON.stringify({ status: 'cancelled' });
+      const req = https.request(
+        {
+          hostname: 'api.mercadopago.com',
+          path: `/preapproval/${preapprovalId}`,
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${token}`,
+          },
+        },
+        (res) => {
+          let body = '';
+          res.on('data', (chunk) => (body += chunk));
+          res.on('end', () => {
+            try {
+              const data = JSON.parse(body);
+              resolve(data);
+            } catch (e) {
+              reject(e);
+            }
+          });
+        }
+      );
+
+      req.on('error', reject);
+      req.setTimeout(10000, () => req.destroy(new Error('Mercado Pago Cancel Timeout (10s)')));
+      req.write(payload);
+      req.end();
+    });
+  };
+
+  return await circuitBreakers.mercadopago.execute(makeRequest, () => ({ id: preapprovalId, status: 'cancelled' }));
+}
+
+/**
+ * Consulta status da assinatura recorrente no Mercado Pago (/preapproval/{id})
+ */
+async function getMercadoPagoPreapprovalStatus(preapprovalId) {
+  const token = getMPAccessToken();
+
+  if (!token || String(preapprovalId).startsWith('preapp_sim_')) {
+    return { id: preapprovalId, status: 'authorized' };
+  }
+
+  const makeRequest = () => {
+    return new Promise((resolve, reject) => {
+      const req = https.request(
+        {
+          hostname: 'api.mercadopago.com',
+          path: `/preapproval/${preapprovalId}`,
+          method: 'GET',
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        },
+        (res) => {
+          let body = '';
+          res.on('data', (chunk) => (body += chunk));
+          res.on('end', () => {
+            try {
+              const data = JSON.parse(body);
+              resolve(data);
+            } catch (e) {
+              reject(e);
+            }
+          });
+        }
+      );
+
+      req.on('error', reject);
+      req.setTimeout(8000, () => req.destroy(new Error('Mercado Pago Preapproval Status Timeout (8s)')));
+      req.end();
+    });
+  };
+
+  return await circuitBreakers.mercadopago.execute(makeRequest, () => ({ id: preapprovalId, status: 'authorized' }));
+}
+
 module.exports = {
   createMercadoPagoPixPayment,
   createMercadoPagoPreapproval,
+  cancelMercadoPagoPreapproval,
+  getMercadoPagoPreapprovalStatus,
   getMercadoPagoPaymentStatus,
 };
+

@@ -244,6 +244,7 @@ export default function WhatsAppModule({ onStartTour }) {
           <span>Conexão & QR Code</span>
         </button>
         <button
+          id="tour-templates-whatsapp"
           onClick={() => setActiveTab('templates')}
           className={`flex-1 py-2 text-xs font-bold rounded-xl transition flex items-center justify-center gap-1.5 ${
             activeTab === 'templates' ? `${segTheme.activeTab}` : 'text-slate-500 hover:text-slate-800 dark:hover:text-slate-200'
@@ -289,7 +290,7 @@ export default function WhatsAppModule({ onStartTour }) {
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             {/* Card do QR Code */}
-            <div className="glass-panel p-6 flex flex-col items-center justify-center text-center space-y-4">
+            <div id="tour-qr-whatsapp" className="glass-panel p-6 flex flex-col items-center justify-center text-center space-y-4">
               <h3 className="text-base font-extrabold text-slate-800 dark:text-slate-100 flex items-center gap-2">
                 <QrCode className="w-5 h-5 text-emerald-600" />
                 Pareamento Multi-Device WhatsApp
@@ -380,7 +381,7 @@ export default function WhatsAppModule({ onStartTour }) {
             </div>
 
           {/* Instruções Passo a Passo */}
-          <div className="glass-panel p-6 space-y-4">
+          <div id="tour-lembretes-whatsapp" className="glass-panel p-6 space-y-4">
             <h3 className="font-bold text-base text-slate-800 dark:text-slate-100 flex items-center gap-2">
               <ShieldCheck className="w-5 h-5 text-emerald-600" />
               Como Conectar em 3 Passos Simples:

@@ -326,7 +326,7 @@ export default function BackupSettings({ onStartTour }) {
     <div className="space-y-6 animate-fadeIn pb-16">
       
       {/* Header Principal */}
-      <div className="glass-panel p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4 border border-emerald-500/20 bg-gradient-to-r from-emerald-50/40 to-teal-50/20 dark:from-emerald-950/20 dark:to-slate-900">
+      <div id="tour-backup-google-drive" className="glass-panel p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4 border border-emerald-500/20 bg-gradient-to-r from-emerald-50/40 to-teal-50/20 dark:from-emerald-950/20 dark:to-slate-900">
         <div>
           <div className="flex items-center gap-2">
             <span className="p-2 rounded-xl bg-emerald-600 text-white shadow-md shadow-emerald-600/20">
@@ -560,7 +560,7 @@ export default function BackupSettings({ onStartTour }) {
         {/* Lado Esquerdo (8 colunas): Lista de Backups com Abas (Google Drive vs Local) */}
         <div className="lg:col-span-8 space-y-6">
           
-          <div className="glass-panel p-6 space-y-4">
+          <div id="tour-backup-historico" className="glass-panel p-6 space-y-4">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-100 dark:border-slate-800 pb-3">
               <div>
                 <h3 className="font-bold text-base text-slate-800 dark:text-slate-100 flex items-center gap-2">
