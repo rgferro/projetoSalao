@@ -1,3 +1,4 @@
+@import "driver.js/dist/driver.css";
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -78,3 +79,248 @@
 .badge-no_show {
   @apply bg-slate-200 text-slate-800 dark:bg-slate-800 dark:text-slate-300 border border-slate-300 dark:border-slate-700;
 }
+
+/* ==========================================================================
+   Driver.js - Tema Popover com Spotlight (Custom Spotlight & High-End Popover)
+   ========================================================================== */
+
+/* 1. Overlay / Backdrop Spotlight */
+.driver-overlay {
+  transition: all 0.3s ease-in-out !important;
+}
+
+/* Efeito de destaque de borda arredondada e leve brilho/sombra branca ao redor do elemento em foco */
+.driver-active-element {
+  position: relative !important;
+  z-index: 1000000001 !important;
+  border-radius: 12px !important;
+  box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.95),
+              0 0 20px 4px rgba(255, 255, 255, 0.45),
+              0 10px 25px -5px rgba(0, 0, 0, 0.5) !important;
+  transition: box-shadow 0.25s ease, transform 0.25s ease !important;
+}
+
+/* 2. Container e Layout do Popover */
+.driver-popover {
+  all: unset;
+  box-sizing: border-box !important;
+  font-family: inherit !important;
+  position: fixed !important;
+  z-index: 1000000002 !important;
+  background-color: #ffffff !important;
+  color: #0f172a !important;
+  border-radius: 20px !important;
+  min-width: 290px !important;
+  max-width: 380px !important;
+  padding: 22px 24px !important;
+  margin: 0 !important;
+  border: 1px solid rgba(226, 232, 240, 0.9) !important;
+  box-shadow: 0 20px 35px -5px rgba(15, 23, 42, 0.22), 
+              0 10px 15px -5px rgba(15, 23, 42, 0.08),
+              0 0 1px 1px rgba(15, 23, 42, 0.05) !important;
+  transition: opacity 0.25s ease, transform 0.25s ease !important;
+  animation: driver-popover-enter 0.25s cubic-bezier(0.16, 1, 0.3, 1) !important;
+}
+
+@keyframes driver-popover-enter {
+  0% {
+    opacity: 0;
+    transform: scale(0.96) translateY(4px);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+/* Seta (Pointer) */
+.driver-popover-arrow {
+  content: "" !important;
+  position: absolute !important;
+  border: 8px solid transparent !important;
+  z-index: 1000000003 !important;
+}
+
+.driver-popover-arrow-side-left {
+  border-left-color: #ffffff !important;
+  border-right-color: transparent !important;
+  border-top-color: transparent !important;
+  border-bottom-color: transparent !important;
+  left: 100% !important;
+}
+
+.driver-popover-arrow-side-right {
+  border-right-color: #ffffff !important;
+  border-left-color: transparent !important;
+  border-top-color: transparent !important;
+  border-bottom-color: transparent !important;
+  right: 100% !important;
+}
+
+.driver-popover-arrow-side-top {
+  border-top-color: #ffffff !important;
+  border-bottom-color: transparent !important;
+  border-left-color: transparent !important;
+  border-right-color: transparent !important;
+  top: 100% !important;
+}
+
+.driver-popover-arrow-side-bottom {
+  border-bottom-color: #ffffff !important;
+  border-top-color: transparent !important;
+  border-left-color: transparent !important;
+  border-right-color: transparent !important;
+  bottom: 100% !important;
+}
+
+.driver-popover-arrow-side-center,
+.driver-popover-arrow-none,
+.driver-popover-arrow-side-over {
+  display: none !important;
+}
+
+/* Cabeçalho */
+.driver-popover-title {
+  display: block !important;
+  position: relative !important;
+  font-size: 1.05rem !important;
+  font-weight: 800 !important;
+  line-height: 1.35 !important;
+  color: #0f172a !important;
+  margin: 0 !important;
+  padding-right: 32px !important;
+  letter-spacing: -0.01em !important;
+}
+
+/* Botão Fechar (x) */
+.driver-popover-close-btn {
+  all: unset !important;
+  position: absolute !important;
+  top: 18px !important;
+  right: 18px !important;
+  width: 28px !important;
+  height: 28px !important;
+  border-radius: 9999px !important;
+  cursor: pointer !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  color: #94a3b8 !important;
+  font-size: 18px !important;
+  font-weight: 500 !important;
+  line-height: 1 !important;
+  text-align: center !important;
+  transition: all 0.2s ease !important;
+  background-color: transparent !important;
+}
+
+.driver-popover-close-btn:hover,
+.driver-popover-close-btn:focus {
+  color: #0f172a !important;
+  background-color: #f1f5f9 !important;
+}
+
+/* Corpo / Descrição */
+.driver-popover-description {
+  display: block !important;
+  font-size: 0.875rem !important;
+  font-weight: 450 !important;
+  line-height: 1.6 !important;
+  color: #475569 !important;
+  margin: 10px 0 0 0 !important;
+  padding: 0 !important;
+}
+
+/* Rodapé */
+.driver-popover-footer {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+  gap: 12px !important;
+  margin-top: 20px !important;
+  padding-top: 14px !important;
+  border-top: 1px solid #f1f5f9 !important;
+}
+
+/* Contador de passos: formato X of Y (ex: 1 of 2) */
+.driver-popover-progress-text {
+  font-size: 0.8125rem !important;
+  font-weight: 700 !important;
+  color: #64748b !important;
+  letter-spacing: 0.02em !important;
+  white-space: nowrap !important;
+}
+
+/* Botões de Navegação */
+.driver-popover-navigation-btns {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: flex-end !important;
+  gap: 8px !important;
+  flex-wrap: wrap !important;
+}
+
+.driver-popover-footer-btn {
+  all: unset !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  cursor: pointer !important;
+  box-sizing: border-box !important;
+  font-size: 0.8125rem !important;
+  font-weight: 700 !important;
+  padding: 7px 16px !important;
+  border-radius: 9999px !important; /* Formato de pílula (>= 20px) */
+  transition: all 0.2s ease !important;
+  line-height: 1.3 !important;
+  text-decoration: none !important;
+  user-select: none !important;
+}
+
+/* Botão 'Anterior' em estilo secundário (fundo claro/neutro, texto escuro) */
+.driver-popover-prev-btn,
+.driver-popover-footer button.driver-popover-prev-btn {
+  background-color: #f1f5f9 !important;
+  color: #334155 !important;
+  border: 1px solid #e2e8f0 !important;
+}
+
+.driver-popover-prev-btn:hover,
+.driver-popover-prev-btn:focus {
+  background-color: #e2e8f0 !important;
+  color: #0f172a !important;
+  transform: translateY(-1px) !important;
+}
+
+/* Botão 'Próximo' em destaque primário (fundo azul vivaz, texto branco) */
+.driver-popover-next-btn,
+.driver-popover-footer button.driver-popover-next-btn {
+  background-color: #2563eb !important;
+  background-image: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%) !important;
+  color: #ffffff !important;
+  border: 1px solid transparent !important;
+  box-shadow: 0 4px 12px rgba(37, 99, 235, 0.35) !important;
+}
+
+.driver-popover-next-btn:hover,
+.driver-popover-next-btn:focus {
+  background-image: linear-gradient(135deg, #1d4ed8 0%, #1e40af 100%) !important;
+  box-shadow: 0 6px 16px rgba(37, 99, 235, 0.45) !important;
+  transform: translateY(-1px) !important;
+}
+
+.driver-popover-next-btn:active,
+.driver-popover-prev-btn:active {
+  transform: translateY(0) !important;
+}
+
+/* Botão Desabilitado */
+.driver-popover-btn-disabled,
+.driver-popover-footer .driver-popover-btn-disabled {
+  opacity: 0.4 !important;
+  cursor: not-allowed !important;
+  pointer-events: none !important;
+  transform: none !important;
+  box-shadow: none !important;
+}
+
